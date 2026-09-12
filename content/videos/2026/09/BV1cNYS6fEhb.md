@@ -1,4 +1,18 @@
-# 课代表立正 · 老东家被OpenAI以11亿美元收购，我为什么选择全职卖课？
+---
+title: "老东家被OpenAI以11亿美元收购，我为什么选择全职卖课？"
+bvid: BV1cNYS6fEhb
+platform: bilibili
+uploader: 课代表立正
+url: https://www.bilibili.com/video/BV1cNYS6fEhb
+date: 2026-09-12
+---
+
+# 老东家被OpenAI以11亿美元收购，我为什么选择全职卖课？
+
+- UP：课代表立正
+- 平台：B站
+- 视频：https://www.bilibili.com/video/BV1cNYS6fEhb
+- BV：BV1cNYS6fEhb
 
 ## 一句话概括
 All in问题别绑方案，Calling+PMF决定长期与打法。
