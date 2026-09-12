@@ -180,8 +180,11 @@ def build(
     meta: str,
     css_prefix: str,
     inline: bool = False,
+    no_overview: bool = False,
 ) -> None:
     title, sections = md_to_h2_sections(md_path.read_text(encoding="utf-8"))
+    if no_overview:
+        sections = [(h, b) for h, b in sections if h.strip() != "概览"]
     body = []
     for idx, (h, b) in enumerate(sections):
         rail = RAILS[idx % len(RAILS)]
@@ -215,8 +218,9 @@ def main() -> None:
     ap.add_argument("--meta", default="")
     ap.add_argument("--css-prefix", default="")
     ap.add_argument("--inline", action="store_true", help="Embed tokens+css in <style> (Pages-safe)")
+    ap.add_argument("--no-overview", action="store_true", help="Drop auto lead card titled 概览")
     args = ap.parse_args()
-    build(args.input, args.output, args.kicker, args.meta, args.css_prefix, inline=args.inline)
+    build(args.input, args.output, args.kicker, args.meta, args.css_prefix, inline=args.inline, no_overview=args.no_overview)
 
 
 if __name__ == "__main__":
