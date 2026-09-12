@@ -32,7 +32,7 @@ TEMPLATE_LINKS = """<!DOCTYPE html>
 </head>
 <body>
   <div class="reader-wrap">
-    <header class="reader-hero reveal">
+    <header class="reader-hero reveal in">
       <div class="reader-kicker">{kicker}</div>
       <h1>{title}</h1>
       <div class="reader-meta">{meta}</div>
@@ -40,29 +40,11 @@ TEMPLATE_LINKS = """<!DOCTYPE html>
     <main>
 {body}
     </main>
-    <footer class="reader-footer reveal">邮件推送 · 暗色科技阅读页</footer>
+    <footer class="reader-footer reveal in">邮件推送 · 暗色科技阅读页</footer>
   </div>
   <script>
   (function () {{
-    var nodes = document.querySelectorAll('.reveal');
-    if (!('IntersectionObserver' in window)) {{
-      nodes.forEach(function (n) {{ n.classList.add('in'); }});
-      return;
-    }}
-    var io = new IntersectionObserver(function (entries) {{
-      entries.forEach(function (e) {{
-        if (e.isIntersecting) {{
-          e.target.classList.add('in');
-          e.target.classList.remove('out');
-        }} else if (e.boundingClientRect.top < 0) {{
-          e.target.classList.add('out');
-          e.target.classList.remove('in');
-        }} else {{
-          e.target.classList.remove('in');
-        }}
-      }});
-    }}, {{ threshold: 0.12, rootMargin: '0px 0px -8% 0px' }}});
-    nodes.forEach(function (n) {{ io.observe(n); }});
+    /* visibility no longer depends on JS; keep observer optional */
   }})();
   </script>
 </body>
@@ -81,7 +63,7 @@ TEMPLATE_INLINE = """<!DOCTYPE html>
 </head>
 <body>
   <div class="reader-wrap">
-    <header class="reader-hero reveal">
+    <header class="reader-hero reveal in">
       <div class="reader-kicker">{kicker}</div>
       <h1>{title}</h1>
       <div class="reader-meta">{meta}</div>
@@ -89,36 +71,11 @@ TEMPLATE_INLINE = """<!DOCTYPE html>
     <main>
 {body}
     </main>
-    <footer class="reader-footer reveal">邮件推送 · 暗色科技阅读页</footer>
+    <footer class="reader-footer reveal in">邮件推送 · 暗色科技阅读页</footer>
   </div>
   <script>
   (function () {
-    var nodes = document.querySelectorAll('.reveal');
-    // Fail-safe: show content even if observer fails
-    function showAll() { nodes.forEach(function (n) { n.classList.add('in'); n.classList.remove('out'); }); }
-    if (!('IntersectionObserver' in window)) { showAll(); return; }
-    try {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting) {
-            e.target.classList.add('in');
-            e.target.classList.remove('out');
-          } else if (e.boundingClientRect.top < 0) {
-            e.target.classList.add('out');
-            e.target.classList.remove('in');
-          } else {
-            e.target.classList.remove('in');
-          }
-        });
-      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
-      nodes.forEach(function (n) { io.observe(n); });
-      // first paint fail-safe
-      setTimeout(function () {
-        nodes.forEach(function (n) {
-          if (!n.classList.contains('in')) n.classList.add('in');
-        });
-      }, 800);
-    } catch (err) { showAll(); }
+    /* visibility no longer depends on JS; keep observer optional */
   })();
   </script>
 </body>
@@ -198,7 +155,7 @@ def render_section(heading: str, body_md: str, rail: str, rail_idx: int) -> str:
             chunks.append(render_sub(sh, sb, child_rail))
         sub_html = '        <div class="sub-stack">\n' + "".join(chunks) + "        </div>\n"
     return (
-        f'      <section class="block-card rail-{rail} reveal">\n'
+        f'      <section class="block-card rail-{rail} reveal in">\n'
         f'        <div class="label">{rail}</div>\n'
         f"        <h2>{heading}</h2>\n"
         f"        {lead_html}\n"
