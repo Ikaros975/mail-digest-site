@@ -168,11 +168,12 @@ def load_inline_style() -> str:
     tokens = (ROOT / "docs/assets/tokens.css").read_text(encoding="utf-8")
     css = (ROOT / "docs/assets/digest-reader.css").read_text(encoding="utf-8")
     css = re.sub(r"@import\s+url\(['\"]?[^'\")]+['\"]?\);\s*", "", css)
-    return tokens + "\n\n" + css
-
-
-def build(
-    md_path: Path,
+    # WeChat in-app browser often disables JS; never hide .reveal by default.
+    force = (
+        "\n/* REVEAL_FORCE_VISIBLE */\n"
+        ".reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}\n"
+    )
+    return tokens + "\n\n" + css + force
     out: Path,
     kicker: str,
     meta: str,
