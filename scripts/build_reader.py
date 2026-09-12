@@ -92,27 +92,34 @@ TEMPLATE_INLINE = """<!DOCTYPE html>
     <footer class="reader-footer reveal">邮件推送 · 暗色科技阅读页</footer>
   </div>
   <script>
-  (function () {{
+  (function () {
     var nodes = document.querySelectorAll('.reveal');
-    if (!('IntersectionObserver' in window)) {{
-      nodes.forEach(function (n) {{ n.classList.add('in'); }});
-      return;
-    }}
-    var io = new IntersectionObserver(function (entries) {{
-      entries.forEach(function (e) {{
-        if (e.isIntersecting) {{
-          e.target.classList.add('in');
-          e.target.classList.remove('out');
-        }} else if (e.boundingClientRect.top < 0) {{
-          e.target.classList.add('out');
-          e.target.classList.remove('in');
-        }} else {{
-          e.target.classList.remove('in');
-        }}
-      }});
-    }}, {{ threshold: 0.12, rootMargin: '0px 0px -8% 0px' }}});
-    nodes.forEach(function (n) {{ io.observe(n); }});
-  }})();
+    // Fail-safe: show content even if observer fails
+    function showAll() { nodes.forEach(function (n) { n.classList.add('in'); n.classList.remove('out'); }); }
+    if (!('IntersectionObserver' in window)) { showAll(); return; }
+    try {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) {
+            e.target.classList.add('in');
+            e.target.classList.remove('out');
+          } else if (e.boundingClientRect.top < 0) {
+            e.target.classList.add('out');
+            e.target.classList.remove('in');
+          } else {
+            e.target.classList.remove('in');
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+      nodes.forEach(function (n) { io.observe(n); });
+      // first paint fail-safe
+      setTimeout(function () {
+        nodes.forEach(function (n) {
+          if (!n.classList.contains('in')) n.classList.add('in');
+        });
+      }, 800);
+    } catch (err) { showAll(); }
+  })();
   </script>
 </body>
 </html>
