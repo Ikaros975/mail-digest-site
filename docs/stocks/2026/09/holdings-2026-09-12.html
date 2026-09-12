@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🎯 2026-09-12 决策仪表盘</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">股票分析 · 全文</div>
+      <h1>🎯 2026-09-12 决策仪表盘</h1>
+      <div class="reader-meta">2026-09-12</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>📊 分析结果摘要</h2>
+        <p>⚪ <strong>华锋股份(002806)</strong>: 观望 | 评分 45 | 震荡
+⚪ <strong>阳光电源(300274)</strong>: 观望 | 评分 42 | 看空
+🟠 <strong>驰宏锌锗(600497)</strong>: 减仓 | 评分 35 | 看空</p>
+<hr>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>⚪ 华锋股份 (002806)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 近3日无有效公司新闻，舆情情绪中性偏冷，无催化。
+<strong>📊 业绩预期</strong>: 结构化财报字段缺失，无法判断。检索到提及公司上半年营收5.82亿元、净利润亏损（同比增亏）的报道，但发布时间无法确认、未经核验，仅作基本面偏弱的背景提示，不作为操作依据。</p>
+<p><strong>🚨 风险警报</strong>:
+- 2026-09-10至2026-09-12 未检索到减持、处罚、立案等公司层面重大利空公告，但筹码与基本面数据缺失，风险排查并不完整
+- 近3日无新增利空，但公司基本面数据缺失，业绩层面风险无法确认</p>
+<p><strong>✨ 利好催化</strong>:
+- 2026-09-10至2026-09-12 无可确认的利好催化事件，题材与资金数据部分缺失，暂不具备事件驱动买点</p>
+<p><strong>📢 最新动态</strong>: 近3日（2026-09-10至2026-09-12）未检索到华锋股份公司层面重大公告；结果多为宏观/海外/板块背景信息（如新加坡经济、海外矿业、A股新股等），与公司无直接关联。</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>⚪ 观望</strong> | 震荡</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 均线未多头、股价跌破MA20，暂不具备买点，观望为主。</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 本周内</p>
+<table>
+<thead>
+<tr>
+<th>持仓情况</th>
+<th>操作建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🆕 <strong>空仓者</strong></td>
+<td>空仓者：不追高、不抄底，等待股价重新站上MA5(14.51)并修复为多头排列、量价配合后再分批试探性建仓。</td>
+</tr>
+<tr>
+<td>💼 <strong>持仓者</strong></td>
+<td>持仓者：轻仓可暂持，跌破14.20元减仓，跌破13.90元清仓；反弹至MA10(14.64)附近若滞涨可先减半。</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📈 当日行情</h3>
+          <table>
+<thead>
+<tr>
+<th>收盘</th>
+<th>昨收</th>
+<th>开盘</th>
+<th>最高</th>
+<th>最低</th>
+<th>涨跌幅</th>
+<th>涨跌额</th>
+<th>振幅</th>
+<th>成交量</th>
+<th>成交额</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14.33</td>
+<td>14.35</td>
+<td>14.23</td>
+<td>14.65</td>
+<td>13.82</td>
+<td>-0.14%</td>
+<td>-0.02</td>
+<td>5.78%</td>
+<td>531.19 万股</td>
+<td>7549.62 万元</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>当前价</th>
+<th>量比</th>
+<th>换手率</th>
+<th>行情来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>14.33</td>
+<td>N/A</td>
+<td>3.19%</td>
+<td>tickflow</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: MA5(14.51) &lt; MA10(14.64)，但MA10 ≥ MA20(14.43)，呈弱势空头/均线缠绕，未形成MA5&gt;MA10&gt;MA20多头排列 | 多头排列: ❌ 否 | 趋势强度: 40/100</p>
+<table>
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>14.33</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>14.51</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>14.64</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>14.43</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-1.23% 安全</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>14.2</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>14.64</td>
+</tr>
+</tbody>
+</table>
+<p><strong>成交量</strong>: 量比 N/A (放量) | 换手率 3.19%
+💡 <em>成交量为昨日1.52倍而股价微跌0.14%，呈放量滞涨，上方抛压仍在，量价配合不佳</em></p>
+<p><strong>筹码</strong>: 筹码分布未启用或数据源暂不可用，未纳入筹码判断。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>非交易日观察</td>
+<td>观察</td>
+<td>2026-09-14 09:30（下一交易日开盘）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>观察条件</strong>:
+- 下一交易日能否重新站上MA5(14.51)并修复均线结构
+- 成交量能否与价格配合（缩量回踩或放量上攻）
+- 能否守稳14.20元支撑及MA20(14.43)
+- 是否出现公司层面公告或汽车题材催化</p>
+<p><strong>置信度理由</strong>: 行情为stale、技术面partial、筹码缺失、基本面partial，数据质量76分，按规则置信度不得为高，故取低。</p>
+<p><strong>数据限制</strong>:
+- 行情数据过期（quote_stale）
+- 技术指标仅部分可用（intraday_realtime_overlay）
+- 筹码分布缺失（chip_distribution_missing）
+- 基本面/财报字段缺失，估值与业绩无法判断
+- quote: stale</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作点位</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🎯 理想买入点</td>
+<td>14.30元附近（须先站上MA5 14.51并形成MA5&gt;MA10多头排列后再考虑，当前未满足）</td>
+</tr>
+<tr>
+<td>🔵 次优买入点</td>
+<td>14.00元（MA20下方整数关强支撑，需出现缩量止跌）</td>
+</tr>
+<tr>
+<td>🛑 止损位</td>
+<td>13.90元（跌破则趋势转弱，减仓/离场）</td>
+</tr>
+<tr>
+<td>🎊 目标位</td>
+<td>14.64元（MA10压力）→ 15.00元（整数关）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>💰 仓位建议</strong>: 建议仓位：0-2成（以观望为主，暂不建仓）
+- 建仓策略: 不追高。等待均线由空转多、股价站上MA5/MA10并伴随缩量回踩确认后，再分批试探性建仓，首次不超过1成。
+- 风控策略: 跌破14.20元减仓，跌破13.90元清仓；单只个股仓位不超过总资产10%，严格执行止损。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——MA5(14.51)<MA10(14.64)，未形成MA5>MA10&gt;MA20</li>
+<li>✅ 检查项2：乖离率合理——MA5乖离率-1.23%，处于安全区间（&lt;5%）</li>
+<li>⚠️ 检查项3：量能配合——较昨日放量1.52倍但股价微跌，放量滞涨需警惕</li>
+<li>⚠️ 检查项4：无重大利空——近3日无公司层面利空公告，但风险数据不完整</li>
+<li>❌ 检查项5：筹码健康——筹码分布数据缺失，无法判断</li>
+<li>⚠️ 检查项6：PE估值合理——估值数据缺失，无法判断</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 36%
+- 📰 新闻舆情: 16%
+- 📊 基本面: 19%
+- 🌐 市场环境: 29%</p>
+<p><strong>🐂 最强看多信号</strong>: MA5乖离率-1.23%处于安全区间，价格接近MA5支撑
+<strong>🐻 最强看空信号</strong>: 均线未形成多头排列且股价跌破MA20</p>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🧩 关联板块</h3>
+          <p>汽车 / 汽车零部件 / 底盘与发动机系统 / 广东板块 / 高压快充</p>
+<p><em>📋 数据来源：行情：tickflow（stale/quote_stale）；日线：storage.get_analysis_context；技术：partial（intraday_realtime_overlay）；筹码：missing（chip_distribution_missing）；基本面：partial（realtime_quote）；新闻：Tavily（13条）。</em></p>
+<hr>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>⚪ 阳光电源 (300274)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 消息面真空、无增量催化，舆情情绪中性偏弱，主要矛盾集中在技术面空头排列与超卖博弈。
+<strong>📊 业绩预期</strong>: 结构化财报字段（营业收入、归母净利润、经营现金流、ROE、分红等）均为N/A，数据缺失，无法判断正式业绩口径。检索所得盈利预测页面提及的公司经营数据时间戳不明确且非近3日公告，仅可作中长期背景参考，不作为短线交易依据。基本面整体偏中性偏多但技术面尚未确认，属“基本面偏多、技术面未确认”状态。</p>
+<p><strong>🚨 风险警报</strong>:
+- 风险1（2026-09-11日线数据）：技术面呈MA5&lt;MA10&lt;MA20空头排列，股价84.40元显著低于MA20（98.96元），中期趋势向下，不宜做多
+- 风险2（2026-09-11日线数据）：价格下跌1.78%同时成交量放大至昨日1.51倍，属放量下跌，若失守82.00元附近支撑将扩大跌幅
+- 风险3（2026-09-12核查）：风险排查类检索结果多为无关网页内容，信息完整度不足，不排除存在未被检索到的减持/解禁/业绩类公告，需以交易所披露为准</p>
+<p><strong>✨ 利好催化</strong>:
+- 无2026-09-09至09-12窗口内可确认的公司利好催化（2026-09-12核查）
+- 技术性因素（2026-09-11数据）：RSI约24.8处于超卖区，短线存在超跌反弹需求，但仅属技术性反抽，不构成趋势反转依据</p>
+<p><strong>📢 最新动态</strong>: 2026-09-09至2026-09-12窗口内，未检索到阳光电源公司特定重大公告。窗口内可命中的新闻为2026-09-10与2026-09-11（来源Mining.com.au）的海外矿业/铀矿类行业背景信息，与公司光储主业无直接关联，不构成有效催化；机构研报类信息发布时间为2026-08-31，超出近3日窗口，按时间规则不予采用。</p>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>⚪ 观望</strong> | 看空</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列放量下跌，暂不买入，持仓者反弹减仓并严守82元止损</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 本周内</p>
+<table>
+<thead>
+<tr>
+<th>持仓情况</th>
+<th>操作建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🆕 <strong>空仓者</strong></td>
+<td>空仓者：不参与。MA5&lt;MA10&lt;MA20为空头排列，趋势未修复前严禁抄底；待放量站稳MA5（86.79元）之上并缩量回踩不破，再考虑1成试探仓。</td>
+</tr>
+<tr>
+<td>💼 <strong>持仓者</strong></td>
+<td>持仓者：以保护本金为主。反弹至MA5（86.79元）/MA10（87.67元）附近分批减至3成以下；收盘跌破82.00元坚决止损离场，不摊薄成本。</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📈 当日行情</h3>
+          <table>
+<thead>
+<tr>
+<th>收盘</th>
+<th>昨收</th>
+<th>开盘</th>
+<th>最高</th>
+<th>最低</th>
+<th>涨跌幅</th>
+<th>涨跌额</th>
+<th>振幅</th>
+<th>成交量</th>
+<th>成交额</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>84.40</td>
+<td>85.93</td>
+<td>85.64</td>
+<td>85.77</td>
+<td>83.12</td>
+<td>-1.78%</td>
+<td>-1.53</td>
+<td>3.08%</td>
+<td>4724.92 万股</td>
+<td>39.84 亿元</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>当前价</th>
+<th>量比</th>
+<th>换手率</th>
+<th>行情来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>84.40</td>
+<td>N/A</td>
+<td>2.98%</td>
+<td>tickflow</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: 空头排列 MA5(86.79) &lt; MA10(87.67) &lt; MA20(98.96)，均线向下发散，中期趋势走弱 | 多头排列: ❌ 否 | 趋势强度: 25/100</p>
+<table>
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>84.4</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>86.786</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>87.667</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>98.9605</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-2.75% 安全（但为负乖离，属弱势回踩而非多头回踩）</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>82.0</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>86.79</td>
+</tr>
+</tbody>
+</table>
+<p><strong>成交量</strong>: 量比 数据缺失 (温和放量（成交量为昨日1.51倍，价格下跌1.78%）) | 换手率 2.98%
+💡 <em>价跌量增属放量下跌，抛压尚未充分释放；需出现缩量止跌才视为企稳信号</em></p>
+<p><strong>筹码</strong>: 筹码分布未启用或数据源暂不可用，未纳入筹码判断。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>非交易日观察</td>
+<td>无盘中动作</td>
+<td>2026-09-14 09:30（下一交易日开盘后30分钟内）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>观察条件</strong>:
+- 下一交易日能否守住82.00元附近支撑，并缩量收复MA5 86.79元
+- 成交量能否萎缩至低于近期均量（缩量止跌为企稳第一信号）
+- 是否出现公司公告类信息（减持、解禁、业绩预告、大额订单）
+- 光伏/储能板块整体资金情绪能否回暖</p>
+<p><strong>置信度理由</strong>: 行情为过期估算价（quote_stale），技术指标为部分可用（intraday_realtime_overlay），筹码与估值数据缺失，且当前为非交易日无法观察实时量价，按规则置信度不得为高，故定为低。</p>
+<p><strong>数据限制</strong>:
+- 实时行情为过期估算价84.40元，不能代表最新成交状态
+- 技术指标部分可用，缺少盘中实时量价确认
+- 筹码分布数据缺失，获利比例/平均成本/集中度无法判断
+- 量比、市盈率、市净率、总市值/流通市值等字段缺失
+- 近3日无公司特定新闻，舆情信息覆盖不完整（主题数据为partial）</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作点位</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🎯 理想买入点</td>
+<td>暂不设买入点（空头排列、放量下跌）。激进者仅在放量收复MA5 86.79元并缩量回踩不破后，轻仓试探</td>
+</tr>
+<tr>
+<td>🔵 次优买入点</td>
+<td>企稳并连续2日站稳MA10 87.67元之上，视为右侧确认信号，方可考虑加仓（当前不适用）</td>
+</tr>
+<tr>
+<td>🛑 止损位</td>
+<td>82.00元（近期低点区域，估算，需盘中验证；收盘跌破无条件离场）</td>
+</tr>
+<tr>
+<td>🎊 目标位</td>
+<td>第一目标：86.79元（MA5，减仓区）；第二目标：87.67元（MA10，强压力）；98.96元（MA20）为中期趋势压力，短期难触及</td>
+</tr>
+</tbody>
+</table>
+<p><strong>💰 仓位建议</strong>: 建议仓位：空仓者0成；持仓者降至3成以下
+- 建仓策略: 不主动建仓、不补仓摊薄。等待三类确认信号之一：①缩量止跌收阳并收复MA5；②放量突破MA10并连续2日站稳；③出现公司层面实质利好公告。任一确认后首笔不超过1成，回踩不破再分批。
+- 风控策略: 单笔止损控制在2.5%以内；持仓者以82.00元为硬止损线，反弹至MA5/MA10分批减仓；严禁在空头排列下重仓或加杠杆。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——实际为MA5&lt;MA10&lt;MA20空头排列，核心条件不满足</li>
+<li>✅ 检查项2：乖离率合理——MA5乖离-2.75%，处安全区间（但为负乖离，属弱势）</li>
+<li>❌ 检查项3：量能配合——价跌1.78%配合1.51倍成交量，属放量下跌，非缩量回调</li>
+<li>⚠️ 检查项4：无重大利空——近3日未检索到公司特定重大利空，但信息覆盖不完整</li>
+<li>⚠️ 检查项5：筹码健康——筹码分布数据不可用，无法判断</li>
+<li>⚠️ 检查项6：PE估值合理——市盈率、市净率、市值数据缺失，无法判断</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 32%
+- 📰 新闻舆情: 18%
+- 📊 基本面: 24%
+- 🌐 市场环境: 26%</p>
+<p><strong>🐂 最强看多信号</strong>: RSI约24.8进入超卖区，短线存在超跌反弹需求
+<strong>🐻 最强看空信号</strong>: MA5&lt;MA10&lt;MA20空头排列叠加放量下跌，股价低于MA20约14.7%</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>🧩 关联板块</h3>
+          <p>电力设备 / 逆变器 / 光伏设备 / 安徽板块 / 权重股</p>
+<p><em>📋 数据来源：行情：tickflow（过期告警 quote_stale）；日线：storage.get_analysis_context（2026-09-11为最新完整交易日）；技术指标：partial（intraday_realtime_overlay）；筹码分布：missing（chip_distribution_missing）；基本面：partial（realtime_quote）；新闻：Tavily 检索结果，筛选窗口为2026-09-09至2026-09-12；市场结构：partial（缺失 hotspot_constituents、leader_stocks、theme_ranking_match、industry_rankings、concept_rankings）。数据质量评分76/100（可用）。</em></p>
+<hr>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>🟠 驰宏锌锗 (600497)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 消息面中性偏谨慎：业绩高增长为陈年利好，短期被商品板块回调与技术破位情绪压制。
+<strong>📊 业绩预期</strong>: 基本面偏多但技术面尚未确认：2026-08-25披露半年报，上半年营业收入138.37亿元、同比增长30.78%，净利润15.9亿元、同比增长70.58%；2026-07-13曾预告半年度归母净利润15.5亿至17.5亿元、同比增66.26%至87.71%。上述为窗口外历史信息，仅作基本面参考，不能作为当前买点依据。</p>
+<p><strong>🚨 风险警报</strong>:
+- 风险点1：2026-09-11 单日放量下跌5.03%，量能放大至昨日1.2倍，属放量杀跌，资金承接意愿弱
+- 风险点2：股价9.81元已跌破MA20（10.145）与MA10（10.123），均线转为空头排列，中期趋势线失守
+- 风险点3：2026-09-10 商品板块整体回调（上证商品指数盘中跌1.03%），所属有色金属题材缺乏成分股与龙头股证据，存在板块联动下杀风险</p>
+<p><strong>✨ 利好催化</strong>:
+- 近3日窗口（2026-09-09至2026-09-12）内未检索到带明确日期的实质性利好催化，消息面以商品板块回调为主</p>
+<p><strong>📢 最新动态</strong>: 【最新消息】2026-09-11该股下跌5.03%，收盘报9.81元，换手率3.51%，成交量177.15万手，成交额17.25亿元（来源：证券之星/网易）；2026-09-10大宗商品ETF国联安（510170）成分股名单中，驰宏锌锗为其前十大权重股之一（占比2.91%）。</p>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>🟠 减仓</strong> | 看空</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列+放量跌破MA20，反抽减仓、空仓观望</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 本周内</p>
+<table>
+<thead>
+<tr>
+<th>持仓情况</th>
+<th>操作建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🆕 <strong>空仓者</strong></td>
+<td>空仓者建议：不参与。均线空头排列且放量下跌，趋势未修复前禁止抄底，等待站回MA5（10.05）并放量收复MA20（10.15）后再评估。</td>
+</tr>
+<tr>
+<td>💼 <strong>持仓者</strong></td>
+<td>持仓者建议：利用反弹分批减仓至3成以下，跌破9.60（前低/整数支撑）坚决止损离场，不补仓摊薄。</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>📈 当日行情</h3>
+          <table>
+<thead>
+<tr>
+<th>收盘</th>
+<th>昨收</th>
+<th>开盘</th>
+<th>最高</th>
+<th>最低</th>
+<th>涨跌幅</th>
+<th>涨跌额</th>
+<th>振幅</th>
+<th>成交量</th>
+<th>成交额</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9.81</td>
+<td>10.33</td>
+<td>9.95</td>
+<td>9.95</td>
+<td>9.53</td>
+<td>-5.03%</td>
+<td>-0.52</td>
+<td>4.07%</td>
+<td>1.77 亿股</td>
+<td>17.25 亿元</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>当前价</th>
+<th>量比</th>
+<th>换手率</th>
+<th>行情来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9.81</td>
+<td>N/A</td>
+<td>3.51%</td>
+<td>tickflow</td>
+</tr>
+</tbody>
+</table>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: 空头排列：MA5(10.046) &lt; MA10(10.123) &lt; MA20(10.145)，均线向下压制，趋势强度仅25/100 | 多头排列: ❌ 否 | 趋势强度: 25/100</p>
+<table>
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>9.81</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>10.046</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>10.123</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>10.145</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-2.35% 安全</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>9.6</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>10.15</td>
+</tr>
+</tbody>
+</table>
+<p><strong>成交量</strong>: 量比 0 (放量) | 换手率 3.51%
+💡 <em>成交量放大至昨日1.2倍、股价下跌5.03%，属放量下跌，抛压加重，短期承接力不足</em></p>
+<p><strong>筹码</strong>: 筹码分布未启用或数据源暂不可用，未纳入筹码判断。</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>非交易日观察</td>
+<td>等待盘中确认，禁止追高。</td>
+<td>2026-09-14 09:30（下一交易日开盘）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>观察条件</strong>:
+- 下一交易日开盘能否守住9.60一线支撑，是否出现缩量止跌
+- 能否收复MA5（10.05）并放量重回MA20（10.15）上方
+- 商品板块（有色金属/上证商品指数）是否止跌企稳
+- 是否出现窗口内新增公告：减持、解禁、监管问询等风险事件</p>
+<p><strong>置信度理由</strong>: 行情为过期估算数据、技术面为部分可用、筹码数据完全缺失，数据质量评分76分，故置信度定为中，不得为高。；当前市场阶段不支持即时盘中买卖动作。</p>
+<p><strong>数据限制</strong>:
+- 行情块状态为stale（quote_stale），实时价格为估算值而非当日成交确认价
+- 技术块为partial，含intraday_realtime_overlay告警，指标可能非最终收盘口径
+- 筹码分布数据缺失（chip_distribution_missing），无法进行获利盘与集中度分析
+- 市场结构状态partial，缺少题材成分股、龙头股与行业排名证据，不能断言个股为板块龙头
+- quote: stale</p>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作点位</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🎯 理想买入点</td>
+<td>暂不适用（空头排列不建仓）；仅当股价放量站回MA5 10.05并收复MA20 10.15后，才可轻仓试错</td>
+</tr>
+<tr>
+<td>🔵 次优买入点</td>
+<td>9.60附近若出现缩量止跌+长下影企稳信号，可极小仓观察，需严格设损</td>
+</tr>
+<tr>
+<td>🛑 止损位</td>
+<td>9.60元（跌破前低/整数支撑，或较现价再跌约2%）</td>
+</tr>
+<tr>
+<td>🎊 目标位</td>
+<td>第一压力10.15（MA20），第二压力10.50，机构一致目标价约11.10（远月参考）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>💰 仓位建议</strong>: 建议仓位：0成（空仓）；已有持仓者降至3成以下
+- 建仓策略: 不主动建仓。若后续出现企稳信号（缩量回踩9.60不破 + 站回MA5 10.05 + 量能温和放大），可用不超过2成资金分批试仓，第一步1成，确认后加1成。
+- 风控策略: 严格执行9.60止损；反抽10.05—10.15受阻即减，不因业绩利好而放宽止损；单只个股仓位不超过总仓2成。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——MA5(10.046)&lt;MA10(10.123)&lt;MA20(10.145)，为空头排列，不满足</li>
+<li>✅ 检查项2：乖离率合理——MA5乖离率-2.35%，未超5%追高警戒线，但为负乖离（已在均线下方运行）</li>
+<li>❌ 检查项3：量能配合——放量下跌（1.2倍量能、跌5.03%），量价背离，属抛压释放</li>
+<li>✅ 检查项4：无重大利空——近3日未检索到减持、监管处罚、业绩变脸等公告</li>
+<li>⚠️ 检查项5：筹码健康——筹码分布数据缺失，无法判断获利比例、平均成本与集中度</li>
+<li>⚠️ 检查项6：PE估值合理——动态市盈率、市净率数据缺失，无法判断</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 60%
+- 📰 新闻舆情: 15%
+- 📊 基本面: 15%
+- 🌐 市场环境: 10%</p>
+<p><strong>🐂 最强看多信号</strong>: 半年报净利同比+70.58%且MA5乖离率仅-2.35%，未过度偏离
+<strong>🐻 最强看空信号</strong>: 放量下跌5.03%并跌破MA20，均线转空头排列</p>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>🧩 关联板块</h3>
+          <p>有色金属 / 工业金属 / 铅锌 / 云南板块 / 光纤概念</p>
+<p><em>📋 数据来源：行情与技术指标来自 tickflow（行情块状态 stale/quote_stale，技术块 partial/intraday_realtime_overlay）；日线来自 storage.get_analysis_context；舆情来自 Tavily 近3日新闻检索（13条结果）；筹码分布数据缺失（chip_distribution_missing）；基本面字段部分缺失（partial）。数据质量评分76/100，整体可用但存在过期与缺失限制。</em></p>
+<hr>
+<p><em>报告生成时间：2026-09-12 13:18:59</em>
+<em>分析模型：deepseek/deepseek-v4-flash, deepseek-flash</em></p>
+        </div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">股票分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
