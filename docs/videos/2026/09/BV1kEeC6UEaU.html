@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>如何用Codex做自媒体</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>如何用Codex做自媒体</h1>
+      <div class="reader-meta">B站 · 黄益贺 · BV1kEeC6UEaU</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用“人主编、AI帮手”的Codex系统化创作，让内容做成可复利的机器。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与问题：UP主点名当前“AI一键生成”的主流做法正在污染内容生态，尤其是公众号“万字长文”重灾区，充斥着正确却平庸的废话堆砌。根因在于AI总沿最安全、最高概率路径生成，没有真实感受与价值判断，致使内容缺乏新意与营养。为此，他在新书与配套课程中提出另一条路线：别把主导权交给AI，而要用Codex把人、系统、AI的分工重构成一套“AI原生内容生产系统”。</p>
+</li>
+<li>
+<p>核心观点：原则是“人是主编，AI只是帮手”。在编程等可自动化强的领域他会放手给AI，但内容创作绝不放手。AI可以提选题、写初稿、给润色方向，但“真实素材、真实感受、价值判断”必须来自创作者。在此之上，用Codex搭建一个可反复运行的系统：不是解决“一次写一篇文章”的临时任务，而是把“账号定位—选题—资料复盘”连成闭环，形成可持续复利。</p>
+</li>
+<li>
+<p>案例1（反例与诊断）：关于“AI一键生成的平庸化”。UP主以公众号“万字长文”为例，称自己已基本不看，因为至少90%是AI生成——“一堆车轱辘话来回说”，看似正确却无新东西。这是对“AI默认安全路径”的直观观察：输出正确但泛化、无洞见。结论是：内容创作中最宝贵的是“真实感受+价值判断”，不能被AI替代。</p>
+</li>
+<li>
+<p>案例2（账号说明书与边界设定）：他强调先给账号写“说明书”，明确“写给谁、长期关注什么、坚持立场、哪些内容坚决不做、不可出现的语气”。他在自己的说明书中特别强调“不做what型内容”（只报新工具/新模型的“发生了什么”），用“禁做清单”为AI画出清晰边界，避免AI凭“猜”越线。做法要点：把“不做什么”写成红线——一旦被触发，AI与系统即回退或重拟方案。这类清晰约束，是保证风格与价值观稳定的“第一闸门”。</p>
+</li>
+<li>
+<p>案例3（三库建设：尤其重视视觉素材库）：系统包含“三库”——选题库、素材库、视觉素材库。选题库存放灵感念头；素材库沉淀亲历事件、读书观点、用户问题；视觉素材库存封面与B-roll参考。UP主特别强调，很多人忽视视觉库，导致封面风格与B-roll拍法不可复现，只能凭记忆“感觉拍”。建设视觉库后，封面模板、镜头语言与光效可复用，视频辨识度与生产效率同步提升。</p>
+</li>
+<li>
+<p>案例4（内容母题与跨平台转换）：先从资料中提炼“内容母题”，再决定内容形态（文章/帖子/视频）。他给出判断口诀：“公众号要讲透，小红书要讲具体，视频要讲出来”。意思是：同一母题在平台侧重不同——公号适合逻辑链条的深度论证；小红书强调可执行的细节清单；视频则依赖口播与演示“讲出来”。他在配套视频中演示了“一个母题，三个平台的转换表”。这使母题具备多平台可塑性，稍作改动即可跨形态复用。</p>
+</li>
+<li>
+<p>流程沉淀与自动化：当“母题—选形态—出框架—初稿—修改定稿”跑通后，将其固化为工作流，甚至封装成Skill；对需要定时重复的步骤再做自动化任务。整套系统的本质不是神奇提示词，而是“把人的判断固化、把资料组织好、把重复劳动外包给AI”，让每次创作与复盘都成为下一次的起点，形成复利飞轮。分工公式：人负责判断，系统负责记忆，AI负责执行。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【主编定生死】人主编、AI帮手，不把价值判断外包给机器；机器只能写稿，不能做“人”。逻辑：真实感受+价值判断是内容的稀缺资产。</li>
+<li>【一本三库】一本账号说明书+三大资料库（选题/素材/视觉）。逻辑：先立边界与风格，再用库支撑可复现与高效率。</li>
+<li>【母题三变】“公号讲透，小红书讲具体，视频讲出来”。逻辑：同一母题跨平台转换，因地制宜，不同表达侧重。</li>
+<li>【三分工顺口溜】人判断、系统记忆、AI执行。逻辑：把一次性操作升级为可复利的生产系统。</li>
+<li>【不做what】先划“禁做清单”，挡住无效信息搬运。逻辑：边界越清，AI越不瞎跑，账号辨识度越稳。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：AI一键生成=正确但平庸</li>
+<li>原文引用：「AI1键生成的东西都非常非常的平庸……另外AI没有感受，没有价值判断。」 </li>
+<li>案例还原：UP主以公众号“万字长文”为例，称至少90%是AI生成的无营养内容，常见特征是观点泛化、语言来回转述“车轱辘话”，缺乏独到体验与判断力。他因此几乎不再阅读这类长文，判定其对信息生态造成污染，直接推动他提出“人主编、AI帮手”的替代路线。</li>
+<li>
+<p>解读：提醒创作者别迷信自动化输出，用户要的是判断与新知。</p>
+</li>
+<li>
+<p>要点标题：账号说明书与边界管理</p>
+</li>
+<li>原文引用：「比如这个账号是谁写给谁……什么内容坚决不做……这些东西不写清楚，AI就只能靠拆。」</li>
+<li>案例还原：他在自己的说明书里明确“不做what型内容”，拒绝只报新工具/新模型资讯的“信息搬运”。把“禁做清单”固化为系统红线，AI与工作流一旦触及就回退或重拟，确保内容不越界，风格与价值观长期一致。</li>
+<li>
+<p>解读：适用于团队协作与规模化生产中的“风格控”。</p>
+</li>
+<li>
+<p>要点标题：三库齐下，尤其别缺“视觉素材库”</p>
+</li>
+<li>原文引用：「你平时看到喜欢的封面和画面参考，可以放进视觉素材库……单凭记忆很难复现效果。」</li>
+<li>案例还原：系统设三个库：选题库（念头）、素材库（亲历/读书/用户问题）、视觉素材库（封面与B-roll参考）。他强调很多人只重脚本，忽视视觉库，结果封面与镜头语言不可复用，风格漂移、效率低。视觉库让封面模板和B-roll方案可快速调用，复现稳定效果。</li>
+<li>
+<p>解读：对短视频账号尤为关键，决定点击率与完播。</p>
+</li>
+<li>
+<p>要点标题：内容母题优先于选题</p>
+</li>
+<li>原文引用：「母题会更宽，它可以做成文章、帖子、视频……只需要针对形态做一些改动就能完成转换。」</li>
+<li>案例还原：先从资料里提炼“母题”，再按平台差异改写；他提出“公众号要讲透，小红书要讲具体，视频要讲出来”，并在配套视频里演示“一个母题三平台转换表”。这让同一思想资产在多平台复用，减少从零开工的成本。</li>
+<li>
+<p>解读：利于多平台矩阵与存量内容二次开发。</p>
+</li>
+<li>
+<p>要点标题：把流程固化成工作流与Skill</p>
+</li>
+<li>原文引用：「当一套流程跑通之后，可以固定成工作流，甚至封装成skill……再做成自动化的任务。」</li>
+<li>案例还原：以“母题—形态—框架—初稿—修改定稿”为主链，凡可重复的环节就标准化、模板化，依赖Codex封装为Skill，对定时任务再自动化。其目标不是“神奇提示词”，而是把人的判断固定、资料组织好，把重复劳动交给AI，使每次复盘成为下次起点。</li>
+<li>解读：让内容生产具备工业化与复利属性。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：用“账号说明书”将目标用户、立场与禁做清单制度化，相当于把“研究结论”前置到生产端，避免偏题与越界。用“三库”把一线用户问题与实地观察沉淀为可检索资产，减少“凭感觉选题”。</li>
+<li>可借鉴方法：建立“用户问题子库”，按高频/痛点/可解决性打标签；定期从素材库产出“母题”，用“公讲透/书讲具体/视讲出来”的三分法设计多触点验证（文章验证逻辑、帖子验证可执行细节、视频验证传播与情感）。</li>
+<li>易踩坑：只收集工具与模型新闻（what型），忽视用户生活世界中的“why/How”；导致内容与需求脱节。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：把“母题”当作品牌主张的内容资产，一题多解，在不同平台用不同表达强化一致心智（深度—可用—可感）。账号说明书中的“禁做清单”即品牌边界，避免短期话题稀释长期定位。</li>
+<li>值得研究的手段：视觉素材库让封面与B-roll形成品牌化视觉系统（模板、镜头语法、色板），提升点击率与识别度；同时可进行A/B复盘，持续优化CTR与完播。</li>
+<li>传播路径：以Skill与工作流固化“选题—生产—复盘”闭环，短周期复用，形成持续触达与话题复利。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略：用“母题+平台差异化表达”打通内容种草链路——公号“讲透”建立认知与信任，小红书“讲具体”给到SKU对位与清单，视频“讲出来”通过演示与前后对比促转化。</li>
+<li>用户旅程新发现：视觉素材库直接影响“首图/封面点击”，而“素材库中的真实体验与用户问题”影响停留与转化说服力；两者叠加，优化“点进—看完—下单”三段式。</li>
+<li>运营动作：把常青母题封装为月度固定工作流（上新说明、痛点对位、UGC精选再演绎），避免一次性爆发后断档。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「AI1键生成的东西都非常非常的平庸。」（开头）——一锤定音地指出行业顽疾，明确视频立场与问题意识。</li>
+<li>「人是主编，AI只是帮手。」（中段）——全片方法论的总纲，决定权永远在人。</li>
+<li>「我不做what型内容。」（中段）——边界即品牌，拒绝信息搬运，确保差异化。</li>
+<li>「公众号要讲透，小红书要讲具体，而视频要讲出来。」（中段）——跨平台改写的金科玉律，立刻可用。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想用AI提升自媒体产能，但拒绝千篇一律平庸输出的创作者。</li>
+<li>运营多平台内容矩阵、需要建立可复用流程与视觉系统的团队负责人。</li>
+<li>关注“方法+系统+工具”一体化落地，而非“提示词速成”的从业者。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
