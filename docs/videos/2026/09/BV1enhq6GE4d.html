@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Anthropic闭门会｜Claude营销团队怎么用AI</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Anthropic闭门会｜Claude营销团队怎么用AI</h1>
+      <div class="reader-meta">B站 · 迪迪碎碎念_AI · BV1enhq6GE4d</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>Anthropic营销团队把AI当&rdquo;实习生&rdquo;带：喂上下文、拆步骤、写规矩、留纠错，一次教会，终身复用。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>背景：这不是一场"AI秀"，而是一次真实工作流的公开解剖</h3>
+          <p>视频解读的是Anthropic一场闭门分享会（时长13分36秒，UP主&rdquo;迪迪碎碎念_AI&rdquo;提炼）。出场的关键人物有两个：<strong>Annabelle</strong>（负责Anthropic所有活动的运营）和<strong>Yan/Inn</strong>（营销运营与分析）。他们演示的不是&rdquo;AI能写文案&rdquo;这种浅层玩法，而是把Claude嵌入到每周营销数据复盘、线上活动搭建这两条真实业务流水线里。</p>
+<p>视频开头就点明了一个关键背景：Annabelle刚加入Anthropic时，线上公开课的后台运营——从添加讲者到报名页面搭建——<strong>很多步骤都是纯手动做的</strong>。而现在她站在台前，展示自己怎么把这些活交给Claude。这个&rdquo;从手动到自动化&rdquo;的转变本身，就是整场分享的叙事主线。</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>核心观点一：周报的质量，取决于你有没有把"上周的评论"喂给AI</h3>
+          <p>Yan负责营销数据复盘，他先抛出一个非常现实的问题：<strong>即使在Anthropic，需要的信息也没有整齐地躺在一个数据库里</strong>——有的在客户管理系统（Salesforce），有的在人工维护的表格里，有的散落在Slack工作文档里。所以做周报的第一关不是&rdquo;分析&rdquo;，而是&rdquo;这些资料到底在哪里、怎么拼在一起理解&rdquo;。</p>
+<p>他把这件事拆成两个要素：
+1. <strong>Claude能看见什么</strong>——把相关工具和资料连接给它；
+2. <strong>Claude知道怎么做</strong>——报告按什么标准写、哪里要停下来讨论、交付前检查什么。这些写成<strong>Skills</strong>（技能规则），相当于给AI一份&rdquo;执行任务时的参考答案&rdquo;，里面可以有步骤、模板、检查标准和对结果的要求。</p>
+<p><strong>最值得记住的一个细节</strong>：启动周报后，Claude不只是读新数据，它还会<strong>打开上一周的报告，读取不同同事留下的评论</strong>。为什么？因为评论里才是团队上周真正关心的事——哪里还没解释清楚、哪里需要持续追踪、哪些问题这周应该回答。这些信息会直接决定本周分析的重点。</p>
+<p>UP主在这里给了一个非常犀利的对比：<strong>我们平时用AI做周报，往往是每周上传一张新表格让它分析，但&rdquo;上周讨论过什么、上次还没解决什么&rdquo;，它根本不知道</strong>。所以AI周报做不深，不是模型不行，是你没给它连续的上下文。</p>
+<p>迁移到内容创作场景：你可以让AI同时读本周数据和上周留下的选题假设——&ldquo;上周我们觉得某个开场更吸引人，这周数据支持了吗？有什么需要持续观察？&rdquo;</p>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>核心观点二：AI会主动"发现问题"，但业务背景永远由人贡献</h3>
+          <p>演示中Claude还做了几件超出预期的事：它会去看<strong>销售团队的文档和讨论</strong>（因为营销和销售的工作相关联，只看营销数据有些解释不通）；它注意到<strong>营销组织发生了调整</strong>，于是主动提问&rdquo;报告是否需要调整&rdquo;；它看到销售团队对某个细分业务的担忧，就把这件事提出来追问&rdquo;销售说了什么、依据在哪里&rdquo;。</p>
+<p>但注意——<strong>Yan会反过来补充Claude没捕捉到的信息</strong>：比如&rdquo;营销团队已经做了哪些动作&rdquo;，以及&rdquo;这件事应该放进报告，还是回到会上再讨论&rdquo;。</p>
+<p>所以在这套配合里，<strong>人负责的是业务背景、重要性判断和表达方式</strong>，AI负责的是信息拉取、交叉比对和初稿生成。</p>
+<p><strong>Yan的一个小习惯特别值得学</strong>：他不想一开始就收到一份大报告，所以会让Claude<strong>先列出本周最重要的三件事</strong>，先讨论这三个重点，方向对了再展开下文。UP主说这方法几乎人人都能用：让AI写报告前，先说&rdquo;列出你认为最重要的三个主题，每个主题的依据是什么，有哪些地方需要我补充&rdquo;——对齐后再写完整内容，先花精力判断大方向，再去改细节。</p>
+<p><strong>一个真实的小插曲</strong>：Yan的Skill里明明写了&rdquo;要求Claude停下来，和他一项一项讨论&rdquo;，但这次Claude<strong>直接往前做了，已经开始拉指标了</strong>，Yan不得不把它拉回来。这说明：<strong>即使你把规则写进了Skill，实际操作中也要观察它是否照做，必要时人为修正</strong>。规则不是一劳永逸的。</p>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>核心观点三：交付前的"校对Skill"是整场最硬核的设计</h3>
+          <p>分析完成还不算交付。Yan专门做了一个<strong>&ldquo;交付校对Skill&rdquo;</strong>，要求：
+- 每个指标都能追溯到原始数据来源；
+- 每一项结论都要有据可依；
+- 检查多轮修改有没有留下过时内容。</p>
+<p>这里有一个极重要的原则：<strong>不要把推测说得过于确定</strong>。Yan举了个例子：Claude有时候会说&rdquo;A是因为B才发生的&rdquo;，但你追问它有没有把握，它才承认&rdquo;刚才可能有点说过头了&rdquo;。</p>
+<p>UP主点破了这是AI分析的常见病：<strong>文字写得很顺、解释也很完整，但证据可能只支持&rdquo;这两件事同时发生&rdquo;，还不足以给出一个&rdquo;归因&rdquo;结论</strong>。所以检查要求必须具体到：数据来自哪里、结论是什么、是被证实的原因还是另有其他可能——把这些写下来，检查才有明确标准。</p>
+<p>校对完成后，<strong>同一套分析会生成两种交付物</strong>：给管理层的简报、给活动执行同事的详细文档——按不同读者调整信息详细程度。Claude还会准备好Slack通知，Yan确认后自动发送。</p>
+<p><strong>未处理的问题也有去处</strong>：Yan有个&rdquo;代办Skill&rdquo;，把选中事项记录到Asana（他们用的任务管理工具），Claude会问&rdquo;这件事谁负责&rdquo;，Yan指定人名写上去，并明确说&rdquo;有一项需要记录，另一项不用&rdquo;。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>核心观点四：活动运营——一个任务跨五个工具，怎么组织？</h3>
+          <p>Annabelle的流程更复杂。它的起点是<strong>同事在Slack里提需求</strong>：点击按钮选请求类型、填对应表单。不同请求类型对应不同Skill——比如搭建线上活动，就填这类活动所需信息。<strong>这个入口很重要</strong>，它把模糊的需求整理成一个相对明确的任务，后面的流程才知道要处理什么、需要哪些资料。</p>
+<p>她设置了<strong>定时任务</strong>去频道里检查哪些请求没被处理，承担&rdquo;分派&rdquo;工作：识别请求类型，交给对应Skill。最早是给数据导入和活动搭建各设定时任务，后来觉得管理太乱，改成统一入口。频率是<strong>平时每小时检查一次，忙时调到30分钟</strong>——注意，是按固定间隔检查，而不是请求一出现就立即触发。</p>
+<p><strong>一个看起来很小心很重要的动作</strong>：接到任务后，会在消息里<strong>标记&rdquo;这个任务已被领取&rdquo;</strong>。Annabelle专门解释原因：如果下一轮定时任务开始运行，它就知道这件事已经有人处理了，<strong>否则会重复接单</strong>。UP主点评：我们做自动化往往只想到&rdquo;周一、周二&rdquo;，但<strong>任务的状态（未开始/处理中/已完成）也需要被记录</strong>，否则后续流程衔接不上。</p>
+<p>活动搭建要跨多个系统：
+- <strong>Goldcast</strong>（线上活动平台）——没有MCP集成，就让Claude<strong>通过Chrome扩展做网页操作</strong>；
+- <strong>Salesforce</strong>（客户管理系统）——有集成，通过<strong>MCP连接器</strong>操作；
+- 步骤包括：读取活动说明、从Slack获取内部讲者头像、添加讲者链接、创建日历邀请、在Marketo激活营销工作流。</p>
+<p>UP主总结这条任务链：团队沟通（有需求有资料）→活动平台（报名页面）→客户管理系统（记录信息）→营销系统（后续流程）→日历（邀请讲者）。<strong>有合适集成就用MCP，缺集成时就用网页操作补充</strong>。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>核心观点五：搭建和验收拆成两个角色，最后一定要人审核</h3>
+          <p>页面搭好不等于任务结束。Annabelle把<strong>搭建和验收分成两个角色</strong>：前一个完成后，后一个（检查AI）来接收。验收做什么？
+- 提交一次<strong>真实的测试注册</strong>；
+- 打开邮件看确认信有没有正确到达；
+- 检查活动信息同步、报名产生的线索有没有进入正确位置；
+- 检查落地页内容和拼写。</p>
+<p>UP主强调这段的价值在于<strong>把完整标准说清楚了</strong>：页面能打开，只说明这个环节完成了；报名之后邮件和后续记录是否正常，<strong>还得沿着用户实际会走的路径去测试</strong>。而且——另一个AI加了一道复核功能，但它<strong>也可能遗漏问题，所以后面仍然有人审核</strong>。Annabelle会把&rdquo;面向请求方的完成消息&rdquo;和&rdquo;给自己看的详细说明&rdquo;区分开：请求方只需要结果和链接，她自己要留意异常、审核被标记的事项。</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>核心观点六：这些Skill不是设计出来的，是"长"出来的</h3>
+          <p>整套体系怎么搭起来的？Annabelle的回答值得记住：<strong>这些Skill是一点一点积累出来的</strong>。最早从最简单的数据导入任务开始，先把一个小任务做通，再增加其他任务，后来才形成现在的样子。</p>
+<p>Yan给了一个极实用的起步方法：<strong>让Claude来采访你</strong>。把案例交给它，说&rdquo;我想先了解一下我的工作流程，问清楚资料在哪里、我如何判断结果、给谁使用，帮我选一个适合先做成Skill的任务&rdquo;。</p>
+<p><strong>闭环的最后一环</strong>：每次做完，Claude会问&rdquo;今天有哪些东西值得下次记住&rdquo;；如果它没主动问，你可以主动提——&ldquo;今天我纠正了你哪个地方，哪些适用于以后同类任务&rdquo;，整理后更新到Skill里。UP主强调：这里的&rdquo;记住&rdquo;不是一句话说完模型就记住了，而是<strong>把规则写进下次读取的Skill</strong>，让一次纠正有机会在以后的任务里继续发挥作用。</p>
+<p>最后Annabelle强调：<strong>策略仍然要由人决定</strong>——哪些事情值得做、哪些信息重要、哪些结果可以接受，这些判断仍然需要你自己。而那些你已经反复做过、步骤逐渐清晰的工作，就是可以交给AI的部分。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【带实习生法则】</strong> AI不是搜索引擎，是刚入职的实习生——你不给&rdquo;上周的评论&rdquo;，它就不知道团队在纠结什么；上下文就是它的工位背景板。</li>
+<li><strong>【三件事对齐术】</strong> 别让AI上来就写一万字，先让它交&rdquo;本周最重要的三件事&rdquo;——先对方向，再改细节，省下的是你返工的时间。</li>
+<li><strong>【同时发生≠因果】</strong> AI最爱说&rdquo;A因为B&rdquo;，你一追问它就心虚——文字顺滑不代表证据够，归因结论必须问&rdquo;依据在哪&rdquo;。</li>
+<li><strong>【接单要挂牌】</strong> 定时任务检查请求时必须标记&rdquo;已领取&rdquo;，否则下一轮又来接一遍——自动化不是只排时间，还要管任务状态。</li>
+<li><strong>【Skill是长出来的】</strong> 别想着一次搭完美系统，从一个最熟的小任务做起，跑通、纠错、写回规则，像滚雪球一样积累。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点1：给AI连续上下文，而不只是新数据</strong></li>
+<li><strong>原文引用</strong>：「我们经常会每周上传一张新的表格让他去分析，可是上周我们讨论过什么、上次还没有解决什么，他并不知道。」</li>
+<li><strong>案例还原</strong>：Yan的周报流程中，Claude启动后会主动打开上周报告、读取不同同事留下的评论，从中识别&rdquo;哪里没解释清楚、哪里需持续追踪、哪些问题本周该回答&rdquo;。背景是Anthropic内部信息散落在Salesforce、手工表格、Slack文档中；过程是先把资料连接给Claude、再把报告标准写成Skill；结果是一份能延续上周讨论重点的周报，而非孤立的数据快照。</li>
+<li>
+<p><strong>解读</strong>：做内容/运营复盘时，把上周的选题假设一起喂给AI，让它验证而非重新猜。对AI应用者的核心启发。</p>
+</li>
+<li>
+<p><strong>要点2：先对齐三件事，再展开写全文</strong></p>
+</li>
+<li><strong>原文引用</strong>：「他会让cloud列出本周最重要的三件事情，去先讨论这三个重点方向对了，然后再去开展下文。」</li>
+<li><strong>案例还原</strong>：Yan不愿意一开始就收到一份大报告，而是让Claude先输出本周最重要的三个主题及依据，人工补充对齐后再写完整内容。背景是AI容易一口气生成一篇看似完整但重点跑偏的报告；过程是先定方向后填内容；结果是修改成本从&rdquo;改全文&rdquo;降为&rdquo;改方向&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：任何用AI写长文档的场景都适用——先让AI暴露它的优先级判断，你才有机会纠正。</p>
+</li>
+<li>
+<p><strong>要点3：把&rdquo;推测&rdquo;和&rdquo;结论&rdquo;分开，是AI交付的底线</strong></p>
+</li>
+<li><strong>原文引用</strong>：「不要把推测说得过于正确或者确定……文字写得很顺，解释得也很完整，但是证据可能只支持这两件事情同时发生，还不足以去给一个归因的结论。」</li>
+<li><strong>案例还原</strong>：Claude有时会说&rdquo;A是因为B发生的&rdquo;，Yan追问后它才承认&rdquo;有点说过头了&rdquo;。为此Yan专门做了&rdquo;交付校对Skill&rdquo;，要求每个指标可追溯来源、每项结论有据可依、检查多轮修改是否留有过时内容。背景是AI输出流畅度掩盖了证据不足；过程是靠明确标准逼出可信度；结果是报告敢直接交给管理层。</li>
+<li>
+<p><strong>解读</strong>：对做数据分析、市场洞察的人尤其重要——AI最危险的不是写错，是&rdquo;写得太顺让你信了&rdquo;。</p>
+</li>
+<li>
+<p><strong>要点4：自动化必须记录任务状态，否则会重复接单</strong></p>
+</li>
+<li><strong>原文引用</strong>：「如果下一轮定时任务开始运行，他知道这件事情已经有人处理了，否则就可能重复的去接单。」</li>
+<li><strong>案例还原</strong>：Annabelle设置定时任务（平时每小时、忙时30分钟一次）扫描Slack频道中的未处理请求，按类型分派给对应Skill。接到任务后会在消息里标记&rdquo;已被领取&rdquo;。背景是多任务并发时系统容易重复触发；过程是靠状态标记去重；结果是每个请求只被处理一次，流程不乱。</li>
+<li>
+<p><strong>解读</strong>：做工作流自动化、RPA、AI Agent编排的人，这是最容易被忽略却最致命的细节。</p>
+</li>
+<li>
+<p><strong>要点5：搭建和验收要拆成两个角色，终点必须有人审</strong></p>
+</li>
+<li><strong>原文引用</strong>：「页面能够打开，只能说明这个页面这个环节结束了，报名之后邮件和后续的记录是否正常，还得沿着用户实际会经过的这些路径去进行测试。」</li>
+<li><strong>案例还原</strong>：Annabelle让一个AI负责搭建活动页面，另一个AI负责验收——提交真实测试注册、检查确认邮件、验证线索是否进入正确位置、检查落地页拼写。但验收AI也可能遗漏，所以最后仍由Annabelle人工审核，并区分&rdquo;给请求方的简报&rdquo;和&rdquo;给自己的异常说明&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：所有AI自动化流程都该有&rdquo;复核+人工兜底&rdquo;，尤其面向外部用户的环节，测的是完整用户路径而非单点。</p>
+</li>
+<li>
+<p><strong>要点6：Skill从最小任务起步，纠错要写回规则形成闭环</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这些skill是一点一点积累出来的，最早是从一个简单的数据导入任务开始……今天我纠正了你哪个地方，哪些是适用于以后同类的任务，把这些内容整理出来，更新到skill里面。」</li>
+<li><strong>案例还原</strong>：Annabelle的体系从数据导入这一件小事做起，跑通后逐步叠加其他任务，最终形成覆盖活动全流程的Skill群。每次任务结束Claude会问&rdquo;今天有什么值得下次记住&rdquo;，没问就主动提。背景是很多人反复解释同一偏好、改同一格式；过程是把有效纠正沉淀为规则；结果是一次纠正长期生效。</li>
+<li><strong>解读</strong>：这是把&rdquo;提示词一次性消耗&rdquo;变成&rdquo;能力资产积累&rdquo;的关键动作，对任何长期用AI的人都适用。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>&ldquo;上周评论才是真需求&rdquo;揭示了一个调研盲区</strong>：团队在周报评论里暴露的&rdquo;没解释清楚、需持续追踪&rdquo;的疑问，本质上就是内部用户（决策者）的隐性需求清单。市场调研可以借鉴这个逻辑——不要只收集当期问卷/数据，要建立&rdquo;上一轮假设→本轮验证&rdquo;的连续追踪机制，否则每次调研都在原地重启。</li>
+<li><strong>&ldquo;同时发生≠因果&rdquo;是调研分析最该警惕的归因陷阱</strong>：视频中Claude把相关性说成因果、被追问才认错，这几乎复刻了市场调研中最常见的错误。调研人员可以照搬Yan的&rdquo;交付校对Skill&rdquo;标准：每个结论标注证据来源、区分&rdquo;证实的原因&rdquo;与&rdquo;可能的其他解释&rdquo;。</li>
+<li><strong>研究方法可借鉴</strong>：让AI先列出&rdquo;最重要的三个发现及依据&rdquo;，与团队对齐方向后再展开完整报告——避免在错误的分析主线上浪费精力。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>营销与销售数据要交叉看</strong>：视频中Claude主动去读销售团队文档，因为&rdquo;只看营销自己的数据有些数据比较难解释&rdquo;。这提示品牌营销团队做效果归因时，不能只看campaign后台，要打通销售端信号，否则会误判哪些内容真正带来了转化。</li>
+<li><strong>同一套分析、两种交付物</strong>：给管理层的是简报、给执行同事的是详细文档。这是品牌传播里&rdquo;分层内容策略&rdquo;的完美示范——同样的洞察，按受众调整颗粒度，管理层要结论、执行层要操作细节。</li>
+<li><strong>内容营销可迁移的实操</strong>：把本周数据与上周的选题假设一起喂给AI，验证&rdquo;某个开场是否更吸引人&rdquo;的假设是否被数据支持，形成内容假设的持续验证闭环。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>&ldquo;沿着用户实际路径测试&rdquo;是转化优化的黄金标准</strong>：Annabelle验收活动时不只是看页面能否打开，而是提交真实测试注册、检查确认邮件、验证线索进入正确位置。这正对应电商最该做但常被省略的——<strong>走完整个下单闭环</strong>：加购→支付→确认邮件→订单同步→售后触达，任何一环断掉都可能静默流失用户。</li>
+<li><strong>任务状态管理防止重复处理</strong>：定时任务标记&rdquo;已领取&rdquo;避免重复接单，这个思路可以直接迁移到电商订单/工单系统——促销高峰期订单状态机必须清晰，否则客服和系统会重复处理同一订单。</li>
+<li><strong>统一入口胜过分散任务</strong>：Annabelle把多个定时任务合并成统一入口，电商运营在配置自动化（如自动回复、库存预警、活动上架）时也应如此，入口越统一，越不容易漏单、错单。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频虽不直接涉及硬件，但它给智能硬件PM提供了<strong>&ldquo;AI能力边界&rdquo;的清晰样本</strong>，可以直接映射到ID设计→MD堆叠→电子设计demo的流程：
+- <strong>AI真正能发挥作用的阶段</strong>：视频中AI擅长的是<strong>跨工具的流程搬运、资料拉取、状态标记、重复性校验</strong>——对应到硬件PM，就是<strong>前期资料整合、BOM表交叉核对、供应商信息汇总、测试用例清单生成、需求文档初稿撰写</strong>。这些&rdquo;有明确步骤、可判断对错&rdquo;的环节，正是Skill化的最佳候选，就像Annabelle从&rdquo;数据导入&rdquo;这种小任务起步。
+- <strong>AI的边界在哪</strong>：视频反复强调——<strong>策略由人决定</strong>（哪些值得做、哪些信息重要、哪些结果可接受），<strong>业务背景由人贡献</strong>（营销团队已做了什么、这事该进报告还是回会讨论），<strong>异常由人审核</strong>（复核AI仍可能遗漏）。映射到硬件：<strong>ID的美学取舍、MD堆叠的散热/结构权衡、电子设计demo的架构选型——这些涉及多约束冲突决策和行业经验判断的事，AI目前给不出可靠答案，PM必须亲自扛</strong>。
+- <strong>岗位职责演变的信号</strong>：Annabelle和Yan做的事——把工作流程拆解成Skill规则——本身就是一种<strong>新兴的PM核心技能：把你最熟的工作变成可被AI执行的标准化流程</strong>。视频给出的起步方法（让AI采访你、让它帮你选一个适合Skill化的任务）可以直接用于硬件PM梳理自己的工作流。另一个信号是<strong>&ldquo;搭建与验收分离&rdquo;的角色设计</strong>——未来硬件PM可能也需要为每个AI辅助环节配置独立的&rdquo;验收标准&rdquo;，而不是让同一个AI既生产又自检。<strong>AI不会取代PM，但会淘汰不会把流程Skill化的PM</strong>。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li><strong>「评论里面才是整个团队上周真正关心的一些事情。」</strong>（中段）——点破了AI复盘的命门：数据会更新，但&rdquo;关注点&rdquo;藏在人类评论里，这句话值得所有用AI做分析的人贴在屏幕上。</li>
+<li><strong>「文字写得很顺，解释的也很完整，但是证据可能只支持这两件事情同时发生，还不足以去给一个归因的结论。」</strong>（中段）——对AI输出最精准的祛魅，提醒我们警惕流畅表达背后的证据空洞。</li>
+<li><strong>「策略还是需要由人来决定的，哪些事情值得做，哪些信息是重要的，哪些结果可以接受，这些判断仍然需要你自己。」</strong>（结尾）——整场分享的价值坐标：AI接管流程，人守住判断。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>最适合<strong>正在把AI落地到实际工作流的运营、市场、增长从业者</strong>，以及<strong>想从&rdquo;偶尔用AI写文案&rdquo;升级到&rdquo;系统性用AI跑流程&rdquo;的产品经理和团队管理者</strong>。如果你手头有一件每周重复、自己很熟、能判断对错的工作，这个视频会给你一套可直接照抄的起步方法——从让AI采访你开始，到把纠错写回Skill形成闭环。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
