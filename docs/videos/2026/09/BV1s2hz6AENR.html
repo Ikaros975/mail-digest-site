@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>分享一个有趣的提示词：把AI对你的印象装进一个盒子</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>分享一个有趣的提示词：把AI对你的印象装进一个盒子</h1>
+      <div class="reader-meta">B站 · 晓辉博士 · BV1s2hz6AENR</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>给AI一个空饭盒，看它把&rdquo;你&rdquo;装成什么样——聊什么，就长什么样。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频仅1分51秒，属于&rdquo;短平快&rdquo;的提示词玩法分享，但背后的信息量却不小。UP主晓辉博士介绍了一个在社交平台上流传的趣味提示词玩法：用户给AI一张空容器的图片（形状类似饭盒或便当盒，有两个格子），然后对AI说：&rdquo;把你知道的关于我的一切，把这两个容器都填满。&rdquo;AI会根据它对你的记忆、对你的理解、以及你们曾经讨论过的各种话题，可视化地生成一张&rdquo;填满内容&rdquo;的图片。本质上是让AI用它自己的方式，画出一幅&rdquo;你的人格画像&rdquo;。</p>
+<p>这个玩法的有趣之处在于：每个人的结果差别极大，因为AI对每个用户的理解完全取决于你们聊了什么。UP主观察到的案例非常多样——</p>
+<ul>
+<li><strong>有人被填成了漫画形象和动画角色</strong>，说明这位用户平时跟AI聊的多是创作、二次元、视觉相关的内容；</li>
+<li><strong>有人被填成一堆电脑设备和缠来缠去的线缆</strong>，显然这位用户是个硬件玩家或技术宅，日常对话围绕设备、配置、折腾；</li>
+<li><strong>有人被填成两份好看的食物</strong>，大概率这位用户主要跟AI讨论做饭、食谱、美食；</li>
+<li><strong>还有人填出来的内容非常复杂，形态多变</strong>，说明其对话话题跨度大、兴趣广泛。</li>
+</ul>
+<p>UP主自己也亲自试了一下，结果&rdquo;还挺准确&rdquo;：他关注的、跟AI对话过的内容都被填进去了，而且非常丰富。特别值得注意的是，他填出来的很多是<strong>抽象概念</strong>，AI直接用文字标注在上面，比如&rdquo;复杂系统&rdquo;&ldquo;AI&rdquo;&ldquo;创新创业&rdquo;&ldquo;新可能实验室&rdquo;等，还有&rdquo;出国旅行的护照&rdquo;这类具象物件。此外，AI还提炼出了他的基本理念——&ldquo;表达、连接、信任&rdquo;。UP主认为这个结果&rdquo;能够比较全面地展现你在跟AI讲什么&rdquo;。</p>
+<p>核心结论很简单：<strong>AI对你的理解，就是你输入给它的东西的镜像</strong>。你喂给它什么话题，它就还你什么画像。UP主鼓励大家用自己的agent去试试，并表示会把图片和提示词贴在评论区，方便大家复现。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【AI饭盒】你给AI喂什么菜，它就给你装什么饭——输入即画像，聊什么就长什么样。
+【人格镜子】AI不是算命先生，是照妖镜：它照出的不是&rdquo;你是谁&rdquo;，而是&rdquo;你跟它聊过什么&rdquo;。
+【抽象标签效应】聊得越深，填出来的越不是物件而是概念——&ldquo;复杂系统&rdquo;比&rdquo;一台电脑&rdquo;更能说明你。
+【评论区复现】提示词贴评论区，人人可试——低成本、高反差，天然适合传播。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：AI画像=对话历史的可视化投影</strong></li>
+<li><strong>原文引用</strong>：「因为他确实每个人的情况差别很大哈，因为你主要跟AI聊什么的话，它就会生成什么样的内容出来。」</li>
+<li><strong>案例还原</strong>：UP主观察到四类截然不同的结果——聊二次元的人被填成漫画形象；聊硬件的人被填成电脑设备和线缆；聊做饭的人被填成两份美食；兴趣广泛的人填出来形态复杂多变。背景是同一个提示词、同一张空容器图，变量只有一个：用户平时跟AI聊什么。结果是千人千面，没有标准答案。</li>
+<li>
+<p><strong>解读</strong>：这揭示了一个底层逻辑——AI对你的&rdquo;理解&rdquo;完全由输入决定，对做用户画像和推荐系统的人有直接启发。</p>
+</li>
+<li>
+<p><strong>要点二：深度对话会产出抽象概念而非具象物件</strong></p>
+</li>
+<li><strong>原文引用</strong>：「很多都是抽象的概念，它所以都是用文字在那个上面标出来了，比如说复杂系统呀，比如说AI呀，创新创业啊。」</li>
+<li><strong>案例还原</strong>：UP主自己的容器里填的不是具体的书、电脑或某个物品，而是&rdquo;复杂系统&rdquo;&ldquo;AI&rdquo;&ldquo;创新创业&rdquo;&ldquo;新可能实验室&rdquo;等概念标签，甚至提炼出了&rdquo;表达、连接、信任&rdquo;这样的理念关键词。这说明当对话内容偏向思想、方法论、价值观层面时，AI会跳过具象、直接输出抽象总结。</li>
+<li>
+<p><strong>解读</strong>：对做知识管理和个人品牌的人来说，这是一个信号——你的AI画像质量，取决于你对话的深度。</p>
+</li>
+<li>
+<p><strong>要点三：极低门槛的提示词玩法具备强传播性</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我会把这个图片和提示词贴在评论区，让大家不妨去试一试。」</li>
+<li><strong>案例还原</strong>：整个玩法只需要两样东西——一张空容器图片+一句提示词。UP主在视频结尾直接把素材贴到评论区，观众可以零成本复现。正因为操作简单、结果个性化强、反差感大（每个人的饭盒长得完全不一样），这类内容天然适合在社交平台传播。</li>
+<li><strong>解读</strong>：对内容创作者和增长运营来说，&rdquo;低门槛+高个性化+可晒&rdquo;是病毒传播的三要素，这个案例值得拆解。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <p>这个玩法本质上是一种<strong>轻量级的投射测验</strong>——和心理学里的罗夏墨迹测验逻辑类似：给一个模糊的、开放的刺激（空容器），让被试（AI）自由填充，从而暴露出内在的偏好结构。对用户研究员来说，有几点启发：第一，如果想快速了解一个用户跟AI的交互画像，不需要做冗长的问卷，一个开放式的可视化任务就能获得高密度的信息；第二，案例中&rdquo;聊做饭的填出食物、聊硬件的填出线缆&rdquo;说明，<strong>行为数据（对话历史）比自报数据（问卷填答）更能反映真实兴趣</strong>；第三，这个方法的坑也很明显——它只反映&rdquo;用户跟AI聊了什么&rdquo;，不等于&rdquo;用户真实的生活全貌&rdquo;，存在严重的<strong>渠道偏差</strong>：一个用户可能天天做饭但从不跟AI聊做饭。做调研时要警惕这种&rdquo;可用数据≠全量真相&rdquo;的陷阱。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <p>这是一个教科书级的<strong>UGC传播模板</strong>。核心机制有三层：第一层是<strong>参与门槛极低</strong>——一张图+一句话，任何人都能玩；第二层是<strong>结果高度个性化</strong>——每个人的饭盒不一样，天然有&rdquo;晒&rdquo;的冲动，形成社交货币；第三层是<strong>反差感和好奇心驱动</strong>——&ldquo;AI眼中的我长什么样&rdquo;这个问题本身就极具吸引力，用户会主动想知道答案。对整个营销路径的启示是：好的传播活动不是品牌说给用户听，而是<strong>给用户一个工具，让用户自己产出内容并互相展示</strong>。UP主把图片和提示词放评论区这一步也很关键——降低了从&rdquo;看到&rdquo;到&rdquo;行动&rdquo;的转化摩擦，这是从内容消费到行为转化的经典设计。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <p>虽然视频没有直接讲电商，但这个玩法的转化逻辑对电商运营有借鉴意义。第一，<strong>个性化结果=天然的推荐入口</strong>：如果AI给你的饭盒里填的是&rdquo;美食&rdquo;，那下一步推荐食谱、厨具、食材就是顺理成章的转化路径；第二，<strong>&ldquo;晒结果&rdquo;的行为可以设计成裂变节点</strong>：用户生成自己的AI画像后分享到社交平台，每个分享都是一次免费曝光，这和拼多多式的社交裂变逻辑一致；第三，<strong>用户旅程的起点可以前置</strong>：不是等用户来搜索商品，而是通过一个有趣的互动让用户暴露兴趣标签，再基于标签做精准推荐。转化路径从&rdquo;搜索→比价→下单&rdquo;变成了&rdquo;玩→晒→被推荐→下单&rdquo;，更柔性、更自然。</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>这个视频虽然只是一个提示词玩法，但它触碰到了一个PM在AI时代的核心命题：<strong>AI对用户的理解能力，已经到了可以把&rdquo;对话历史&rdquo;转化为&rdquo;可视化画像&rdquo;的程度</strong>。对智能硬件PM来说，有几个信号值得注意：第一，这个玩法本质上是一个&rdquo;AI记忆的可视化前端&rdquo;，如果把它移植到智能硬件上（比如智能音箱、智能相框、AI玩具），用户可以通过一个物理容器或屏幕看到&rdquo;AI眼中的自己&rdquo;，这是一个极有情感价值的产品形态——AI不再只是工具，而是&rdquo;懂你的伙伴&rdquo;；第二，从产品设计角度看，这个案例证明了<strong>AI的记忆和画像能力可以作为硬件的核心卖点</strong>，而不是附属功能；第三，边界也很清楚——AI能画出&rdquo;你的画像&rdquo;，但它不能替你决定&rdquo;你想成为什么样的人&rdquo;。PM的工作仍然是在AI能力之上做<strong>场景定义、情感设计和交互框架</strong>，AI可以生成内容，但&rdquo;为什么生成&rdquo;&ldquo;给谁看&rdquo;&ldquo;在什么场景下触发&rdquo;这些决策，仍然是PM不可替代的价值。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>
+<p>「把你知道的关于我的一切，把这两个容器都填满。」（开头）——这是整个玩法的核心提示词，极简但极具张力，&rdquo;你知道的关于我的一切&rdquo;直击用户好奇心，值得记住因为它展示了好的提示词如何用一句话激发AI的最大表达欲。</p>
+</li>
+<li>
+<p>「因为你主要跟AI聊什么的话，它就会生成什么样的内容出来。」（结尾）——这句话是整个视频的&rdquo;题眼&rdquo;，一句话点破了AI画像的本质：不是AI在定义你，而是你在定义AI眼中的你。对所有想理解&rdquo;AI如何理解人&rdquo;的人，这是最值得反复咀嚼的一句。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>对AI提示词玩法感兴趣的好奇型用户、想快速了解&rdquo;AI如何理解用户&rdquo;的产品经理和用户研究员、以及寻找低成本高传播内容模板的营销和运营从业者。花2分钟看这个视频，能收获一个可立刻上手试玩的提示词，以及一个关于&rdquo;输入决定画像&rdquo;的底层认知。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
