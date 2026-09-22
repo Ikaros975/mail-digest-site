@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>2026-09-22 A股大盘复盘</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+
+<style id="stock_reader_overrides">
+/* Stock report visual overrides — brighter + mobile-friendly tables/kv */
+
+:root {
+  --bg-deepest: #12151f;
+  --bg-surface: #1a1e2b;
+  --bg-card: #222736;
+  --bg-card-hover: #2a3042;
+  --bg-elevated: #1c2130;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --text-primary: #f5f7fc;
+  --text-secondary: #d0d5e4;
+  --text-tertiary: #a7aec2;
+}
+
+body {
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+}
+
+.block-card p,
+.block-card ul,
+.block-card ol,
+.block-card li {
+  color: var(--text-secondary);
+}
+
+.block-card strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.reader-meta { color: var(--text-tertiary); }
+
+/* ---- Classic tables (2–3 cols) ---- */
+.block-card .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px 0 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.block-card table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.block-card thead th {
+  background: #323a52;
+  color: #f3f5fb;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.block-card tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.block-card tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.block-card tbody tr:last-child td { border-bottom: none; }
+
+.block-card tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+/* Advice tables: label column fixed-ish */
+.block-card table.table-advice td:first-child {
+  width: 28%;
+  white-space: nowrap;
+}
+.block-card table.table-advice td:last-child {
+  color: var(--text-secondary);
+}
+
+/* ---- KV metric grid (replaces wide OHLC tables on mobile) ---- */
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+
+.kv-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.kv-item .k {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.kv-item .v {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.kv-item.kv-wide {
+  grid-column: 1 / -1;
+}
+
+.kv-item.kv-wide .v {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Stacked advice cards */
+.advice-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+.advice-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.advice-card .advice-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.advice-card .advice-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .kv-grid { gap: 8px; }
+  .kv-item { padding: 10px 11px; }
+  .block-card thead th,
+  .block-card tbody td { padding: 10px 12px; font-size: 13.5px; }
+}
+
+</style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">大盘复盘</div>
+      <h1>2026-09-22 A股大盘复盘</h1>
+      <div class="reader-meta">2026-09-22</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>2026-09-22 大盘复盘</h2>
+        <blockquote>
+<p>指数分化、跌多涨少，权重护盘与题材退潮并存，成交额维持2万亿说明资金未离场但高低切换加剧；明日优先看燃料电池能否分歧转强、上证3950能否守住。</p>
+</blockquote>
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>一、盘面总览</h3>
+          <p>今日市场不是全面强势，而是“指数分化+个股走弱”的震荡偏弱结构。上证收平，沪深300、上证50小幅收红，说明大盘价值与权重承担护盘；深证成指、创业板指小幅下跌，中小成长承压。上涨2210家、下跌3177家，跌多涨少，市场宽度明显偏弱。成交额20152亿元，量能不低，涨停62家、跌停5家，短线情绪未冰点，但赚钱效应集中在少数方向。综合判断：震荡偏弱，情绪温度中性略偏冷。</p>
+<ul>
+<li><strong>盘面信号</strong>：54/100（震荡，需观察）</li>
+<li><strong>信号依据</strong>：上涨家数占比 41%，市场分化；主要指数平均涨跌幅 +0.06%；涨跌停差 +57</li>
+<li><strong>操作建议</strong>：信号分化，控制仓位并等待量价确认。</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>观察</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上涨/下跌/平盘</td>
+<td>2210 / 3177 / 167</td>
+<td>上涨占比(不含平盘) 41.0%</td>
+</tr>
+<tr>
+<td>涨停/跌停</td>
+<td>62 / 5</td>
+<td>涨跌停差 +57</td>
+</tr>
+<tr>
+<td>两市成交额</td>
+<td>20152 亿</td>
+<td>高活跃度</td>
+</tr>
+</tbody>
+</table></div>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>二、指数结构</h3>
+          <p>上证指数收在3950.05，恰好收平，3950关口反复争夺，权重护盘痕迹明显。上证50涨0.40%、沪深300涨0.03%，大盘价值风格相对占优，是今日指数没有进一步走弱的主要支撑。深证成指跌0.16%、创业板指跌0.16%，成长与中小盘拖累明显；科创50涨0.22%，略强但幅度有限，未能带动成长整体转强。</p>
+<p>关键位置参考：上证支撑看3920—3900，压力看3980—4000；创业板支撑看3350，压力看3420—3450；深证成指支撑看13600，压力看13800。若权重不能继续护盘，指数存在补跌风险；若上证放量站稳3980，则市场结构可能重新转暖。</p>
+<div class="advice-stack"><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">上证指数</span></div><div class="kv-item"><span class="k">最新</span><span class="v">3950.05</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.00%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">3963.81</span></div><div class="kv-item"><span class="k">最高</span><span class="v">3967.68</span></div><div class="kv-item"><span class="k">最低</span><span class="v">3945.42</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">0.56%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">9457</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">深证成指</span></div><div class="kv-item"><span class="k">最新</span><span class="v">13707.90</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🔴 -0.16%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">13858.62</span></div><div class="kv-item"><span class="k">最高</span><span class="v">13914.21</span></div><div class="kv-item"><span class="k">最低</span><span class="v">13691.08</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">1.63%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">10518</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">创业板指</span></div><div class="kv-item"><span class="k">最新</span><span class="v">3394.14</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🔴 -0.16%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">3446.33</span></div><div class="kv-item"><span class="k">最高</span><span class="v">3472.47</span></div><div class="kv-item"><span class="k">最低</span><span class="v">3387.88</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">2.49%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">5086</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">科创50</span></div><div class="kv-item"><span class="k">最新</span><span class="v">1661.20</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.22%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">1699.05</span></div><div class="kv-item"><span class="k">最高</span><span class="v">1707.67</span></div><div class="kv-item"><span class="k">最低</span><span class="v">1657.22</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">3.04%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">1074</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">上证50</span></div><div class="kv-item"><span class="k">最新</span><span class="v">2898.08</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.40%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">2905.96</span></div><div class="kv-item"><span class="k">最高</span><span class="v">2911.93</span></div><div class="kv-item"><span class="k">最低</span><span class="v">2895.30</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">0.58%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">1386</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">沪深300</span></div><div class="kv-item"><span class="k">最新</span><span class="v">4541.14</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.03%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">4569.87</span></div><div class="kv-item"><span class="k">最高</span><span class="v">4583.38</span></div><div class="kv-item"><span class="k">最低</span><span class="v">4537.04</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">1.02%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">4925</span></div></div></div>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>三、板块主线</h3>
+          <p>行业层面，燃料电池大涨11.31%，是今日最强行业方向，但近三日新闻中没有可验证的催化信息，暂只能定义为资金驱动的强势异动，不能编造基本面原因。单日暴涨后，明日大概率进入分歧检验，重点看龙头是否继续封板、板块内是否扩散。其他家电Ⅲ/Ⅱ涨4.83%，偏细分与防御，暂时难成为市场主线。</p>
+<p>领跌方向中，涂料跌5.72%、橡胶助剂跌2.96%、旅游综合跌2.73%。旅游综合与概念中的旅游酒店同步走弱，说明旅游链是扩散下跌，短期需要规避。概念领涨端，昨日打二板以上表现、昨日连板、Kimi概念居前，前两者说明连板接力资金仍活跃，后者属于AI应用方向的局部异动，但持续性需要后续消息或龙头带动确认。概念领跌端，铜缆高速连接、MLCC、旅游酒店走弱，算力硬件与电子元件退潮特征较明显。</p>
+<p>整体看，今日产业主线不清晰，真正有强度的只有燃料电池；情绪主线是“连板接力”，但这类方向波动大、容错低，不能简单视为市场全面转强。</p>
+<h4>行业板块领涨 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>行业板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>燃料电池</td>
+<td>+11.31%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>其他家电Ⅲ</td>
+<td>+4.83%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>其他家电Ⅱ</td>
+<td>+4.83%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>广告媒体</td>
+<td>+4.20%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>大众出版</td>
+<td>+3.51%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>行业板块领跌 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>行业板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>涂料</td>
+<td>-5.72%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>橡胶助剂</td>
+<td>-2.96%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>旅游综合</td>
+<td>-2.73%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>航运</td>
+<td>-2.59%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>快递</td>
+<td>-2.54%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>概念板块领涨 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>概念板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>昨日打二板以上表现</td>
+<td>+3.05%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Kimi概念</td>
+<td>+3.04%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>昨日连板</td>
+<td>+3.02%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>拼多多概念</td>
+<td>+2.91%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>VPN</td>
+<td>+2.75%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>概念板块领跌 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>概念板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>铜缆高速连接</td>
+<td>-1.94%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>MLCC</td>
+<td>-1.77%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>旅游酒店</td>
+<td>-1.73%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>反转股</td>
+<td>-1.67%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>草甘膦</td>
+<td>-1.61%</td>
+</tr>
+</tbody>
+</table></div>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>四、资金与情绪</h3>
+          <p>成交额维持在20152亿元高位，说明资金并未系统性撤离，但上涨家数明显少于下跌家数，资金集中度很高，属于存量博弈下的高低切换。涨停62家、跌停5家，跌停数量少，说明没有恐慌性抛售；但3177家下跌，说明多数个股赚钱效应较差。</p>
+<p>短线风险偏好没有崩，但市场宽度差。若明日成交额萎缩、连板高度下降或炸板率上升，情绪可能从“局部活跃”转向退潮；若成交额继续维持2万亿以上，且燃料电池、Kimi等方向出现扩散，则情绪还有修复机会。</p>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>五、消息催化</h3>
+          <p>近三日新闻的有效增量有限。大盘价值指数9月21日收涨0.27%，可以印证价值风格相对偏强，与今日上证50、沪深300护盘形成呼应。淘股吧内容属于泛泛市场观点，不构成实质催化。</p>
+<p>今日燃料电池大涨缺乏可验证新闻支撑，因此不能将其归因于政策、订单或业绩，只能按资金行为处理。消息面接近真空时，市场更容易受传闻、盘中小作文和资金博弈影响，追高需要更严格的分歧确认。明日重点观察是否有产业政策、公司公告或权威媒体信息对燃料电池、AI应用方向形成确认；若没有，相关异动更可能是一日游或脉冲轮动。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>六、明日交易计划</h3>
+          <p>结论：均衡偏防守。指数分化，个股跌多涨少，领跌方向有扩散迹象，虽然成交额不低、跌停不多，但不足以支持全面进攻。</p>
+<p>仓位建议：4—6成，稳健者控制在5成以下，激进者不宜超过6成。关注方向：燃料电池分歧后的承接强度；Kimi概念/AI应用能否从单点异动扩散为板块；上证50、沪深300代表的大盘价值护盘能否延续。回避方向：旅游酒店链、旅游综合；铜缆高速连接、MLCC等退潮电子硬件；高位连板断板与炸板风险。</p>
+<p>触发失效条件：若上证放量跌破3900，或成交额萎缩至1.7万亿以下且跌停家数明显增加，则转防守，减仓至3成以下。若上证放量站稳3980、上涨家数超过3000家，且燃料电池或AI应用出现主线扩散，则可转进攻，适度加仓。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>七、风险提示</h3>
+          <ul>
+<li>指数分化加剧，若权重护盘失效，可能引发补跌。</li>
+<li>燃料电池单日暴涨后若次日分歧，追高风险较大。</li>
+<li>连板情绪票波动剧烈，炸板率上升会拖累短线情绪。</li>
+<li>旅游链、电子元件方向领跌扩散，需防范补跌。</li>
+<li>消息面真空环境下，市场对传闻敏感，轮动可能加快。</li>
+<li>建议仅供参考，不构成投资建议。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">股票分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
