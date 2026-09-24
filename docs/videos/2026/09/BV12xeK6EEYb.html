@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Stable Diffusion是如何画画的</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Stable Diffusion是如何画画的</h1>
+      <div class="reader-meta">B站 · 隔壁的程序员老王 · BV12xeK6EEYb</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>SD的本质：把噪声一层层“减掉”，靠概念向量把“柴犬”画出来。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与核心框架：视频用通俗、可复现实验解释Stable Diffusion三件套——U-Net（干减噪）、CLIP（把文字翻成模型能懂的“概念向量”）、VAE（把大图压成小“潜空间”以提效）。主线是：先学会从“加噪后的图+噪声等级+文字”里预测“噪声图”，推理时再从纯噪声出发，反复“骗”模型这里面藏着一只“卡通柴犬”，每次只去掉一小部分噪声，轮廓到细节逐步浮现。</p>
+</li>
+<li>
+<p>论点一：U‑Net的“逆扩散”是逐步减噪，不是一步还原
+  案例（柴犬从无到有）：先随机采样一张全噪声图，告诉模型“这里藏着一只卡通柴犬”，但第一次基本不可能变出清晰狗，只能出现模糊影子。于是采用多步采样：例如每次去掉约10%的噪声，重复十次（视频演示用ComfyUI分解十步）。过程是“输入当前带噪图+剩余噪声水平+文字embedding”，U‑Net输出“该去掉的噪声图”，据此更新图像，再进入下一轮。结果：从“什么都看不见”，到轮廓、颜色、眼睛依次出现，最终成图。这也解释了经典DDPM要迭代很多步（常见上百到上千步）的原因：一步到位几乎不可能，靠小步快跑逐渐接近真相。</p>
+</li>
+<li>
+<p>论点二：CLIP把“文字多样性”压成“概念邻近性”，降低学习难度
+  案例（相似词归一到同一概念）：训练U‑Net若直接喂“卡通柴犬/动画柴犬/二次元小黄狗”这些写法，等于让它一边学画画一边学语言，难度陡增。CLIP事先把文字转成text embedding（向量），并用对比学习把“描述同类画面”的文字靠近（正样本余弦相似度高），把不匹配的拉远（负样本）。视频内举例：输入一张柴犬图、一张汽车图和文字“a shiba inu”，CLIP后与柴犬图的相似度0.244，和汽车仅0.078。结果：U‑Net收到的不是零散词，而是“柴犬概念向量”，从而稳当地“按概念作画”。</p>
+</li>
+<li>
+<p>论点三：VAE把像素图压到“潜空间latent”，让U‑Net在小体量上高效工作
+  案例（压缩与“理解而非像素”的差别）：1024×1024×3（约3MB）经VAE encoder压成128×128×4（约256KB）latent，体积仅十二分之一。视频做了两个实验：其一，重复“压缩-解压”20次，图像逐步裂化，说明VAE是有损压缩；其二，把“latent转置+左右翻转（等效旋转90°）后再解压”，裂化很严重；而“先旋转原图再压-解”，效果好得多。结论：latent里记录的是“对图像内容的理解”（如“左边点赞，中间硬币，右边收藏”这种布局与元素），不是逐像素栅格；你粗暴地旋转latent，等于把“理解坐标系”扭曲，自然崩。</p>
+</li>
+<li>
+<p>论点四：负向提示词=向量“减法”，能把“不想要的元素”从图里剔除
+  案例（不戴墨镜的狗）：直接写“a dog without sunglasses”，由于CLIP训练多为肯定句配图，模型更偏向“带墨镜的狗”。解决：用两套提示词——正向写“dog”，负向写“dog with sunglasses”。U‑Net会分别生成两个降噪用噪声图，再按“（戴墨镜的狗）+（狗）−（戴墨镜的狗）×W”的合成逻辑得到“去墨镜”的目标噪声，W可调。结果：通过“向量层面减去墨镜”，更稳定地生成“不戴墨镜的狗”。</p>
+</li>
+<li>
+<p>论点五：训练看的是“加噪图+噪声等级+文字”，不直接看原图
+  案例（“老王求三连”训练样本）：取一张干净原图（老王求三连）和对应描述，混入高斯噪声到指定位点（比如10%），喂给U‑Net的输入是“带噪图+噪声含量+文字描述”，目标是“纯噪声图”。大量样本训练后，U‑Net学会“给定带噪图与提示，预测该去掉的噪声”。结果：推理时哪怕从“纯噪声”起步，也能在多步里逐渐“扣掉对的噪声”，还原出与提示一致的画面。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【谎言成真】“一口吃不成胖子，十步骗出柴犬” + 扩散采样需多步小幅减噪，逐轮把“概念”落实成像素细节。</li>
+<li>【概念翻译器】“同义不同词，embedding让它们挤一张凳子” + CLIP把文字多样表达压成“概念邻近”，减轻U‑Net语言负担。</li>
+<li>【理解压缩】“像素装箱不如意思打包” + VAE把大图压进latent，记录“内容理解”而非像素，提效且保结构。</li>
+<li>【向量减法】“加上狗，减掉墨镜，狗就不戴镜” + 负向提示词通过向量运算剔除不想要的属性，W控制强度。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>迭代减噪才是王道</li>
+<li>原文引用：「谎言说一千次就是真理，就这么一遍一遍地骗下去。AI就真的能从噪点中画出一只卡通柴犬了。」</li>
+<li>案例还原：从99%噪声起步，每次只去掉一小部分噪声，输入“当前噪声图+噪声等级+柴犬描述”，U‑Net给出应去噪声，反复十步，轮廓—颜色—细节逐步成型。</li>
+<li>解读：从0到1要分步逼近，采样步数/调度策略影响清晰度与一致性。</li>
+<li>CLIP把语言变“概念向量”</li>
+<li>原文引用：「CLIP 会把文字转化成一组数字，叫做 text embedding……与之相近的文字……embedding 也会离得很近。」</li>
+<li>案例还原：把“卡通柴犬/二次元小黄狗”等不同表述，映射到邻近向量空间；视频示例“a shiba inu”与柴犬图相似度0.244，和汽车图0.078，显著可分。</li>
+<li>解读：提示词写法允许多样，但要抓“概念核”，能稳触发目标分布。</li>
+<li>VAE的潜空间不是“小图”</li>
+<li>原文引用：「latent 中记录的是对这些图片的理解，而不是像素本身。」</li>
+<li>案例还原：同一张图先压后“旋转latent再解码”画面崩坏；而“先旋转原图再压-解”质量明显更好，说明latent承载的是语义结构。</li>
+<li>解读：编辑latent要顺着“理解坐标”，避免野蛮几何操作导致语义错位。</li>
+<li>负向提示词的数学直觉</li>
+<li>原文引用：「Stable Diffusion 提供了两套提示词，正向提示词和负向提示词。……戴墨镜的狗加上狗减去戴墨镜的狗再乘以 W。」</li>
+<li>案例还原：为“不戴墨镜的狗”，正向写“dog”，负向写“dog with sunglasses”，U‑Net生成两套噪声图，经向量组合抵消“墨镜”属性。</li>
+<li>解读：当否定句无效时，用“属性减法”更稳，W决定约束强弱。</li>
+<li>训练不直接看原图</li>
+<li>原文引用：「注意一下，这个过程中模型并没有看过原图，它只看到了加噪后的图、噪声等级以及对应的文字描述。」</li>
+<li>案例还原：以“老王求三连”为样本，加10%高斯噪声，把“带噪图+10%+描述”输入，目标输出“噪声图”，反复在大规模数据上拟合残差。</li>
+<li>解读：本质是“预测噪声”的残差学习，稳、易收敛、可泛化。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：用户对“否定式需求”（不要某元素）常被模型误解，真正解决的是“向量减法”的工程路径。调研问法应聚焦“想要+不想要”的属性表，并转译成正/负提示模板。</li>
+<li>方法借鉴：用对比任务测“提示词等价类”——把同义词（如“卡通柴犬/二次元小黄狗”）放CLIP相似度对照，建立团队的“高触发词库”。</li>
+<li>避坑：把“语言风格差异”当作模型能力差。实为embedding映射差异，需通过同义词穷举、风格标签（artist/style）和权重（如W）优化。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>营销思路：围绕“负向提示词=向量减法”的心智做内容科普，打造“可控生成力”作为品牌差异点（可视化前后对比、W滑杆演示）。</li>
+<li>传播路径：用ComfyUI流程节点图+十步可视化，把“从噪声到成图”的过程短视频化，提升理解与转化。</li>
+<li>可学手段：建立“场景化提示词套餐”（主题+构图+风格+负向清单），降低用户试错成本，形成留存工具包。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略：用SD批量生成“主图多风格变体+负向提示剔除干扰物”，快速做A/B测试，验证点击率差异。</li>
+<li>转化路径：把“多步采样对细节的影响”做对照页（步数/调度器/CFG等）让用户选择“清晰/速度”版本，提升自主感与转化。</li>
+<li>新发现：latent编辑不等于像素编辑——对大促海报的“结构改版”应在文案/布局层面改prompt，而不是后期硬几何变换。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「你敢信吗？这张图里面全都是噪点，但我只要对 AI 撒个谎……它就真的能从噪点里面把柴犬找出来。」（开头）——一开场定义扩散的奇观与主旨：从无中“减出”有。</li>
+<li>「谎言说一千次就是真理，就这么一遍一遍地骗下去。」（中段）——生动刻画多步采样的必要性与直觉。</li>
+<li>「latent 中记录的是对这些图片的理解，而不是像素本身。」（中段）——VAE与潜空间的本质，一语中的。</li>
+<li>「有和无之间，也许从来就没有一条线。」（结尾）——把技术过程上升为哲思，强化“从噪到像”的连续性心智。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想系统搞懂Stable Diffusion工作原理、但厌烦纯数学推导的产品/运营/设计/内容创作者。</li>
+<li>正在写提示词、却总被“否定句”坑到的AI绘图初中级用户。</li>
+<li>想把SD用于商业场景（电商图、营销KV、风格批量化）的人，能从可控性与流程化上立刻受益。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
