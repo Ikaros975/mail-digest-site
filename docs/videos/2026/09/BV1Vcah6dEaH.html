@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>朋友想开咖啡店，我用 AI 给他做了个点单系统</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>朋友想开咖啡店，我用 AI 给他做了个点单系统</h1>
+      <div class="reader-meta">B站 · 第四种黑猩猩CHIMP · BV1Vcah6dEaH</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用AI一键拉起“顾客-店员-老板”闭环的咖啡点单系统，先跑通生意再慢慢完善。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与目标：UP主朋友想开咖啡店，先做小范围试卖，不急着把系统做全，只要“能下单、能接单、能看数据”。UP主用WorkBody/Work8的能力，结合一份四家门店的历史经营表+品牌视觉体系，目标是快速生成“顾客点单—店员制作—老板看盘”的最小可用系统（MVP），验证是否有人愿意买。</p>
+</li>
+<li>
+<p>核心做法：在WorkBody里先用MA品牌设计能力定好Logo与视觉；准备或后补历史经营数据；在“网站开发任务”里明确需求与流程，要求生成一个手机与电脑都能访问的应用。关键节点是开启云服务：因为要实现登录、取餐号、订单保存与多人协同，需占用云端应用名额与资源点（免费版支持10个云服务应用、每应用每月5000资源点）。这一步把“能看的页面”升级为“能跑业务的系统”。</p>
+</li>
+<li>
+<p>案例——黑猩猩咖啡点单全链路：
+  1) 顾客端：注册→选择门店（例如梧桐店）→点“经典美式22元”→选择到店自取→提交（采用线上下单、线下付款的权宜流程）→系统生成取餐号，订单进度可实时查看。
+  2) 店员端：同店店员登录→收到顾客001号订单→“接单”后状态变为“制作中”→完成后“请取餐”→顾客端进度同步更新→叫号完成订单闭环→页面还能看本店经营数据。
+  3) 老板端：老板账号看到四店经营总览：历史销售、商品排行、库存等，且可作为管理员直接编辑库存等数据。新发生的订单进入“今天的云端订单数据库”；梧桐店新增1单、金额22元，其它为0。系统将历史数据与当日实时数据分账管理，避免污染原始历史表。
+  4) 后台数据库：进入云服务后台可查看并管理全量数据表（库存、订单、SKU等）；在后台或应用前端改动均实时同步到前端页面（手机/电脑）。</p>
+</li>
+<li>
+<p>关键结论：区别于过去“给自己看的单页看板”，这次的重点是“有账号、有身份、有数据能流转”。同一应用中，不同身份（顾客/店员/老板）各取所需：顾客关心进度、店员关心处理队列、老板关心今日实绩。方法可平移到活动报名（用户报名/工作人员审核）、预约（客户提交时间/服务方确认）、工单（内部处理）等场景。落地心法是“三问先行”：谁来用？谁来处理？要留下什么数据？此外，Work8已支持一键生成微信小程序，数据库、登录、文件存储一并接入，进一步降低从原型到上线的门槛。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【三问开路】顺口溜：先问“谁用、谁处理、留什么”，系统自然长出来。逻辑：以角色与数据为骨架，AI自动把流程皮肉补齐。</li>
+<li>【一链三角】顾客-店员-老板同一链，信息各取所需不打架。逻辑：同应用多身份视图，驱动“下单-制作-统计”闭环。</li>
+<li>【云代运维】不用自己买/配服务器，一键开云服务就能多人协作。逻辑：登录、取餐号、订单持久化都靠云，注意免费额度。</li>
+<li>【新旧分账】历史数据不被新订单污染，日报/历史两本账。逻辑：当日订单入云端“今天库”，历史表保持干净。</li>
+<li>【先跑通后补全】先让生意转起来，再补支付等高级功能。逻辑：MVP优先验证需求，降低试错成本。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>需求框架先行</li>
+<li>原文引用：「关键的是要把需求跟他说清楚 把这个框架搭建起来」</li>
+<li>案例还原：UP主未等门店开张，先把“顾客点单—店员接单—老板看数”的核心链路写进生成任务；视觉体系与历史表一起喂给AI，系统一次成型可用，后续再补细节与数据。</li>
+<li>解读：MVP导向，先定骨架，再迭代血肉。</li>
+<li>必须开启云服务</li>
+<li>原文引用：「要实现用户登录点单取餐号 然后订单保存这些多人交互的能力了 所以就要开启云服务了」</li>
+<li>案例还原：因为顾客下单与店员接单在不同端同步，订单要持久化，还需账号区分角色；UP主开启云服务并提示免费版“10个云应用、每月5000资源点”的限制，满足演示与试卖。</li>
+<li>解读：多人协同=云端持久化与鉴权，非本地可替代。</li>
+<li>角色视图分离</li>
+<li>原文引用：「同一个应用啊 不同的身份 需要看到的就是各自想要的这种不同的信息」</li>
+<li>案例还原：顾客端只看订单进度与取餐号；店员端看新单、接单、制作、叫号；老板端汇总四店经营盘与编辑库存。三端各有侧重，减少干扰。</li>
+<li>解读：多角色多视角提升效率，避免信息噪音。</li>
+<li>历史与实时分账</li>
+<li>原文引用：「历史经营数据是一部分 新发生的业务数据又是另外一部分 他没有把这一笔订单直接就混进原来的历史数据里面」</li>
+<li>案例还原：历史表用来回看与排行，而当天新增订单写入“今天的云端订单数据库”，例如梧桐店+1单、22元；统计清晰，历史口径不受影响。</li>
+<li>解读：干湿分离，保证统计口径与回溯可靠。</li>
+<li>通用化场景迁移</li>
+<li>原文引用：「本质上呢都先想清楚三件事情 谁来用 谁来处理 然后什么数据要留下来」</li>
+<li>案例还原：UP主强调该方法可直接迁移到活动报名（报名/审核）、预约（提交时间/确认）、工单（登记/处理）等，只要先定角色与数据，AI即可代劳代码与部署。</li>
+<li>解读：角色-流程-数据三件套，适配多行业。</li>
+<li>一键小程序化</li>
+<li>原文引用：「现在work8也支持生成微信小程序了 数据库登录文件存储都能一起方便的介入」</li>
+<li>案例还原：除网页直链外，可直接产出微信小程序版本；同一套数据库/鉴权/存储打包集成，便于触达与分发。</li>
+<li>解读：分发半径更大，触达用户更轻。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：用“能下单的MVP”替代问卷，真实行为数据优于意向调研；通过“角色视图分离”观测顾客等待、店员拥堵、老板关注项。</li>
+<li>方法可借鉴：</li>
+<li>快速上线最小通路：注册→下单→进度→取餐；支付可延后。</li>
+<li>数据分账：历史与当日分离，确保试卖数据分析口径纯净。</li>
+<li>云端字段规划：订单状态机（待接单/制作中/可取/完成）、门店维度、SKU与库存联动，便于A/B与复盘。</li>
+<li>易踩坑：一开始就做复杂支付/会员，导致迭代慢；建议先跑流程与队列管理，再接支付。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：用可下单的小程序/网页直链做“转化型物料”，比“宣传海报”更能收集真实转化与留资。</li>
+<li>值得研究的路径：</li>
+<li>直链分发到社群/朋友圈，监控不同渠道订单转化。</li>
+<li>门店分流：顾客先选店，天然实现LBS/门店归因。</li>
+<li>运营位：订单完成页承载加群、二单折扣、点评引导，实现复购闭环。</li>
+<li>案例启示：视频中直接用品牌视觉+下单链路当Demo，立即收数；为试营业投放提供可量化工具。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>策略与案例：用“店员工作台”管理制作队列，缓解高峰；“老板总览”做日清日结；库存可后台维护，减少断货。</li>
+<li>转化与旅程：顾客下单—进度可视—叫号取餐，降低不确定；离线支付不阻塞在线体验，快速起盘。</li>
+<li>新发现：把“今日订单库”独立出来，方便做小时级报表、峰值判断、补货建议。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【延展】</h3>
+          <ul>
+<li>AI能发挥作用的阶段：从需求到原型到可用Demo（含账号、权限、数据库、简单状态机）；能自动生成前端/后端/云部署与微信小程序集成。</li>
+<li>边界：业务流程建模、合规（支付/隐私）、跨系统对接（POS/ERP）、门店SOP仍需PM亲自定义。设备侧（如出杯机联动）需真实设备协议与安全评估。</li>
+<li>工具与流程信号：以“角色-流程-数据”三表驱动生成，PM从写PRD转为“喂结构化素材+验收指标”，原型到上线周期显著缩短。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「关键的是要把需求跟他说清楚 把这个框架搭建起来」（开头）——点明AI开发的本质是“先定框架”，不是先写代码。</li>
+<li>「要实现用户登录点单取餐号 然后订单保存这些多人交互的能力了 所以就要开启云服务了」（中段）——指出从页面到系统的分水岭：云与多人协作。</li>
+<li>「同一个应用啊 不同的身份 需要看到的就是各自想要的这种不同的信息」（中段）——多角色视图是业务系统可用性的关键。</li>
+<li>「历史经营数据是一部分 新发生的业务数据又是另外一部分」（中段）——数据口径管理的核心方法，避免试卖数据污染历史。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想低成本验证门店/小生意可行性的创业者。</li>
+<li>需要快速上线内部小系统（报名、预约、工单）的运营/产品同学。</li>
+<li>希望用AI从PRD直达可用应用、减少运维与部署成本的产品经理与技术负责人。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
