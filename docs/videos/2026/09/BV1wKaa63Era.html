@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>每一个AI Agent都需要的四种记忆类型（上） #人工智能 #大模型 #智能体 #智能体记忆 #姜学长</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>每一个AI Agent都需要的四种记忆类型（上） #人工智能 #大模型 #智能体 #智能体记忆 #姜学长</h1>
+      <div class="reader-meta">B站 · 清华姜学长 · BV1wKaa63Era</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>把记忆分四类，AI才会少犯错、会办事。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与框架：视频用一张白板拆出智能体的四种记忆——工作记忆（眼前任务）、语义记忆（已知事实/偏好）、程序性记忆（做事方法）、情景记忆（过往经历）。起点问题是：即使给到百万级上下文，把历史对话全塞进去，AI仍会重复犯错。原因在于“保存”只是第一步，关键是何时想起、如何筛选、怎样把一段经历转化为下次可用的经验。普林斯顿团队在2023年提出的OALA认知架构引入了这四类记忆的区分；重点不在名词本身，而是它们分别解决的问题与相互转化路径。</p>
+</li>
+<li>
+<p>论点一：工作记忆不是“上下文越多越好”，而是“少而准的高信号”。工作记忆是智能体当前完成任务所需要的一切信息：目标、用户需求、执行中的计划、刚读到的文件/工具结果、尚未解决的问题等。视频特别强调“上下文窗口只是工作记忆的空间，不等于有效记忆”。Anthropic在2025年的“上下文工程”原则：用尽可能少的高信号token最大化任务完成概率。
+  案例（编码Agent跨文件重构）：背景——一个代码Agent要做大范围重构，团队习惯把10万行日志、几十份文档、全部工具说明一股脑塞进上下文。过程——模型被淹没在冗余里，无法聚焦：同一个函数被来回修改，单测连续失败却没被持续跟踪。走过弯路——“全量塞入”让窗口成了杂物堆，任务状态反而时断时续。改进——引入“状态三板斧”：1）保留当前状态（重构目标、已改文件清单、未过测试列表、当前架构判断、下一步检查点）；2）维护任务状态（每步后用简化笔记/任务清单压缩关键信息，形成滚动摘要）；3）清理失效信息（仅保留最近一次工具调用的高价值输出，丢弃过期搜索结果）。结果——模型能稳定延续同一任务脉络，修改-回归-再修改闭环更快，错误率显著下降。关键结论：工作记忆的核心不是容量，而是专注与状态连续性。</p>
+</li>
+<li>
+<p>论点二：语义记忆存事实与偏好，但必须带“时间-场景-来源”四要素。语义记忆涵盖相对稳定的事实、概念、规则和偏好，如“该项目用Python 3.12”“公司报销上限5000元”“某API需额外认证”“用户偏好简洁表达”。真实系统里可落在用户Profile（结构化档案）、知识库/向量库、知识图谱或Markdown文档等。实现上常见两路：持续更新的Profile与可追加的Collection。前者易读但难维护一致性，后者易累积重复/过期/冲突条目。
+  案例（偏好冲突的判别）：背景——用户三个月前说“写文章要尽量详细”，近期又要求“短视频口播一定要简短”。过程——如果仅用Collection追加两条偏好，召回时会互相“打架”；如果只保留最新一句，又会丢失对长文场景的有效指导。走过弯路——粗暴去重或“保留最新”都导致在特定场景出错。改进——为每条偏好写入四元标签：事实内容+时间+适用场景+来源，如“偏好简洁｜2025-08｜短视频口播｜用户直述”；“偏好详尽｜2025-05｜长文图文｜用户直述”。推理时先判定当前任务场景，再过滤与排序。结果——长文自动展开、短视频自动收敛，偏好不再冲突。关键结论：四要素齐备，长期记忆才可用、可溯源、可消歧。</p>
+</li>
+<li>
+<p>论点三（承上启下）：仅有“记住事实”和“盯紧当下”还不够，Agent还需“会做事（程序性记忆）”与“会复盘（情景记忆）”。程序性记忆让Agent掌握任务范式与操作步骤；情景记忆让一次任务经历沉淀为下次可复用的经验。视频下期将讲：如何让一次经历转化为可迁移策略，避免“每次都从头撞南墙”。当前上半期的落点是：保存对话≠会做事；要把“当下状态维护”和“长期事实管理”分别做好，后续才能把方法与经验真正接上。</p>
+</li>
+<li>
+<p>提示性反例（“全日志存了却还犯错”）：背景——客户支持Agent保留了所有对话与工单历史。过程——面对同类投诉，Agent每次都要“从海量历史里凭运气找关键”，经常重复已被证明无效的处理建议。问题根因——只有情景记录（发生过什么）但无结构化的语义抽取（规则/偏好/额度）、也没有程序化的处理SOP，更缺少把“这类投诉的最佳响应”沉淀为带索引的可调用策略。结果——“记住了”却不会“想起来并照做”。启示：四类记忆缺一不可，尤其是触发条件与适用场景的结构化存档是桥梁。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【桌面不是仓库】干净桌面快办事：少而准的高信号上下文，比什么都往桌上堆更高效。对应工作记忆“容量不等于效率”原则。</li>
+<li>【状态三板斧】保状态、续进度、勤清理。三步让长任务不断线。对应工作记忆的持续性维护与噪声清除。</li>
+<li>【真记忆四件套】事实+时间+场景+来源，缺一则乱、齐则准。对应语义记忆的可用性与可溯源性。</li>
+<li>【档案vs抽屉】Profile像档案袋好读难改，Collection像抽屉好塞易乱。对应两种语义记忆实现与权衡。</li>
+<li>【少即是多】上下文越多不等于更聪明，高信号才提高完成率。对应Anthropic的上下文工程原则。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>工作记忆≠上下文窗口</li>
+<li>原文引用：「上下文窗口是工作记忆存在的空间，但并不等于有效的工作记忆。」</li>
+<li>案例还原：编码Agent跨文件重构时，把日志、文档、工具说明全塞入上下文，导致注意力分散、任务状态中断。改为保留目标/已改文件/未过测试/当前判断/下一步检查，并持续滚动摘要与清理，效率显著提升。</li>
+<li>
+<p>解读：做Agent先做“减法”，确保当下聚焦与状态连续。</p>
+</li>
+<li>
+<p>高信号上下文原则</p>
+</li>
+<li>原文引用：「好的上下文不是越多越好，而是尽可能少的高信号的token，最大化的去完成任务的概率。」</li>
+<li>案例还原：同一客服Agent处理重复投诉，早期把全部历史贴进对话仍频繁跑偏；改为仅召回与当前问题高度相关的最近一次有效处理与关键参数，命中率提升、响应更一致。</li>
+<li>
+<p>解读：任何长上下文任务都应先提炼“证据集”。</p>
+</li>
+<li>
+<p>工作记忆的核心是专注</p>
+</li>
+<li>原文引用：「工作记忆的核心不是容量，是专注。」</li>
+<li>案例还原：数据清洗Agent早期每轮都复述上轮全量日志；引入“任务清单+未决问题列表+最近一次工具结果”三件套后，来回核对减少，收敛速度提升。</li>
+<li>
+<p>解读：以“下一步最该做什么”为轴管理上下文。</p>
+</li>
+<li>
+<p>语义记忆的对象与载体</p>
+</li>
+<li>原文引用：「语义记忆保存的是agent知道什么……事实、概念、规则和相对稳定的偏好。」</li>
+<li>案例还原：项目知识以“项目设定（Python 3.12）、公司规则（报销上限5000）、API限制（需额外认证）”写入结构化表和向量库；任务时先查表再召回补充，避免反复问用户或踩权限坑。</li>
+<li>
+<p>解读：把“会查的事实”前置到结构化存储，减少无效回合。</p>
+</li>
+<li>
+<p>Profile vs Collection与冲突化解</p>
+</li>
+<li>原文引用：「profile更容易读取……collection容易追加，但时间长了会积累大量重复、过期、甚至冲突的内容。」</li>
+<li>案例还原：用户既要“长文详尽”又要“短视频简短”。将两条偏好写入四元标签（事实+时间+场景+来源），在推理前先判场景后选偏好；不同渠道输出风格各自正确。</li>
+<li>解读：偏好管理要“场景先行”，用元数据消歧与保鲜。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：把用户偏好当“语义记忆”，必须带时间-场景-来源，才能在多触点、多渠道不冲突。对用户旅程各阶段建立独立场景标签，再合并视图。</li>
+<li>可借鉴方法：用Profile承载“稳定画像”（角色/行业/设备/权限），用Collection记录“多场景偏好片段”（话术风格、渠道特性），周期性去重+过期清理；召回时先判场景后取偏好。</li>
+<li>揭示的坑：仅保留“最新偏好”或“全量偏好”都会误导；不带时间/场景将导致跨渠道错误迁移（如把短视频口播风格套到长文）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：品牌语调与合规要写入语义记忆（事实与规则），同时按渠道建立“场景化话术库”；生成内容时工作记忆仅注入高信号要点与当期Campaign目标。</li>
+<li>可研究路径：RAG不拉满，先“提要后生成”；以“高信号证据片段+Campaign约束+渠道模板”驱动生成，更稳一致。</li>
+<li>案例做法：将“品牌词禁用/必提点/法务条款”放入Profile；历史高转化文案片段放入Collection并打上“渠道/时间/受众”标签，调用前先按场景筛选。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略：把“实时会话状态”（购物车、库存返回、优惠叠加规则匹配结果）放入工作记忆，把“用户价格敏感度/尺码偏好/退货史”沉淀为语义记忆并加场景标签（如“运动鞋/促销期”）。</li>
+<li>转化路径发现：在结算关键节点，仅注入与本单相关的优惠与库存“高信号信息”，避免优惠规则噪声干扰，减少错用券与超时。</li>
+<li>参考案例：尺码推荐Agent以“近90天退货原因+品牌尺码偏差表（事实）+当季新品版型说明（事实）”为底，结合当前SKU场景输出建议，退换率下降。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>真正发挥作用的阶段：在“交互策略/任务规划/在设备端的会话与传感融合”中，AI可用工作记忆管理当下传感状态与任务进度，用语义记忆保存家庭规则、设备能力图谱、地图等“事实”。</li>
+<li>边界：ID外观与MD堆叠仍需工程与供应链约束下的人主导；电子设计demo可用AI生成方案与BOM初稿，但安全/成本/法规验证必须PM与工程师把关。程序性记忆（SOP）与情景记忆（事故复盘）的抽象与发布，需PM定义指标与验收门槛。</li>
+<li>工具与流程信号：引入“设备侧高信号上下文总线”（仅注入关键传感/规划状态），语义层用本地知识库（地图/禁区/清扫优先级）+云端增量同步；场景标签化（夜间/儿童在家/访客模式）驱动策略切换。示例：扫地机器人以工作记忆维护“当前房间/电量/未清区域”，以语义记忆持久化“家中地图/禁扫区/安静时段”；程序性记忆管理“边角-大面-回充”SOP；情景记忆把“上次卡在地垫”的经历沉淀为“路过该点抬刷/绕行”策略。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「上下文窗口是工作记忆存在的空间，但并不等于有效的工作记忆。」（中段）之所以值得记住，因为它一锤定音地纠正了“堆料即聪明”的误区。</li>
+<li>「好的上下文不是越多越好，而是尽可能少的高信号的token，最大化的去完成任务的概率。」（中段）这是Agent工程的操作性原则，直接指导提示词与RAG设计。</li>
+<li>「事实加上时间加上场景加上来源，这四项放在一起，才是一条真正可用的长期记忆。」（后段）给出了构建语义记忆的可执行标准。</li>
+<li>「工作记忆的核心不是容量，是专注。」（中段）一句话记住工作记忆的目标函数。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>正在搭建或改造AI Agent的工程师/产品经理：快速建立“工作记忆/语义记忆”两大件的正确实现心智。</li>
+<li>做内容/营销/电商的从业者：学会用“场景化偏好+高信号上下文”提升生成一致性与转化。</li>
+<li>智能硬件PM：把设备的状态管理与持久事实分层，打好后续“方法与经验”的沉淀地基。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
