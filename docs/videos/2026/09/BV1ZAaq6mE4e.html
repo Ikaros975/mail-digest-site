@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>SiliconFlow × Jev：三款开源平替 PK 竞技场！</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>SiliconFlow × Jev：三款开源平替 PK 竞技场！</h1>
+      <div class="reader-meta">B站 · 沧海九粟 · BV1ZAaq6mE4e</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>硅流一口气上线三款Jev开源平替模型，限免到10月8号，UP主还搭了个双模型PK擂台让你自己当裁判。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：Jev发布一周，平替浪潮来了</strong></p>
+<p>上一期视频介绍了Jev——由Type C AI推出的业界首款System One模型，核心卖点是&rdquo;以极低的成本和延迟，给应用提供结构化决策能力支持&rdquo;，主攻意图识别和评估评测场景。Jev发布仅一周，社区就涌现出大量开源平替模型。硅流（SiliconFlow）顺势推出三款Jev开源模型的线上模型端点，分别是 <strong>Diffusion、GA、CAF 和 SIMI</strong>（视频中提及三款主要平替：Diffusion、GA、CAF，同时支持SIMI），并在10月8号之前限免开放使用。</p>
+<p><strong>为什么这件事重要？一个&rdquo;注册门槛&rdquo;的现实痛点</strong></p>
+<p>UP主点出一个非常实际的背景：Jev官方平台虽然已经可以直接注册使用，但&rdquo;可能会因为某些原因，大家不一定能够注册得上&rdquo;。这就给开发者造成了一个真实的堵点——想试Jev，但进不去。硅流的三款平替模型，恰好提供了一个绕开注册门槛的快速体验通道。同时，如果你已经能访问Jev，UP主建议你拿这些开源模型来做<strong>横向对比</strong>，更好地理解各模型的真实性能差异。</p>
+<p><strong>关键数据：Jev仍领先，但差距可量化</strong></p>
+<p>硅流基于Jev Bench公开评测集做了评测，从图表结果看：<strong>Jev官方模型目前仍保持领先水平</strong>，后面三款平替模型（Diffusion、GA、CAF）的准确率数值各有差异，具体数据在官方博客中可查。UP主把API文档入口、公众号文章链接都放在了视频简介区，并特别指出硅流新增了一个 <strong>&ldquo;System One&rdquo;接口</strong>，在API手册中搜索&rdquo;Type C&rdquo;就能找到入口，支持Python SDK调用，也可以通过LangChain的Type C封装接入——后者还提供Midway支持，方便做工具Auto Mode、Model Router和Deep Agent快速接入。</p>
+<p><strong>应用模板升级：从单模型测试到&rdquo;双模型PK擂台&rdquo;</strong></p>
+<p>这是本期最实操的部分。UP主对自己上一期的Jev Harness应用模板做了升级：</p>
+<ol>
+<li><strong>单模型模式</strong>：在决策模型下拉框中，可以选择Jev官方模型或硅流提供的三款模型，任意切换，执行Harness后快速得到结果。</li>
+<li><strong>新增双模型PK模式（Arena）</strong>：这是核心亮点。你可以选中两个模型（比如SIMI vs Jev官方），选择场景、输入任务内容，点击&rdquo;开始双模型PK&rdquo;，系统会逐步展示两个模型在<strong>模型路由→自动模式匹配→放行决策</strong>每个环节的输出差异。</li>
+</ol>
+<p><strong>案例实战：两个场景，结果截然不同</strong></p>
+<p>UP主现场演示了两个测试场景：</p>
+<ul>
+<li><strong>场景一：删除全部生产备份</strong>。理论上这是高危操作，应当&rdquo;不允许、不放行&rdquo;。双模型PK结果显示：在&rdquo;路由&rdquo;环节两个模型很快给出一致结果；但在&rdquo;放行&rdquo;环节，两个模型给出了<strong>不一致</strong>的结果——说明不同模型在安全边界判断上存在分歧。</li>
+<li><strong>场景二：删除过期的测试备份</strong>。这个场景下，两个模型从路由到放行的结果&rdquo;差别还蛮大的&rdquo;，UP主又切换CAF与Jev对比，同样跑了一遍，展示了不同模型组合下的差异。</li>
+</ul>
+<p>这些演示的价值在于：<strong>你不需要盲信任何单一模型的评测分数，而是可以用自己的真实业务场景去实测</strong>。</p>
+<p><strong>开源+二开：把模板扔给Codex，快速迭代自己的应用</strong></p>
+<p>UP主强调，这个Arena模板全部开源，使用方式放在视频简介区。你拿到模板代码后，可以直接扔给Codex或Claude Code，快速做二次开发，迭代出自己想要的测试场景或应用场景。这是给开发者的一种&rdquo;赋能&rdquo;——不是给你一个成品，而是给你一个可以生长的脚手架。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【平替三兄弟】</strong> Diffusion、GA、CAF三兄弟上擂台，Jev老师仍坐头把交椅——但门票（注册）不好买，硅流开了侧门让你先试为敬。</li>
+<li><strong>【双模型PK擂台】</strong> 一个任务两个模型同时跑，路由、匹配、放行三步走，谁一致谁分歧一目了然——模型选型不靠猜，靠打擂台。</li>
+<li><strong>【10月8号限免窗口】</strong> 免费试吃到10月8号，过了这村可能就没这店——薅羊毛要趁早。</li>
+<li><strong>【扔给Codex就二开】</strong> 模板开源不是终点，是起点——代码扔给AI编程工具，你的专属测试场景半小时就能长出来。</li>
+<li><strong>【注册不上就用平替】</strong> Jev官方进不去不是死路，硅流System One接口搜&rdquo;Type C&rdquo;就能找到——路是人走出来的。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：Jev仍领先，但平替已可用</strong></li>
+<li><strong>原文引用</strong>：「大体目前来看JEFF还是一个保持领先的一个水平」</li>
+<li><strong>案例还原</strong>：硅流基于Jev Bench公开评测集对三款平替模型做了评测，结果显示Jev官方模型保持领先，但Diffusion、GA、CAF各有准确率数值差异，且全部限免开放。UP主建议已注册用户拿开源模型做横向对比，未注册用户直接用硅流快速体验。</li>
+<li>
+<p><strong>解读</strong>：模型选型不必等&rdquo;最好的&rdquo;，够用的平替现在就能上手验证。</p>
+</li>
+<li>
+<p><strong>要点二：双模型Arena让选型从&rdquo;看榜单&rdquo;变成&rdquo;打实战&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你可以在这里就可以进行一个快速的对比」</li>
+<li><strong>案例还原</strong>：UP主演示了&rdquo;删除全部生产备份&rdquo;场景——两个模型在路由环节一致，但放行环节结果不一致，说明安全边界判断存在分歧；换&rdquo;删除过期测试备份&rdquo;场景后差异更大。这种实战对比比看评测分数更直观。</li>
+<li>
+<p><strong>解读</strong>：对做Agent决策层的团队，用自己的场景实测比信榜单更靠谱。</p>
+</li>
+<li>
+<p><strong>要点三：开源模板+AI编程工具=快速二开</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你把这个源代码扔给呃codex CD code，很快就可以自己去迭代开发出自己的希望的一个应用场景」</li>
+<li><strong>案例还原</strong>：Arena模板全部开源，使用方式在视频简介区。拿到代码后可直接投喂给Codex或Claude Code，快速迭代出自己想要的测试场景，UP主称之为&rdquo;赋能&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：AI时代做工具，交付的不是成品而是可生长的脚手架。</p>
+</li>
+<li>
+<p><strong>要点四：注册门槛催生平替生态</strong></p>
+</li>
+<li><strong>原文引用</strong>：「可能会因为呃某些原因，可能大家不一定能够注册的上」</li>
+<li><strong>案例还原</strong>：Jev官方平台虽已开放注册，但部分用户因某些原因无法成功注册。硅流的三款平替模型提供了绕开此门槛的替代路径，同时新增System One接口，支持Python SDK和LangChain接入。</li>
+<li><strong>解读</strong>：产品触达受阻时，生态补位者会迅速填满空隙。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：本期提供了一个&rdquo;模型选型&rdquo;的调研方法论——不依赖公开评测榜单，而是用<strong>双模型Arena做A/B对比测试</strong>，在自己真实业务场景下观察两个模型在路由、匹配、放行各环节的输出差异。这是一种&rdquo;场景化对比调研&rdquo;思路，可用于任何技术方案选型。</li>
+<li><strong>可借鉴方法</strong>：UP主演示的&rdquo;同一任务、两个模型、逐步对比&rdquo;框架，本质是控制变量法在AI模型评估中的应用。调研人员可以借鉴这种思路设计评测方案。</li>
+<li><strong>揭示的坑</strong>：公开评测集（如Jev Bench）虽有参考价值，但UP主用实际案例证明——不同模型在具体场景下的表现差异可能远超榜单分数的差距（如&rdquo;删除生产备份&rdquo;场景中放行环节的不一致）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：硅流选择在Jev发布仅一周后迅速推出平替模型，并设定&rdquo;10月8号前限免&rdquo;的时间窗口，制造<strong>紧迫感和尝鲜动机</strong>。这是一种典型的&rdquo;竞品热度借势+限时免费获客&rdquo;策略。</li>
+<li><strong>传播路径</strong>：硅流通过官方博客+公众号文章+API文档入口+第三方UP主（沧海九粟）视频讲解的多渠道分发，触达开发者社区。UP主将文档链接、模板代码全部放在视频简介区，形成&rdquo;内容→工具→社区（飞书群）&rdquo;的转化漏斗。</li>
+<li><strong>值得研究</strong>：开源模型作为&rdquo;免费试用&rdquo;钩子，配合限免倒计时，是AI基础设施类产品获客的经典打法。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：硅流的&rdquo;限免到10月8号&rdquo;本质上是一种<strong>限时促销策略</strong>，适用于任何需要快速拉新的技术产品。UP主的Arena模板则相当于一个&rdquo;用户体验工具&rdquo;，降低试用门槛。</li>
+<li><strong>转化路径</strong>：视频→简介区链接→API文档→注册使用→飞书群沉淀，形成完整转化链路。电商运营可借鉴这种&rdquo;内容种草→工具承接→社群留存&rdquo;的路径设计。</li>
+<li><strong>新发现</strong>：开源作为&rdquo;体验式营销&rdquo;手段——用户拿到代码后可自行二开，极大降低了决策成本，从&rdquo;我要不要用&rdquo;变成&rdquo;我已经在用了&rdquo;。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>AI目前能发挥作用的阶段</strong>：本期视频虽未直接涉及硬件，但<strong>双模型Arena的对比框架</strong>可类比到硬件PM的AI工具选型——比如在ID设计阶段对比不同AI生图模型、在电子设计demo阶段对比不同AI辅助方案的输出差异。</li>
+<li><strong>AI的边界</strong>：正如视频中两个模型在&rdquo;放行决策&rdquo;环节出现分歧，AI在关键决策节点仍不可完全信赖。硬件PM在涉及安全、成本、合规的决策上，必须亲自把关，AI只能做辅助参考。</li>
+<li><strong>流程变化信号</strong>：视频中&rdquo;模板开源→扔给Codex→快速二开&rdquo;的流程，暗示未来硬件PM的工作方式可能是：拿到一个基础框架，用AI编程工具快速迭代出适配自己项目的版本，而非从零搭建。PM的核心能力将从&rdquo;执行&rdquo;转向&rdquo;定义问题+判断AI输出质量&rdquo;。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「它的核心是以极低的成本和延迟，给应用来提供结构化的决策的能力支持」（开头）——一句话说清Jev的核心价值主张，适合用来向团队解释为什么要关注这类模型。</li>
+<li>「你把这个源代码扔给呃codex CD code，很快就可以自己去迭代开发出自己的希望的一个应用场景」（结尾）——概括了AI时代工具交付的新范式：给脚手架，不给成品。</li>
+<li>「大家可以拿这些arena去做一些快速的一些尝试」（中段）——点明了本期最核心的实操价值：别光看，去打擂台。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li><strong>AI应用开发者</strong>：想快速体验Jev类模型但注册不上官方平台，或想对比多个模型做选型的开发者。</li>
+<li><strong>Agent产品经理</strong>：需要在自己的业务场景中评估模型决策能力，寻找可落地对比工具的PM。</li>
+<li><strong>技术内容创作者/ DevRel</strong>：想了解如何用开源模板+AI编程工具快速搭建演示工具的技术传播者。</li>
+<li><strong>AI基础设施关注者</strong>：对模型平替生态、限免策略、开发者获客路径感兴趣的人。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
