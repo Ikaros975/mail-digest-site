@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Why I took the summer off from AI (and what I learned) | Karri Saarinen (Linear)</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Why I took the summer off from AI (and what I learned) | Karri Saarinen (Linear)</h1>
+      <div class="reader-meta">YouTube · Lenny's Podcast · Zn9NZ-r1-C4</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>别迷恋AI产能，把“上下文与学习”打造成你的真正产品。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>1) 背景与问题重心转移<br>
+Karri（Linear 联合创始人）分享了一个反直觉开场：他整个夏天刻意不追AI新闻、模型与“代理”风潮，回到工作后发现“工具在进步，但好产品依旧很难”。行业长期沉迷“软件工厂化”——不断加人、细分职责、上流程、跑实验，以求更高产出；但“产出不等于产品”，客户不买代码行数和实验次数，只买对自己有价值的体验。核心转向：别把组织变成只追求效率的工厂。</p>
+<p>2) 产品产出两样东西：产品与学习<br>
+Karri强调，历史上“做产品”的过程天然产生另一种资产：学习。探索“该做什么、怎么做、为什么这样做”的思考与碰壁，会沉淀为判断力、品味与对赛道的理解，进而形成“复利式的组织语境”（context）。他用F1方向盘几十年形态演进做类比：当团队持续在极端场景中微调与校正，小幅学习不断复利，最终产出与常规轿车完全不同的形态。风险在于：当你把执行大量外包给AI，团队会与“执行中的学习”脱钩，长远丧失优势。</p>
+<p>3) 该自动化什么，不该自动化什么<br>
+“可重复、低学习值”的环节，值得大胆自动化；“高学习值、练判断”的环节，要抓在手里。Linear 的实践：用自研 Linear Loop 自动勘察错误来源（对接数据、Sentry、代码库），自动生成修复方案；工程师负责验证与微调，节省了排障时间。节省下来的精力全部“还给用户”：从公司创立起就要求工程师直连客户——进共享 Slack、亲自回答与提问、在一线训练“客户直觉”。重点不是“多写几行代码”，而是“多靠近一点用户”。</p>
+<p>4) 用AI“构建语境”，而非只做执行<br>
+Linear 把各渠道的客户信息（销售通话纪要、支持邮件、内部讨论）自动汇聚到一个“上下文库”。在此之上，Karri给自己配了“观察者代理”：每天自动生成“客户关于AI工作流”的要点简报，3-5个bullet，几分钟读完。与其把AI当“替你干活的手”，不如也当“帮你看世界的眼”——它能把嘈杂信号转成可学习的脉络，让团队更快更新对用户真实做法与需求的认知。</p>
+<p>5) 训练判断与共识：Quality Wednesday 与 Feature Roast<br>
+当人和“各自的代理”深度结对，很容易各自为战，组织内的“相互学习”断裂。Linear用两项机制把判断训练为“组织肌肉”：<br>
+- Quality Wednesday：全员每周花时间找并修一个“质量缺陷”（抖动的动画、错误文案、奇怪hover等，5分钟也可以），并在会中分享。结果不是“多修了几个小bug”那么简单，而是训练每个人的“质量之眼”，显著拉齐“何为好”的共同标准。<br>
+- Feature Roast：新功能进入全员“烤评”环节，允许“吹毛求疵式”吐槽，团队成员可追问澄清，最后由负责人综合为可执行的改进项。让第一次见到功能的同事真实扮演“初见用户”，快速暴露混淆点与不协调之处，避免闭门造车。<br>
+通过“共看、共评、共修”，团队避免因AI加速而出现的“各自闭环”，把分散的判断重新汇聚为共同品味。</p>
+<p>6) 归因与落地：让“上下文成为产品”<br>
+Karri 的终局主张：把更多时间从“执行”挪到“探索—贴近—回顾—打磨判断”。建设一个可被“人与代理”共同访问的上下文空间，让每次用户对话、每次争论、每次修正都可累积。Linear 不迷信AB实验，而是把“直觉”定义为“被训练出来的大脑模型”。招聘时看“能给公司带来怎样的判断与品味轨迹”，而不只是“多一个产能单元”。当组织把“持续学习与共享语境”运营起来，工具进步就会真正折现为产品进步。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【产出不等于产品】“客户不买代码行”，工具提速≠体验变好；抓住价值的是“做对什么”而非“做多多少”。  </li>
+<li>【F1方向盘定律】极端场景里的小学习会复利成大不同；持续校正，形态自会异化为“真适配”。  </li>
+<li>【省时还人前】AI省下的每分钟，都还给“客户一线”和“判断训练”，别把省时再投回机械执行。  </li>
+<li>【语境才是财富】把分散的反馈汇聚成可查询的“组织语境库”，人和代理都能从中变聪明。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>要点标题：别把组织做成“软件工厂”  </li>
+<li>原文引用：「the output is not the product&hellip; customers are not buying the lines of code.」  </li>
+<li>案例还原：Karri回顾行业路径：加人—细分—上流程—靠实验追产出。结论是“堆产能”并未让产品自动更好，客户并不为“产出指标”买单。  </li>
+<li>
+<p>解读：警惕“效率崇拜”挤压了价值判断。</p>
+</li>
+<li>
+<p>要点标题：产品产出“产品+学习”  </p>
+</li>
+<li>原文引用：「making products produces two things. The product and the learning.」  </li>
+<li>案例还原：以F1方向盘几十年演进为例，团队在高时速、微小操控的真实场景中不断学习，方向盘形态因此与家用车显著不同；学习复利塑形。  </li>
+<li>
+<p>解读：把学习当一等公民，长期回报更大。</p>
+</li>
+<li>
+<p>要点标题：自动化“低学习值”，把人力投向“高判断值”  </p>
+</li>
+<li>原文引用：「we should automate more of the known things&hellip; not something we can learn a lot from.」  </li>
+<li>案例还原：Linear Loop自动定位bug来源并给出修复草案，工程师只需验证与微调；节省的时间用于直连客户、拓展探索、提升作品质量。  </li>
+<li>
+<p>解读：分层看待任务学习值，精力配置才有效。</p>
+</li>
+<li>
+<p>要点标题：AI不仅是“手”，更是“眼”  </p>
+</li>
+<li>原文引用：「people focus on what AI can do&hellip; not what AI can teach you.」  </li>
+<li>案例还原：Linear汇聚销售、支持、内部对话，设“观察者代理”做AI工作流的每日简报，让领导几分钟把握用户使用路径与诉求差异。  </li>
+<li>
+<p>解读：把AI用于“构建与分发上下文”。</p>
+</li>
+<li>
+<p>要点标题：制度化训练“质量之眼”与“共同品味”  </p>
+</li>
+<li>原文引用：「quality Wednesday&hellip; everyone trains themselves to look for this&hellip;」  </li>
+<li>案例还原：每周找并修一个小缺陷，在会上展示；新功能进入Feature Roast全员“烤评”，由负责人汇总为行动项。结果是“看见问题的眼睛”被集体训练，避免各自为政。  </li>
+<li>解读：判断力需要组织化反复练习。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：把AI当“语境聚合器”，持续拉取销售/支持/社群的原声数据，训练“组织直觉”，而非只靠单次项目研究。  </li>
+<li>可借鉴方法：  </li>
+<li>建立“上下文库”：自动收集并结构化所有客户触点信息（通话纪要、邮件、工单、社区帖）。  </li>
+<li>设“观察者代理”：围绕关键议题（日更/周报）推送“少而精”的要点简报。  </li>
+<li>全员前线：研发/设计直连用户群（Slack/Discord），把“听见”变成日常。  </li>
+<li>常见坑：研究与一线割裂、洞察不沉淀、只看量化指标；Karri提醒“学习流失”才是最大成本。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：先在内部把“Feature Roast”跑通，提前暴露易混淆点，输出更清晰的叙事；对外传播强调“我们如何学习”而非“我们多高效”。  </li>
+<li>值得研究的路径：  </li>
+<li>用“每日语境简报”洞察用户真实使用语境，反向校正内容选题与信息架构。  </li>
+<li>把“Quality Wednesday”延展为“触点极致化”行动：微文案、加载动画、空状态页的迭代，驱动品牌感知。  </li>
+<li>结果预期：减少认知摩擦、提升首次理解与转介绍。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略：  </li>
+<li>把AI用于“已知可重复”的客服问答、库存校验、工单路由；把人力投入到“漏斗关键卡点”的用户访谈与细节修复。  </li>
+<li>建“Checkout/售后语境库”，设“观察者代理”推送每日卡点（如支付失败原因、退换货主诉），周度办“Quality Wednesday”式前台细节修复会。  </li>
+<li>新发现：不迷信大规模AB，优先用“前线信号+团队直觉”快速收敛，做小步快修的高频闭环。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>能发挥作用的阶段：需求收集与场景还原（聚合售后/工单/日志）、文档生成与同步（PRD、BOM变更记录）、测试数据归档与异常聚类、可重复校核（公差/合规清单）。  </li>
+<li>边界与必须亲自做：系统架构权衡、交互与触感的品味判断、样机“场景跑通”、取舍的组织共识构建——这些是“高学习值”环节，不能外包。  </li>
+<li>工具与流程信号：搭建“跨学科上下文库”，让设计/制造/售后共享同一语境；移植“Feature Roast”到“Design Roast/试产Roast”，把一线质检与用户反馈纳入；设“Tolerance Thursday”类固定节律，周周训练“质量之眼”。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「the output is not the product&hellip; customers are not buying the lines of code.」（开头）直戳软件工厂迷思，重置目标函数。  </li>
+<li>「making products produces two things. The product and the learning.」（中段）把“学习”抬到与“产品”同等地位。  </li>
+<li>「people focus on what AI can do&hellip; not what AI can teach you.」（中段）把AI从“干活的手”升级为“学习的眼”。  </li>
+<li>「Intuition is basically your training in your brain.」（结尾）为“用直觉决策”提供可操作的来源解释。  </li>
+<li>「context becomes the product.」（结尾）一句话封题：运营语境，即在做产品。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>产品经理、设计/工程负责人、创始人：想用好AI但不想丢掉团队的判断与品味。  </li>
+<li>正在推进AI落地的团队：希望从“提效”升级到“提质”，搭建可复用的组织语境与学习机制。  </li>
+<li>关注用户体验与组织能力建设的人：寻找可复制的实践，如质量周更与功能烤评。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
