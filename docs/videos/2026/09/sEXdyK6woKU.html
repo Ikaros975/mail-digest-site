@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Why Claude can’t be your PM (yet) | Anthropic CPO Panel</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Why Claude can’t be your PM (yet) | Anthropic CPO Panel</h1>
+      <div class="reader-meta">YouTube · Lenny's Podcast · sEXdyK6woKU</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI再强也缺“召集与判断”，PM更重要了。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>1) 产品经理的“恒定任务”：人机之间的桥
+- 背景：对话一开场就回应“AI是否让PM失业”的疑问。Ammy强调，产品工作的本质从未改变——连接真实人类问题与可用技术，只是技术更新的节奏从5-10年一轮变成了“每两个月一版”。
+- 核心观点：技术侧剧变，但人的问题更新很慢；因此PM要“死盯人的问题，常换解法”。要愿意把过去有效的方法扔掉，重新用新技术试一次。
+- 案例：Ammy回忆过去花大量时间训练“代入用户心智”，甚至会为了“按钮放哪”开评审。但今天“与其争论不如做三个版本试”，上线测试更快更准。她把这称为“个人层面的创新者困境”——越擅长旧本领，越难放手；必须定期重置自我预设。
+- 关键结论：适应性、在不确定中保持判断与韧性，是AI时代PM的底层素质。“框定混沌、让尝试变得安全”是团队管理的关键。</p>
+<p>2) 为什么Claude还当不了你的PM：缺“连接组织的人”
+- 背景：Mike今年转IC埋头做事，临近发版被PM负责人提醒“这个项目需要PM”。他起初犹豫，觉得“Claude都能帮”，但马上被现实教育。
+- 核心观点：AI能补强信息与流程，但“召集人/粘合剂/连接组织”的角色不可或缺；PM的“运营卓越”要求更高了。
+- 案例（完整复盘）：起因——项目临近发布，Mike质疑是否要配PM；过程——PM加入后，系统性梳理并推进了：不同客群（从创客到大企业）的“带教与共识”、客服团队的“话术与应答”准备、合规与安全团队的提早介入、跨流团队的节奏与里程碑对齐；结果——大量“本来会掉地上的事”被接住，工程师能持续“深潜模式”，Mike一周后“打脸致谢”，承认PM不可替代。延展——他还指出“Claude还不是召集人（convenor）”，既无组织牵引力，也不具备天然的日程撮合与跨人脉调度。
+- 关键结论：AI提升速度与复杂度，反而抬高PM的标准——要在高速状态下“全局连接、端到端落地、护航合规与体验”。</p>
+<p>3) 从“侧边栏AI”到“可塑界面”：Agent-Native产品范式
+- 背景：Mike复盘AI融入产品的路线图：从小窗问答（V1）到功能级集成，再到“Agent-Native”，直至“界面本身由Agent共同塑形”的阶段。
+- 核心观点：真正的Agent-Native要求“人能做的代理也能做”，关键在于“产品原语/底层管道”的重构；当所有操作经由统一的能力层，涌现式行为才会出现。
+- 案例（完整复盘）：Anthropic内部有个复杂项目，至少4条并行研发流。做法——让Claude既“盯进度”，又“生成供TPM与全队理解的动态UI”。过程——如果团队不喜欢某视图，Claude与团队随时改；UI持续演进。结果——协作效率显著提升，但也引出新问题：谁能更新数据？代理是否能在后台写入？如何保证溯源与可信度？团队在“可塑软件”与“设计系统/边界框架”间寻找平衡。
+- 关键结论：要想让代理深入产品，必须先铺“统一原语与共享管线”；先从“并行侧边实验/个人工作台”切入，逐步把同一套管道推广到主流程。</p>
+<p>4) 双轨试验与产品整合：如何“射门多、又不乱”
+- 背景：Anthropic既要探索前沿，也要照顾只想“稳定聊天”的用户与大型企业的稳健预期。
+- 核心观点：早期要“多脚射门”，允许功能重叠；命中产品-市场契合后再“回填整合”。组织层面要“定DRI/Bet Lead，权责清晰”，同时“统一底座”，减少试验间的割裂。
+- 案例1（组织与文化）：当有两条潜在方向，却只有一队高信念团队时，强行分派“B队”常产出平庸产品；更好的做法是让有热情的队伍去试，多队并行则要“说清白：我们在一起探索”，直面“重叠/挫败感”，用明确叙事维持士气。
+- 案例2（基础设施）：曾出现Chat与Co-Work各自一套记忆、MCP、文件存储，导致第三条试验线“先天残疾”；解决——成立“基础/Foundations”团队统一记忆与能力接入，前台创新团队由此“同底座起跑”，体验趋于一致。
+- 关键结论：在“快”与“一致”之间，先快后合并；并用组织角色（DRI）、统一底座与透明沟通，降低混沌成本。</p>
+<p>5) 别被“能力盲”困住：停放-复访-用评测唤醒时机
+- 背景：模型能力跳变频繁，同一个想法3个月后可能就能跑通。
+- 核心观点：要“先建后评”，建立评测（eval）与“停放机制”，定期随新模型重测，避免“一次试错就永久放弃”。
+- 案例（完整复盘）：2024年实验了“电脑操作（computer use）”产品，既不适合自动化、也不适合教学——被“停放”。做法——把任务接入评测框架，随新模型轮训。结果——在“37”版本出现跳跃，成功率陡增，从日志与转录里看到“能成了”，于是项目重启。
+- 关键结论：面向AI前沿，正确的失败是资产。把失败外化为评测，才能在模型跃迁期“低摩擦复活”。</p>
+<p>6) 一年后的愿景：缩小“能力-使用”鸿沟与个体赋能
+- 背景：今天多数人没有用上模型的真实上限，问题在“产品没把路径铺好”。
+- 核心观点：目标是让非极客用户也能“长程协作、分段校验、并行研究”，把“可操作的复杂度”交由产品承担而非用户。
+- 结果与预期：更多小团队/个体能以AI为拓展臂启动项目与业务；“主入口”体验（类似主Tab）依旧关键，侧边试验要能被“回收并入”而非无限增殖。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【桥而不辩钮】少为“按钮位置”吵，多做“三版快测”；本质是守住“人类问题”，不断替换“技术解法”。</li>
+<li>【PM是胶，不是备胎】AI是发动机，PM是“粘合剂+导航+刹车”；没有召集与运营卓越，高速只会失控。</li>
+<li>【先铺管，再长樹】Agent-Native靠“统一原语与共享管线”，不是在UI上拴个机器人头像。</li>
+<li>【停而不废】前沿方向跑不动就“停放+评测”，等模型进化“唤醒”，别被一次失败锁死。</li>
+<li>【混沌要框】并行试验可以多，但要“定DRI、立底座、讲清话”，把混沌装进可管理的盒子里。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>重要性不变，本质是桥</li>
+<li>原文引用：「I think the job of product is always to be a bridge between the real problems that people have in the world and the technology that you can use to solve it.」</li>
+<li>案例还原：Ammy讲到技术更新频率飙升，旧套路失效，但“人类问题”没变。她从“设计评审抠交互”的老路，切换到“多版本快速试验”，以真实使用反馈替代理论推演。</li>
+<li>
+<p>解读：提醒PM聚焦问题与结果，解法要随模型更迭而迭代。</p>
+</li>
+<li>
+<p>Claude还不是“召集人”</p>
+</li>
+<li>原文引用：「I don’t think Claude is a convenor yet… somebody still needs to bring the … people together to like get the work done.」</li>
+<li>案例还原：Mike起初拒绝配PM，后体验到PM在“带上各类用户群、准备客服与安全、把团队对齐节奏”上的系统价值；并指出AI尚不具备“组织牵引与日程撮合”的真实能力。</li>
+<li>
+<p>解读：AI不足以承担跨人脉与跨函数的协同牵引，PM价值反增。</p>
+</li>
+<li>
+<p>Agent-Native的底层重构</p>
+</li>
+<li>原文引用：「everything a human could do an agent should be able to do as well… build the right primitives… shared plumbing.」</li>
+<li>案例还原：内部复杂项目让Claude不仅监控，还动态生成“项目态势UI”，团队随需共塑视图，引发“数据更新权与溯源”治理议题，迫使底层能力与规制一体化设计。</li>
+<li>
+<p>解读：没有统一原语与权限治理，代理只会“贴边跑”，难入主干流程。</p>
+</li>
+<li>
+<p>并行试验与统一底座</p>
+</li>
+<li>原文引用：「you can have the chaos but you also need very clear leadership and DRI ship… we have like a foundations team… you should be able to get your memory wherever you are within our products.」</li>
+<li>案例还原：多队并行易致割裂与士气波动；做法是一边“定DRI/Bet Lead”拍板，一边由“基础团队”统一记忆/MCP/文件底座，前台创新因此具备“共用能力层”，体验可兼容与复用。</li>
+<li>
+<p>解读：让组织的“快”建立在“同一底座”与“清晰责权”之上。</p>
+</li>
+<li>
+<p>用评测对抗“能力盲”</p>
+</li>
+<li>原文引用：「we parked it and… try it with every new model… we learned that 37 was… a leap in computer use.」</li>
+<li>案例还原：2024年电脑操作产品“不好用”被停放，接入评测框架随新模型重测；当“37”版本成功率跃升，项目被“唤醒”，进入新阶段。</li>
+<li>
+<p>解读：评测是跨代际模型进化的“雷达”，帮你在正确时点重启。</p>
+</li>
+<li>
+<p>主入口的“节制之美”</p>
+</li>
+<li>原文引用：「there’s a very strong power law in tab usage… half of the job is saying no to another thing in the sidebar or another tab.」</li>
+<li>案例还原：以Instagram经验为鉴，主入口承载80%使用；并行试验要能被“回收并入”，而非不断增开新Tab，让用户背负“认知负担”。</li>
+<li>解读：产品形态再多变，也要守住“一个好主入口”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论</li>
+<li>以“构建-评测-停放-复访”的循环替代一次性可行性判断；将失败转为可复用的评测资产。</li>
+<li>用户研究从“预判交互细节”转向“部署多版本→快速行为数据回流→择优合并”的真实场景验证。</li>
+<li>警惕“能力盲”：研究结论要标注“模型版本戳”，并设立“版本触发的复评规则”。</li>
+<li>可借鉴的方法</li>
+<li>建立Agent能力评测基线：围绕关键任务设计任务集，持续跑新模型。</li>
+<li>搭建“个人化工作台/侧边Pane”作为低风险试验场，沉淀跨团队共享原语。</li>
+<li>在并行试验中指定DRI，并公开“停放/合并”标准，透明化路径。</li>
+<li>常见坑</li>
+<li>过早定型（over-constrain）：以理论和过去经验一票否决新形态。</li>
+<li>基座不统一导致体验碎片化，用户研究难以累积对比结论。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例</li>
+<li>用“可塑UI+代理共创”打造动态演示：让产品在Demo中随观众问题实时重组界面与路径。</li>
+<li>讲好“停放-唤醒”的故事：公开评测与版本证据，建立前沿可信度与技术透明度。</li>
+<li>传播路径</li>
+<li>以“主入口场景”输出稳定认知，再引导到“实验分支”试用；沟通上“框定混沌”，降低尝鲜心理成本。</li>
+<li>针对不同成熟度的客户，分层递进：从“侧边助理”到“深度Agent”，一路打通同一套能力叙事。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略/案例</li>
+<li>搭建“订单/服务/推荐”的统一原语层，让代理与人工走同一管线，逐步替换“贴片式AI”。</li>
+<li>引入“停放SKU/流程实验”机制：对新促销逻辑、自动客服策略做评测轮训，模型版本跃迁时再启用。</li>
+<li>转化路径/用户旅程</li>
+<li>保持单一强主入口（首页/购物车），把代理融入关键任务（比价、优惠组合、售后方案）；避免新增无尽“AI Tab”。</li>
+<li>让代理生成“可塑运营看板”，一线运营可与代理共改指标与分层策略，缩短响应周期。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI能真正发挥作用的环节</li>
+<li>早期需求探索与系统方案对比：自动汇总竞品参数、法规清单与用户诉求，生成多方案权衡。</li>
+<li>概念到Demo：基于文本/草图生成UI原型、交互脚本与固件模拟测试用例，联动云端代理进行“可塑调试面板”。</li>
+<li>AI的边界</li>
+<li>物料/工艺/安规/供应链谈判的现实约束与责任归属仍需PM主导；跨部门召集、节奏与风险兜底不可替代。</li>
+<li>工具与流程信号</li>
+<li>“统一原语”迁移到硬件栈：把传感器读写、固件指令、日志溯源抽象成可被代理与工程师共用的基座；以评测库贯穿ID→MD→EE各阶段，版本跃迁时触发复测与配置回收。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「I think the job of product is always to be a bridge between the real problems… and the technology…」（开头）——把PM的本质一锤定音，穿越技术周期。</li>
+<li>「I don’t think Claude is a convenor yet.」（中段）——点题之锚：AI尚不具备“组织召集”能力。</li>
+<li>「it’s faster to just build three versions and try them out.」（中段）——方法论转向：从争论到实验的范式升级。</li>
+<li>「we parked it… try it with every new model… 37 was… a leap in computer use.」（中段）——“停放-复评-唤醒”的硬证据，教你如何等来拐点。</li>
+<li>「half of the job is saying no to another thing in the sidebar or another tab.」（结尾）——在多变中守住“主入口”的产品铁律。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>AI产品/平台的PM、产品负责人、初创团队与技术负责人：掌握Agent-Native与并行试验的实战心法。</li>
+<li>需要把AI深度融入现有SaaS/电商/服务流程的运营与研发经理：学会“统一原语、侧边试验、主入口合并”的路径。</li>
+<li>正被模型快迭代冲击的团队管理者：获得“框定混沌、设DRI、建立评测与停放机制”的组织打法。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
