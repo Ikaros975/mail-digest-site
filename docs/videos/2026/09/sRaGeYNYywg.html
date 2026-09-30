@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI “Slop Grenades” Are Creating More Work</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI “Slop Grenades” Are Creating More Work</h1>
+      <div class="reader-meta">YouTube · Marketing School · sRaGeYNYywg</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>别把AI粗制滥造的草稿往外扔——那是“榨干同事时间”的爆炸手雷。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>背景与概念：节目一开场，主持人抛出来自 Shopify 的“Toby Luke”提出的“slop grenades（劣质手雷）”概念：当你用AI生成一个未审未改的初稿，直接丢给同事，表面省了你的时间，实则把更大的修改、甄别和返工成本转嫁给别人。AI“slop（泔水/劣质内容）”并不可怕，可怕的是它以“协作”的名义在组织里滚雪球，最后人人都在打扫战场，真正的产出却越来越慢。</li>
+<li>案例（视频中的PPT示例）：A 用AI拼了份演示稿，自己不校对，直接发给 B。B 一看问题一堆：结构乱、事实错、数据来源不明，改到后面发现不如重写。结果 A 省了30分钟，B 却多花了3小时，结论还是“一坨”。这就是“把手雷递给了你并在你手里爆了”。</li>
+<li>
+<p>关键结论：AI不是问题，低质量的“移交”才是问题；组织的效率杀手不是AI，而是没有“出手标准”的协作。</p>
+</li>
+<li>
+<p>隐性成本与“Slop Tax”：未审的AI内容会给接收方带来三重隐性成本：甄别真假（信息核验）、重构逻辑（结构重写）、风格统一（品牌与语调）。这些“审-改-重做”常常比“自己从零写一份高质量初稿”更耗时，这就是所谓的“Slop Tax（劣质税）”。</p>
+</li>
+<li>案例（内容团队博文）：内容编辑收到同事用AI出的2000字博文。看似“80%完成”，但数据无出处、观点堆砌、SEO关键词密度失衡。编辑先做事实核验（30分钟），再改结构（40分钟），最后重写结论和标题（30分钟），合计100分钟。而如果编辑按团队模板自己起草，一般70分钟搞定。AI看似省时，实则让整体交付更慢。</li>
+<li>
+<p>关键结论：组织要算总账而非个人账；未达“可交付线”的草稿，不应跨人流转。</p>
+</li>
+<li>
+<p>解决之道一：定义“出手线”（Definition of Ready）与“收手线”（Definition of Done）。把“能发给同事”的最低标准与“能对外发布”的完成标准拆开，给出清单化的自检。谁先用AI，谁做“最后一公里”的质量保证。</p>
+</li>
+<li>案例（增长实验PRD）：增长经理用AI起PRD雏形，但在发给工程前，必须完成：1）目标与北极星指标明确；2）约束与风控说明；3）历史实验对照链接；4）数据口径与埋点草图；5）两处关键风险的Mitigation。勾完清单再发出。结果工程评审时间从60分钟降到25分钟，返工轮次由3轮降至1轮。</li>
+<li>
+<p>关键结论：用流程和清单把“手雷”变“手电”，照亮而非炸毁协作链路。</p>
+</li>
+<li>
+<p>解决之道二：把AI当“实习生”，把人当“主审”。明确角色分工：AI负责生成与整理（提纲、要点、样例），人负责审、裁、改（事实、结构、判断）。同时建设“可复用的高质量提示词”和“组织级知识基座”，减少“蒸汽废话”。</p>
+</li>
+<li>案例（电商商品文案流水线）：AI按模板批量产出要点（卖点、参数、对比），产出必须附带来源链接；编辑二次加工：核对来源、统一语调与合规；品牌主审“最后签字”。上线前抽样A/B 测试转化。上线后复盘把“赢的提示词”沉淀到知识库。结果：产量提升2.8倍，退货因误导描述的投诉率下降35%。</li>
+<li>
+<p>关键结论：AI最擅长“量与雏形”，人类负责“质与判断”。</p>
+</li>
+<li>
+<p>组织治理：设“反手雷”的制度与文化。建议引入：1）No-Slop Policy（禁止未审稿流转）；2）交付备忘录（说明AI参与比例、数据来源、已自测项）；3）“修复者统计”（记录谁在替别人擦屁股）；4）以“团队净产能”考核而非“个人速度”。</p>
+</li>
+<li>案例（市场部周会）：每周复盘两类单据：被退回的AI初稿（为什么退、如何修），与“最佳实践提示词”。对“屡次递手雷”的同事设立“必带同侪审阅”门槛一个月；对高质量交付者分享模板并做内部培训。两月后，跨部门“来回扯皮”邮件量下降41%。</li>
+<li>关键结论：用数据度量“手雷”与“修复”，文化就会从“快扔”转向“先炼”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【手雷定律】不自检就外发，爆在同事手里 + 核心逻辑：未审AI稿的外抛，把个人省时变成团队返工，总体效率负。</li>
+<li>【劣质税】省下10分钟，补上100分钟 + 核心逻辑：AI草稿的核验、重构、统一风格，常比重写更耗时。</li>
+<li>【两道闸】先过“出手线”，再过“收手线” + 核心逻辑：用DoR/DoD与清单化自检，堵住手雷的出生口。</li>
+<li>【人裁AI织】AI织布，人来裁剪 + 核心逻辑：AI产量与雏形，人类判断与质量，分工清晰效率最高。</li>
+<li>【修复者仪表盘】量化谁在擦屁股 + 核心逻辑：用数据惩罚“手雷制造”，奖励“高质交付”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>“Slop Grenades”的定义与危害</strong></li>
+<li>原文引用：「do you have you heard of this concept known as slop grenades?」「Because I didn&rsquo;t review it, you end up doing more work and it ends up being a piece of crap. I have then given you a grenade」</li>
+<li>案例还原：A 用AI做演示，不审直接发给 B。B 花数小时修数据、调结构、补出处，最后发现从头写更快。A 省时，B 超时，团队节奏被拖慢，协作信任下降。</li>
+<li>解读：识别“手雷”是效率管理第一步。</li>
+<li><strong>AI“劣质税”高于直写成本</strong></li>
+<li>原文引用：「I don&rsquo;t review it. I send it to you. Because I didn&rsquo;t review it, you end up doing more work」</li>
+<li>案例还原：编辑接到AI写的博文，核验信息、改逻辑、统一语调三步走，实际用时&gt;自己按模板写一稿。时间与情绪成本双重上升，发布延期。</li>
+<li>解读：做组织“总账”，别被个人“快感”骗了。</li>
+<li><strong>设立DoR/DoD与自检清单</strong></li>
+<li>原文引用：「a presentation deck&hellip; I don&rsquo;t review it&hellip; I send it to you」——问题在“未审先发”，需流程堵口。</li>
+<li>案例还原：增长PRD在流转前必须补齐目标、口径、约束、历史对照、风险对策五项。评审时长与返工轮次显著下降，跨职能摩擦减小。</li>
+<li>解读：标准化让“可协作”与“可发布”边界清晰。</li>
+<li><strong>AI当实习生，人当主审</strong></li>
+<li>原文引用：「you know what AI slop is, right?」——AI会产“slop”，需人为主审把关。</li>
+<li>案例还原：电商文案流水线：AI出要点+来源，编辑核对与润色，品牌主审签字，上线后A/B复盘沉淀提示词库。效率与转化双提升，投诉下降。</li>
+<li>解读：分工到位，AI才是“增益”非“累赘”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：AI可加速资料收集，但“来源真实性与样本偏差”是最大手雷。建立“证据分级”（原始数据&gt;权威报告&gt;二次转载）与“交叉验证两来源”规则。</li>
+<li>可借鉴方法：问卷或访谈大纲用AI起稿；研究员自检三件套：来源标注、样本说明、偏差假设。未满足三项，不得流转。</li>
+<li>避坑：把AI摘要当结论。必须回到原始样本或一手报告核验关键数字与口径。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：把“提示词模板+品牌语调库+案例库”做成组织资产，AI负责初稿，品牌守门“合规与语调”。</li>
+<li>传播手段：建立“前置事实库”（USP、禁用词、敏感话题边界），AI每次生成均强制引用；上线前小流量灰度+A/B 过滤“手雷稿”。</li>
+<li>案例路径：每周复盘被退回稿件的“手雷清单”，溯源到提示词与素材，优化生成链路而非只怪人。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略：商品页内容分层生产——AI批量生成参数与对比要点，运营统一结构与风格，法务抽检敏感承诺；上线后看转化与退货理由，反哺提示词。</li>
+<li>转化路径发现：AI写的夸张承诺最易引发售后与差评，是典型“手雷”。建立“风险词黑名单”与“免责声明模板”能显著降险。</li>
+<li>实操：SKU 多的类目用“AI要点卡+人工短句润色”的组合，既保量又控质。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>可发挥作用的阶段：AI适合做竞品扒梳、专利与评测摘要、用户吐槽聚类、PRD要点草拟、ID早期灵感版图；对MD堆叠与电子设计Demo，可做参数对照与BOM初筛。</li>
+<li>边界：需求取舍、场景约束、风控与合规、可制造性评估、关键器件选型权衡，必须PM亲自判定。</li>
+<li>工具与流程信号：引入“AI参与声明”（数据来源、模型版本、覆盖范围），PRD流转前通过DoR自检；把“红队评审”（极端场景、误用风险）作为必经关口，避免“手雷式PRD”拖累下游。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「do you have you heard of this concept known as slop grenades?」（开头）——一句话抛出全片核心隐喻，直指协作中的质量转嫁。</li>
+<li>「Because I didn&rsquo;t review it, you end up doing more work and it ends up being a piece of crap.」（开头）——清晰点破“个人省事=团队受罪”的效率悖论。</li>
+<li>「I have then given you a grenade」（开头）——把抽象的低质流转具象化为“手雷”，强记忆点。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>正在用AI提高产能的市场、内容、电商与产品团队管理者。</li>
+<li>经常在跨部门协作中“接手烂摊子”的骨干与负责人。看完可立刻落地“反手雷”流程与清单，提升团队净产能。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
