@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>OpenAI公开课：改个数据，整份PPT都要跟着改？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>OpenAI公开课：改个数据，整份PPT都要跟着改？</h1>
+      <div class="reader-meta">B站 · 迪迪碎碎念_AI · BV1aoaz6JEQT</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>先别改文件，用AI出“差异—口径—更新—留痕”全链路计划。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数视视频长度而定，上不封顶）</h2>
+        <ul>
+<li>
+<p>背景与问题场景：每月财务汇报常常要把新Excel数据同步进旧PPT，过程包括找数、改图表、核对、重写结论，易漏、慢且高风险。视频示例来自OpenAI几个月前公开课，用Codex协助把“改一个数据牵动整份PPT”的琐碎链条流程化，目标是：让AI知道改哪里、凭什么改、人如何当最后的检查员。</p>
+</li>
+<li>
+<p>核心观点1：先“出计划”，后“动文件”。演示中的第一句提示词是“先不要修改任何文件”。AI需先对比三类资料：上月PPT（结构与旧口径）、本月实际数据（Excel）、更新后的财务模型（公式/预测），产出“逐页更新计划”。计划必须逐条标注来源到具体sheet/tab/单元格，并把“事实、假设、待确认项”分开，同时主动指出口径对不齐、数字打架之处。价值在于：像审计预报告，暴露潜在错配与口径混淆，让人有机会在改动之前“抓虫”。</p>
+</li>
+<li>
+<p>核心观点2：人主导“定口径”，AI再执行。第二段提示词进入人为介入：示例中“旧估值参考与更新模型计算不对齐”，决策是“以新模型为准，旧值保留为带标记历史参考，不强行调模型贴旧数”，并要求AI列出核心指标来源与检查清单，确认后才继续更新。这里强调两层审核：一是“计算的完整性”（公式对不对、可追溯）；二是“决策的条件”（关键假设如增长率/折现率是否合理）。这两件事必须分开问、分开批示。</p>
+</li>
+<li>
+<p>核心观点3：更新不只改数字与图表，还要重写受影响文案。演示将每页PPT作为独立文件/对象，AI在保留原结构与主题的前提下批量更新：数字、图表、并同步受影响的文字说明（避免“数变了、结论还停在上月”）。为防评估误差，项目规则预设：不覆盖原文件、冲突必须指出、每处修改保留来源。执行速度视频中看似很快，但UP主提醒：演示准备了部分结果，实际用时取决于资料质量与规则完备度。</p>
+</li>
+<li>
+<p>核心观点4：全量留痕的“变更日志”是复核抓手。最终产出包含：哪一页、哪个指标、旧值/新值、差额、来源文件与单元格路径，便于审阅者拿着日志回到Excel逐项核对，也能标出未解决问题，避免“文件生成=问题解决”的错觉。UP主将流程抽象成四步：查差异→定口径（人参与）→改文稿→核定来源（留痕/复核）。其精髓是把“检查”和“修改”拆开，让人类在关键关口做判断。</p>
+</li>
+<li>
+<p>贯穿案例（OpenAI Codex财报更新演示）完整还原：背景：月度财报需更新旧PPT。起因：新结账数据与新模型出炉，旧估值口径不一致。过程：1）首个Prompt禁止改文件，先对比上月PPT、本月Excel、新模型，逐页列更新清单，逐项标明Sheet/单元格，并把“事实/假设/待确认”拆开；2）人审清单，明确“新模型为准，旧估值保留标记”，要求AI列核心指标来源与检查项；3）AI据批示更新每页对象（数字、图、文案），保留原结构；4）生成变更Log（页码、指标、旧新值、差异、来源路径），供人逐项回溯核对。走过弯路：若跳过计划直接改文件，容易把猜测当结论、错用口径或覆盖原件。结果：在可控风控下更快完成同步更新，审计轨迹清晰、复核成本下降。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【先打草稿，再下刀】先出“逐页更新计划”，再改文件；像外科手术先画切口线，风险可控，错口径早发现。</li>
+<li>【口径一锤定音】资料打架先定口径：哪套模型为准、旧数留痕不硬贴；先判法庭，再执行判决。</li>
+<li>【数随文动】数字/图表变更要牵引文字结论更新；数文同频，不做“新数旧话”。</li>
+<li>【两本账：计算 vs 决策】先问算得对，再问该不该；公式完整性≠假设合理性。</li>
+<li>【步步有据】每次修改都能追到Sheet/Cell；没有来源的更新等于没发生。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：先产“更新计划”，禁止直接改动</li>
+<li>原文引用：「第一句话，就是先不要修改任何文件」「相当于在动手之前先把修改方案给交出来」</li>
+<li>案例还原：Codex先对比上月PPT、本月Excel、新模型，逐页列出要改的内容，具体到Sheet/Tab/单元格，并把事实、假设、待确认项拆开，还标注数字冲突点，供人审批后再执行。</li>
+<li>
+<p>解读：先计划再执行，显著降错。</p>
+</li>
+<li>
+<p>要点标题：冲突先定口径，旧数保留为历史参考</p>
+</li>
+<li>原文引用：「以更新后的公式模型为准，旧的估值保留为带标记的历史参考」</li>
+<li>案例还原：当旧估值与新模型不一致，提示词明确新模型为准，不去“调模型贴旧数”。AI需列出核心指标来源和检查项，经人确认后继续更新，避免口径漂移。</li>
+<li>
+<p>解读：消灭“算给领导想要的数”。</p>
+</li>
+<li>
+<p>要点标题：分开验证“算得对”与“应不应该用”</p>
+</li>
+<li>原文引用：「区分计算的完整性和是否具备决策的条件」</li>
+<li>案例还原：即便每个数字可追溯，增长率/折现率等假设仍需人判断。流程要求分别回答“结果是否正确”“支撑假设是否成立”，防止把模型正确当做结论正确。</li>
+<li>
+<p>解读：技术正确≠商业正确。</p>
+</li>
+<li>
+<p>要点标题：数、图、文三位一体同步更新</p>
+</li>
+<li>原文引用：「除了数字图表，还有受影响的一些文字说明」「否则数据已经变了，但是结论它还在上个月」</li>
+<li>案例还原：每页PPT作为独立对象，AI在保留结构的前提下批量改数、重绘图、同步修改解读文字，确保叙述与数据一致。</li>
+<li>
+<p>解读：避免“新数旧话”断裂。</p>
+</li>
+<li>
+<p>要点标题：全程变更日志，方便回溯核对</p>
+</li>
+<li>原文引用：「它记录了哪一页，哪个指标，旧的值是哪一个，新的值是哪一个…来源文件以及单元格都在哪里」</li>
+<li>案例还原：更新后生成日志，标明页码/指标/旧新值/差额/来源路径。审阅者据此回到Excel逐项核对，并保留未解决问题清单，而非默认“生成即正确”。</li>
+<li>解读：让复核有抓手。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>把“先不改文件”的计划阶段标准化到研究流程：先出“差异清单+口径选择+证据来源”再写报告。</li>
+<li>将“事实/假设/待确认”三分法用于洞察产出，减少把推测当结论。</li>
+<li>可借鉴调研方法：</li>
+<li>资料对齐清单：竞品/期数数据的口径表（样本、时间窗、统计口径）先定，再跑分析。</li>
+<li>变更日志：每次更新问卷/样本清洗规则，都留版本与变更原因，方便复盘。</li>
+<li>被揭示的坑：</li>
+<li>口径不一致导致结论波动；人机协作应由人来“定口径”，AI只负责执行与留痕。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>用AI批量更新周报/月报中的渠道指标与可视化，并同步调整洞察文案，保证“数—结论—行动”闭环。</li>
+<li>值得研究的手段：</li>
+<li>为营销看板设“先计划后执行”的提示词模板：列出影响页面、指标来源、异常点，再一键更新。</li>
+<li>对A/B测试结果，要求AI输出“事实/假设/待确认”，防止把波动当因果。</li>
+<li>传播路径启示：</li>
+<li>留痕化报告更利于对上沟通：决策者可直达Cell级来源，提升信任与决策速度。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略/案例：</li>
+<li>月度运营复盘采用“四步法”：查差异（环比/同比异常清单）→定口径（活动口径、退款口径）→改看板与复盘PPT（数/图/文同步）→留痕（变更日志到SKU/店铺/活动层）。</li>
+<li>新发现（转化路径/用户旅程）：</li>
+<li>将“计算完整性vs决策条件”用于转化归因：先验证模型可追溯，再评估假设（如曝光有效性）是否成立，减少误投。</li>
+<li>运营场景收益：</li>
+<li>大促后多源数据冲突时，先定口径能避免“甩锅式复盘”，把问题精准定位到策略或执行。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「第一句话，就是先不要修改任何文件」（开头）——把“先计划后执行”钉成方法论的起点，立规矩胜过救火。</li>
+<li>「把事实、假设以及待确认的事项它都要给分开」（中段）——防止猜测冒充结论的有效护栏。</li>
+<li>「当资料互相矛盾的时候，要把采用哪一个来源的决定说清楚」（中段）——定口径是人类责任，AI只是执行器。</li>
+<li>「区分计算的完整性和是否具备决策的条件」（中段）——技术正确与商业正确的边界画线。</li>
+<li>「它记录了哪一页，哪个指标，旧的值是哪一个，新的值是哪一个…来源文件以及单元格都在哪里」（结尾）——高质量留痕是复核的生命线。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>需要月度/季度更新PPT和看板的职能：财务、运营、电商、市场分析、数据BP。</li>
+<li>管理多源数据且常遇口径冲突的团队负责人，以及希望把AI落到“真流程”的从业者。看完可直接套用“四步法”，降错提速。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
