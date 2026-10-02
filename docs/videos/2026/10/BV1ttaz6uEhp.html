@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🦜 LangChain 助力企业掌握智能｜Own Your Intelligence ⚡️</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🦜 LangChain 助力企业掌握智能｜Own Your Intelligence ⚡️</h1>
+      <div class="reader-meta">B站 · 沧海九粟 · BV1ttaz6uEhp</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用“开、拼、治”三板斧，把智能体从概念做成企业可控的生产力。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数视视频长度而定，上不封顶）</h2>
+        <p>1) 背景与使命：Build Your Own Intelligence（BYOI）
+- 背景：LangChain 在纽约 Interrupt 大会上将使命明确为「Enable every company on their intelligence」，主旨是帮助企业构建“自主可控”的智能体与智能体系统，不再被单一闭源方案绑定。
+- 核心观点：落实 BYOI 的三大关键词是开放（Open）、复合/合成（Compounding/Component 合成效应）、治理（Govern/Governance）。开放确保“拥有权”（Own）在企业手里；复合是把提示词工程、上下文工程、工具/MCP、技能（SOP）与人机协同整合出“化学反应”；治理是把这场“化学试验”放进可控的实验室里（权限、审计、风控），避免野蛮生长后的反噬。
+- 案例：视频明确指出开源模型与开源框架是企业“Own”的底座。典型落地路径是：采用可私有化的 LangChain/LangSmith + 开源模型，结合企业自有 SOP 技能包与工具接口（MCP/HTTP），把数据安全与权限都放在企业网关里统一治理，既享受生态活力，又不失控。
+- 关键结论：要“拥有”并非只选私有部署，更要“开放组合 + 有界治理”，否则不是 Own，而是“重度依赖 + 黑盒风险”。</p>
+<p>2) 人与流程：三类角色 + 智能体开发生命周期（ADLC）
+- 核心观点：组织层需要三层人协同：Platform Engineers（云原生/底座/网关/运行时）、Agent Engineers（用代码造智能体，含数据工程/科学家/多领域开发者）、Non-technical Builders（无代码构建者，借助 LangSmith Slate/Customer Apps 面向场景落地）。流程层强调 ADLC：Build-Test-Deploy-Monitor 的受控闭环，突出“快上生产、用真实数据驱动评测与进化”。
+- 案例：一家内部客服团队的演进（视频方法论再现）。起因：Pilot 阶段只“Build 得很快”，但效果不可控。过程：引入 ADLC，Platform 工程师先搭运行时与模型网关、工具服务器、沙箱；Agent 工程师负责业务逻辑（指令/工具/技能/Hook）与评测集；Non-tech 人员用无代码 Builder 迅速铺设多个业务子场景。难点与弯路：早期“只做 Prompt”导致线上偏差难解释；引入 LangSmith 的 Trace/Trajectory 后，才用真实对话轨迹做根因分析、标注与回归评测。结果：从“写完就上”到“上了就评”，线上的轨迹成为持续改进燃料。
+- 关键结论：智能体不是写完就行，核心竞争力在“测试-监控-评估-再训练”的后半场。</p>
+<p>3) 运行时分层 + Deep Agent Harness：Agent = Model + Harness
+- 核心观点：运行时分三层：Business Logic（指令/工具/MCP/技能SOP/Hooks，强业务属性，常以文件+脚本打包）、Harness（除模型外的“外挂”与中间件，较通用，按模型能力厚薄不同）、Infra（运行时/工具服务/沙箱/模型网关）。Deep Agent Harness 提供：虚拟文件系统、Sandbox as a tool、人机协同（Human-in/on-the-loop）、Delegation（同步/异步/动态子智能体）等。
+- 案例：代码智能体从“厚规划”走向“强委派”。起因：早期依赖复杂 Planner/To-do，慢且易偏。过程：切换到 Delegation 策略，主体智能体将子任务委派给子智能体，在沙箱中执行代码/脚本，虚拟文件系统集中管理上下文与产物；人类可在关键节点介入（Human-in-the-loop）。弯路：Planner 过厚导致成本与失败率上升；维护困难。结果：通过“沙箱即工具”精细控制执行安全与成本，整体性能更稳、可排障可审计。
+- 关键结论：把“沙箱”当独立工具位，配合委派与人机协同，既能放权又能控边界。</p>
+<p>4) 企业基建：工具服务器、记忆与模型网关
+- 核心观点：企业智能体基建至少包括：可托管的 Agent Runtime、集中式 Tool Server（MCP/HTTP 工具聚合+统一权限）、Sandbox、模型网关（统一 OpenAI 风格 API、费用/配额、代理策略、Fallback、路由与安全护栏）。记忆方面先提供文件式记忆（Context Hub）与版本管理，小体量、可追踪、易审计，后续再上向量/结构化存储。
+- 案例：多系统工具治理。起因：各团队私接工具，权限与审计碎片化。过程：沉淀统一 Tool Server，引入企业 SSO/细粒度权限与“服务侧权限+用户侧权限”双通道（Channels）模型；工具以 MCP/HTTP 统一暴露。结果：工具接入、权限管理与审计统一，智能体调用工具更稳可控。延伸：在模型网关内嵌入决策模型（System-1 型），做请求分流（强/弱模型）、工具触发与安全审查，兼顾成本与时延。
+- 关键结论：Tool Server + 模型网关是一体两面，前者管“手”，后者管“脑”与“护栏”。</p>
+<p>5) 观测与评测：决策模型 + Trajectory + Customer Apps + Engine V2
+- 核心观点：评测与观测至少“半壁江山”。视频强调三件事：
+  a) 决策模型（System-1 类）价值：更快更便宜，适配三类任务——评测（Eval：choice/score/boolean 输出契合指标）、护栏（Guardrail：内容与风险审查）、路由（Routing：模型/工具是否调用）。
+  b) LangSmith Trajectory：把 Trace 分析做成“对话式智能体”，支持根因分析、标注、聚合、自动化操作，降低理解和运维门槛。
+  c) Customer Apps：对话式生成“带界面”的 App，可分享与配套 Trace/分析，显著提升非技术人群的“造应用”与复用效率。
+  d) Engine V2（自进化引擎）：在“收集 Trace—生成数据集与指标—自动提 Issue/PR—人审—再部署”的自进化闭环基础上，增强了主动测试/攻击式探边能力、问题修复建议与费用优化（官方称成本下降约40%）；已扫描约7000万条 Trace，发现2万+ Issue（视频口径）。
+- 案例：视频演示 Customer Apps 生成带界面应用（如数据分析助手），并与 Trace/评测打通；Engine V2 用真实轨迹驱动自动化回归，逐步逼近“上线即学习”的工程范式。
+- 关键结论：智能体工程的“胜负手”在评测与监控，决策模型是把评测/护栏/路由“模块化”的关键零件，Engine V2 则把这套机制推向自运转。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【三板斧：开、拼、治】开源打地基，组合出化学反应，治理把实验装进安全玻璃房。核心逻辑：BYOI = Open + Compounding + Governance。</li>
+<li>【Agent=模型+外挂】“模型是引擎，Harness 是变速箱和外设”，强模型薄外挂，弱模型厚外挂。核心逻辑：业务逻辑+Harness+Infra 三层清晰分责。</li>
+<li>【沙箱是工具，不是枷锁】Sandbox as a tool，让代码执行可控、可溯源、可审计。核心逻辑：把执行权交出去，把边界收回来。</li>
+<li>【ADLC 闭环：先上生产再评测】Build-Test-Deploy-Monitor，真实轨迹反哺改进。核心逻辑：评测与监控是后半场，决定长期胜负。</li>
+<li>【决策三板：测、栏、路】System-1 决策模型三大落地：评测打分、护栏审查、路由分流。核心逻辑：更快更便宜，把判断从大模型里“拆”出来。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：BYOI 的使命与三要素</li>
+<li>原文引用：「Enable every company on their intelligence」（中段）</li>
+<li>案例还原：以开源模型+LangChain/LangSmith 私有化为底座，企业把 SOP 技能、工具接口、提示词与人机协同组合成可治理的智能体系统；通过模型网关统一接口/权限/计费/安全，避免被闭源方案锁死。</li>
+<li>
+<p>解读：企业级 AI 的本质是“拥有权”，而非“使用权”。</p>
+</li>
+<li>
+<p>要点标题：三类角色协同与 ADLC</p>
+</li>
+<li>原文引用：「我们可能需要三类人员…首先是platform engineers…第二层…agent engineers…第三类就是非技术的构建者」（中段）</li>
+<li>案例还原：平台工程师搭建运行时/网关/工具服与沙箱；Agent 工程师用代码实现业务逻辑与评测；非技术构建者用 Customer Apps/无代码 Builder 迅速铺设子场景。上线后用 Trajectory 对 Trace 做根因分析与标注，再由 Engine V2 自动生成数据集/指标与改进 PR，进入闭环。</li>
+<li>
+<p>解读：让“写代码的”和“懂业务的”共同造 AI，速度与质量兼得。</p>
+</li>
+<li>
+<p>要点标题：Agent = Model + Harness，沙箱即工具</p>
+</li>
+<li>原文引用：「agent 等于 model 加 harness」「sandbox as a tool」（中段）</li>
+<li>案例还原：代码代理场景中，早期厚规划器（Planner）慢且不稳；切换到委派（Delegation）+ 沙箱执行，主体代理把子任务下发子代理，沙箱内执行代码、产物由虚拟文件系统管理；人类在关键节点介入。性能更稳、审计友好，安全与成本可控。</li>
+<li>
+<p>解读：从“求万能规划”转向“强委派+可控执行”，更工程化。</p>
+</li>
+<li>
+<p>要点标题：决策模型三大用途与模型网关</p>
+</li>
+<li>原文引用：「它更快更便宜…更方便去做决策…非常适合做评估评测…做这个护栏…我们的路由」（中段）</li>
+<li>案例还原：在模型网关内置决策模型：1）评测用 choice/score/boolean 输出做自动化打分与阈值；2）护栏做敏感内容审查与风控；3）路由决定走强模型、弱模型或是否触发工具，兼顾质量-时延-成本。</li>
+<li>
+<p>解读：把“判断”从大模型里拆出来，工程上更轻更稳。</p>
+</li>
+<li>
+<p>要点标题：Engine V2 推进自进化闭环</p>
+</li>
+<li>原文引用：「…能够更好的找到问题…费用降低了40%…已经有70个million的trace…找到了大于21K的…issue」（中段）</li>
+<li>案例还原：部署到 LangSmith 后，系统自动收集 Trace，生成数据集与指标；Engine V2 主动探边（攻击式测试）、定位缺陷、产出修复建议，发起 Issue/PR，由人审合入再部署，成本官方口径下降约 40%；已在 7000 万+ 轨迹上发现 2 万+ 问题。</li>
+<li>解读：评测与演进自动化，是把智能体“做成生产系统”的分水岭。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>用 ADLC 让“线上真实轨迹”成为洞察主粮：部署更早、评测更晚但更真；用 Trajectory 做对话式根因分析与快速标注。</li>
+<li>决策模型用于“问卷与话术评测”：以 choice/score/boolean 自动打分，统一质检标准。</li>
+<li>可借鉴的调研方法：</li>
+<li>将用户访谈接入 LangSmith Trace，按标签聚合（渠道、用户类型、意图），用 Customer Apps 搭 UI 给业务方自助查询。</li>
+<li>A/B 路由：决策模型把同一问题分流到强/弱模型，测质量-成本曲线，指导投产配比。</li>
+<li>常见坑：</li>
+<li>只看离线评测不看真实轨迹；只看平均分不看长尾失败。Trajectory+Engine 的“问题自动聚类+探边”能补齐长尾。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>用 Customer Apps 把“内部提效小助手”打包成可分享演示页，既能跑、又能收集使用数据，形成内容与案例闭环。</li>
+<li>决策模型护栏化：品牌官号 Bot 统一风格、自动避险，且按敏感等级分层响应。</li>
+<li>值得研究的手段/路径：</li>
+<li>模型网关统一计费与路由，在大促或热点时段自动走“弱模型优先+热点问答工具化”，控成本稳响应。</li>
+<li>Trajectory 回放复盘投放/活动问答，快速定位掉线与误导话术。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略/案例：</li>
+<li>统一 Tool Server 接 SKU/库存/物流/售后系统，智能体用 MCP/HTTP 工具调用，权限双通道（服务/用户）可审计。</li>
+<li>路由策略控成本：咨询类先弱模型，触发“高客单/高风险”由决策模型转强模型；退款/售后强制走工具流程。</li>
+<li>转化与用户旅程新发现：</li>
+<li>轨迹聚合可识别高频“卡点”（如支付失败、地址变更），Engine V2 主动探边，提修复建议，持续优化漏斗。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <ul>
+<li>AI 可发挥作用的阶段：</li>
+<li>概念/需求阶段：用 Customer Apps 快速做“场景助手”（安装指导、参数估算、FAQ 生成），拉齐跨团队认知。</li>
+<li>早期 Demo：Agent=Model+Harness 思路下，把固件/接口文档接成工具，沙箱内做仿真脚本与测试用例自动生成，回放 Trace 做回归。</li>
+<li>AI 的边界：</li>
+<li>ID 外观、MD 堆叠与关键器件取舍仍需 PM/工程师拍板；AI 更适合规格对齐、案例生成、测试与质检自动化。</li>
+<li>工具/流程演变信号：</li>
+<li>工具服务器将沉淀“设备指令/诊断”为 MCP 工具；模型网关内置决策模型负责“本地/云端/边缘”路由与安全；Engine V2 驱动硬件交互脚本与回归用例的持续演进。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「Enable every company on their intelligence」（中段）</li>
+<li>理由：整场主题的“纲”。把“拥有权”摆到台面上，是企业 AI 战略分水岭。</li>
+<li>「agent 等于 model 加 harness」（中段）</li>
+<li>理由：工程方法论的总公式，告诉你要把“外挂”当一等公民来设计。</li>
+<li>「sandbox as a tool」（中段）</li>
+<li>理由：从“限制”变“能力”的关键转念，决定可控执行与安全护栏的工程深度。</li>
+<li>「build test deploy monitor」（中段）</li>
+<li>理由：ADLC 的四字真经，提醒大家后半场（测试-监控）才是胜负手。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>适合企业内负责 AI 落地的技术负责人、平台工程师、Agent 工程师，以及希望用无代码快速造应用的业务经理。</li>
+<li>想把“演示级应用”升级为“可控、可审计、可进化”的生产系统的人，值得花 30 分钟系统吸收这套“开、拼、治”的落地方法论与工具链。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
