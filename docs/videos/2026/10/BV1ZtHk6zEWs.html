@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>跨境版的AIHOT，欢迎大家来拍砖</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>跨境版的AIHOT，欢迎大家来拍砖</h1>
+      <div class="reader-meta">B站 · 迪迪碎碎念_AI · BV1ZtHk6zEWs</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>把跨境电商碎片资讯接成一条有源可溯的“信息水渠”，三分钟抓住当天要紧事。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数随片长适配）</h2>
+        <ul>
+<li>
+<p>背景与痛点：UP主用开源项目 AI Hot 搭了一个跨境资讯站“滴滴跨境日报”，要解决的不是“看更多”，而是“更快找到与你经营真正相关、且能追溯来源的信息”。跨境卖家每天被平台公告、物流关税、媒体快讯裹挟，加上英文原文与自媒体二次创作的重复信息，既费时又容易漏掉关键规则变更。核心问题落在两点：相关性判定与溯源能力。<br>
+案例1（漏看代价）：一家做美区家居品类的卖家，忙于促销，反复刷到同一条媒体转述的“TikTok Shop规则讨论”，却错过了Walmart的物流计费调整（原文在英文公告页）。结果月底账单超预期、库存周转延误。这个站点通过“来源直链+精选池”把平台原文置顶，能让这类“真影响成本”的更新更快进入视野。</p>
+</li>
+<li>
+<p>工作机制四步走：采集、归纳、筛选、呈刊。采集层接多种信源（RSS、网页、API等），以不同节奏定时抓取，并保留“打开原文”的溯源接口。归纳层把同一事件的“官方首发+媒体二次创作+后续补充”做合并，避免信息疲劳；考虑不同站点/地区适用规则差异，按站点组织。筛选层由模型做相关性判定与评分，输出中文标题、摘要与“推荐理由”。呈刊层按“精选/全部/热点/日报”等入口分发，用户时间少就看精选，想追全量就看全部。<br>
+案例2（去重合并）：亚马逊对某库存策略更新，美区/欧区措辞不同，媒体又做了几轮延展。过去卖家需逐条核对。现在系统把“同一母事件”的不同版本合并，并保留原文溯源，让运营人员按照所售站点快速聚焦，不再被“相似但不完全相同”的稿件分散注意力。</p>
+</li>
+<li>
+<p>精选、热点与“优先级”的取舍：站内“精选”适合三分钟速览，重点放平台规则、合规、物流履约、行业、汇率与宏观AI工具等一手信息；“热点”按事件聚合多来源报道，但UP主强调“报道多≠对卖家重要”，因此精选与热点是两条分发逻辑。<br>
+案例3（热度≠要紧）：“亚马逊集中库存”（AWD）讨论度很高，媒体反复解读，但对部分类目/模式的卖家短期影响有限；相反，一条VAT申报截止提醒并不“热”，却直接决定账号安全/现金流。站点以“精选”优先展示“对经营要紧的冷门规则”，并在“热点”里单列大事件，兼顾信息广度与经营优先级。</p>
+</li>
+<li>
+<p>日报与“经营节点提醒”：有“每日日报”做集中浏览，按平台规则、合规、行业、AI工具、快讯分类；页面附“经营节点提醒”，哪怕消息不是今天发布，但一旦临近生效/截止也会被拉出提醒。后续会有周报与月报，以及按主题的聚合。<br>
+案例4（节点兜底）：一位做欧盟市场的中小卖家，平日不刷平台公告。因“经营节点提醒”，提前两周看到包装合规新规将生效，迅速调整供货与标签，避免了边境退运与罚款。</p>
+</li>
+<li>
+<p>MVP与共创：这是一个小型MVP，可能存在“遗漏来源/合并错误/摘要偏差”，鼓励用户用页面“反馈按钮”提交截图、链接、缺失需求，并可留邮箱获更新；未来支持Agent接入，融入各自工作流。<br>
+案例5（漏源修复）：一位关注TikTok Shop的运营反馈“未抓到某英文公告RSS”。UP主收录该源、校准抓取节奏并在精选中做一手溯源展示。次日，这位运营在晨读中就捕捉到类目准入变更，及时调整上新计划。</p>
+</li>
+</ul>
+<p>关键结论：对于跨境卖家，信息管理的质量=经营风险控制的下限。用“溯源+去重+AI筛选+节点提醒”的流水线，能以最少时间获取最相关的信息，并把“热闹”与“要紧”清晰分流。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【四步水渠】采-归-筛-刊，信息变水渠，源头看得清。逻辑：采集多源→事件合并→AI打分摘要→多入口分发。</li>
+<li>【热不等于要】“热搜不代表要处理”，经营优先级另算。逻辑：热点看广度，精选看紧迫与影响。</li>
+<li>【三分钟保命】先看精选三分钟，少踩合规大坑。逻辑：有限时间下，优先展示平台/合规/履约要闻。</li>
+<li>【溯源真相】条条可回原文，甄别二次加工噪声。逻辑：保留官方一手链接，减少误读与谣传。</li>
+<li>【节点闹钟】不怕旧消息，就怕到期。逻辑：临近生效/截止的事项被主动提升提醒等级。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：目标是“相关性+溯源”</li>
+<li>原文引用：「真正想要解决的问题是，怎么样更快地找到跟自己经营有关的一些信息，又能知道这条消息从哪里来，能够溯源。」</li>
+<li>案例还原：一名美区卖家被多篇媒体转述“平台风向”分散注意力，直到账单出来才发现物流计费规则早已调整。站点将平台原文链接置顶，并以AI评估“与卖家相关度”，在精选中优先露出，缩短了从更新到行动的时间。</li>
+<li>解读：相关性与可追溯是跨境信息消费的刚需，影响直接是成本与合规风险。</li>
+<li>要点标题：信息流水线“四步法”</li>
+<li>原文引用：「这个网站工作过程可以分成四步，包括采集、归纳、筛选和呈刊。」</li>
+<li>案例还原：抓取亚马逊/监管/媒体多源→合并同一母事件→模型判断是否与卖家相关并产出中文标题摘要→在精选/全部/热点/日报分发。卖家据此建立“早读精选+晚看全部”的SOP，覆盖要紧与全面。</li>
+<li>解读：标准化信息链条，降低人工筛读成本，便于团队作业。</li>
+<li>要点标题：合并同题，避免重复阅读</li>
+<li>原文引用：「同一件事情可能官方发布了一次，然后媒体又进行了二次的创作，后面还有一些不同的补充信息。」</li>
+<li>案例还原：某合规新规先由监管发布，随后多家媒体跟进并加入各自解读。以往运营需反复比对。现在事件被合并呈现，既不遗漏后续补充，也避免“读三篇是一件事”的浪费。</li>
+<li>解读：减少信息噪声，提升知识密度与判断效率。</li>
+<li>要点标题：精选与热点的双轨</li>
+<li>原文引用：「作为精选，如果说你只有几分钟的时间，可以先打开这里…」「报道多和对卖家重要，这其实是两件不同的事情」</li>
+<li>案例还原：“亚马逊集中库存”话题热度很高，聚在“热点”；同时，一则“VAT申报名单截止”低热但高风险，被纳入“精选”。运营由此先处理“要紧事”，再回看“热点”了解大势。</li>
+<li>解读：用不同入口匹配不同“信息任务”，把时间花在刀刃上。</li>
+<li>要点标题：节点提醒与节奏化阅读</li>
+<li>原文引用：「页面里也是有一些经营节点的提醒…某项规则的生效日期等等。随着时间的积累，后面也会形成周报以及月报。」</li>
+<li>案例还原：欧盟包装新规临近，系统将其从历史信息中拉起制成提醒；团队据此安排供应商改版、库存切换，并在周报复盘执行进度，避免临门一脚失误。</li>
+<li>解读：把信息转化为行动计划，形成有节奏的经营日历。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>方法论启发：以“事件为母体”的归并视角，比“稿件为单位”的爬虫更贴近用户任务；引入“与卖家相关度”的AI评分，再用用户反馈校准，构成弱监督的持续学习闭环。</li>
+<li>可借鉴手法：</li>
+<li>溯源优先：所有摘要保留一手原文链接，建立信任与复核链路。</li>
+<li>双轨分发：精选解决“时间稀缺”的关键诉求，全部/热点满足“面向研究”的深挖需求。</li>
+<li>节点提醒：把“临近生效/截止”的时间维度纳入筛选规则，直连经营动作。</li>
+<li>暴露的用研坑：不同站点/地区适用差异大，若不做地域/类目切片，合并可能误导；模型分错类需快速回流校正，避免“越用越偏”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>思路：用“溯源与去重”建立专业背书；“精选三分钟”是强记忆的产品承诺；“免费MVP+公开征求拍砖”形成社区共创与口碑传播。</li>
+<li>可研究路径：</li>
+<li>信息产品的“高频刚需钩子”（汇率看板、节点闹钟）做留存。</li>
+<li>内容形态的多节奏矩阵：日报抓日活，周报做复盘，月报做洞察。</li>
+<li>事件聚合页即“SEO着陆页”，承接长期检索流量。</li>
+<li>案例：UP主在视频中引导用“反馈按钮+邮箱更新”，把用户变成内测员，既收集数据又提升参与感，是低成本增长闭环。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可落地SOP：</li>
+<li>早读3分钟：打开“精选”，处理平台/合规/履约/汇率的当日要紧项。</li>
+<li>午后复核：过一遍“全部”新入库，标注与自家类目/站点相关的条目。</li>
+<li>每周例会：对“热点事件”做影响评估，形成“是否跟进—到谁—何时”的行动单。</li>
+<li>节点台账：把“经营节点提醒”转入团队日历系统（如Notion/Jira），绑定负责人。</li>
+<li>新发现：热点未必要做，优先级以“对账户安全、现金流、库存周转”的直接影响排序。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【本视频为AI资讯产品，以下以AI产品PM映射】</h3>
+          <ul>
+<li>AI可发挥的环节：</li>
+<li>信息采集后：文本去重、指代消解、事件归并、站点/地区分类。</li>
+<li>相关性判定与打分：基于提示词/轻量监督数据训练的分类器。</li>
+<li>摘要与理由生成：中英文标题、摘要、推荐理由的自动生成。</li>
+<li>主题聚合与时间轴：将多来源按事件/时间线组织。</li>
+<li>边界与必须由PM把控的事：</li>
+<li>业务语义与规则：什么叫“与卖家相关”、何为“要紧”，需要PM定义标签体系与优先级框架。</li>
+<li>地域与类目差异：映射表与测试用例必须人工维护，避免“一刀切”误导。</li>
+<li>评测体系：构建数据集与反馈回路（准确率、召回率、误伤率、时效性），定期人工抽检。</li>
+<li>法务与合规：抓取合法性、引用规范、免责声明与来源授权。</li>
+<li>工具与流程信号：RSS/抓取器+消息队列→事件合并器（指纹/相似度+LLM）→打分服务（LLM/RAG）→存储（向量库+关系库）→分发（精选/热点/日报）。岗位演变上，“内容编辑”转为“数据策展人”，核心价值在标签体系与评测集的迭代。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「真正想要解决的问题是，怎么样更快地找到跟自己经营有关的一些信息，又能知道这条消息从哪里来，能够溯源。」（开头）清晰锚定了产品核心价值：相关性与可信度。</li>
+<li>「这个网站工作过程可以分成四步，包括采集、归纳、筛选和呈刊。」（中段）用一句话交代了完整信息流水线，便于记忆与复用。</li>
+<li>「报道多和对卖家重要，这其实是两件不同的事情。」（中段）强调“热度≠优先级”，直接指导运营决策。</li>
+<li>「页面里也是有一些经营节点的提醒…某项规则的生效日期等等。」（中段）把“信息”转化为“行动”的关键机制。</li>
+<li>「当然这个网站还是一个很小的 MVP…这些都需要大家给到我真实的反馈，后续也是免费的为大家开放。」（结尾）展现开放心态与共创路径，利于产品持续演进。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>跨境电商卖家/运营/合规负责人：想用最少时间捕捉最要紧的规则与节点，降低经营风险。</li>
+<li>内容策展与情报分析从业者：可复用“四步法”搭建行业资讯管道。</li>
+<li>做AI聚合/Agent工具的产品与工程：可参考“溯源+去重+打分+分发”的端到端设计与反馈闭环。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
