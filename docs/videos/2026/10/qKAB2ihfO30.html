@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>His Agent Caught the Outage Before the Demo</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>His Agent Caught the Outage Before the Demo</h1>
+      <div class="reader-meta">YouTube · Lenny's Podcast · qKAB2ihfO30</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>一个懂场景的AI小助手，在演示翻车前5分钟发来救命提醒。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与场景
+  视频片段讲述了一次“dev day”现场演示（live demo）翻车：生产环境（“chatt/chat production”）在关键时刻宕机。讲述者提到自己的“dot/小点”智能代理在演示前5分钟识别到“这是一个很重要的活动（dev day）+ 有一个生产系统 + 有一个现场演示，这三者互相关联”，于是主动发来提醒：“生产挂了，要不要我试着修？”虽然最终现场演示仍然失败，但这一“提前5分钟的主动告警”体现了场景感知型AI代理的价值。</p>
+</li>
+<li>
+<p>核心观点1：有用的AI代理不只是回答问题，而是“会串场景、懂时机、能主动”
+  代理之所以有用，不在于能多会聊天，而在于它能把“日程（dev day）—业务系统（生产环境）—即将发生的动作（live demo）—时间窗口（5分钟）”织成一张语义与事件网络，并据此做出主动提醒。这是一种从“被动问答”走向“主动场景协作”的跃迁。案例中，代理把“重要活动”和“系统健康”关联，判断“应立刻告知”而非沉默旁观。</p>
+</li>
+<li>
+<p>核心观点2：自治修复尚未成熟，但“先发现、先通知”已经创造巨大边际价值
+  代理询问“要不要我修复”，主人反馈“还没到那一步”，说明完全自治的“自动修复”仍有信任与能力门槛。然而，即便只做到“提前5分钟的高价值提醒”，就能改变关键时刻的处置曲线：让人有机会立刻降级方案、改切备用环境、沟通预期，或至少准备解释与缓冲。此处的人机分工清晰：代理负责“侦测、聚合、判断重要性、触达”，人负责“最终决策与背锅”。</p>
+</li>
+<li>
+<p>案例复盘（背景→过程→弯路→结果）
+  背景：重要的“dev day”现场要做live demo，生产系统承载核心能力。过程：生产突然宕机；代理理解到“dev day的live demo”这一重要事件与“生产系统状态”强关联，且时间只剩5分钟，于是主动Ping主人，询问要不要尝试修复。弯路：虽然有预警，但可能由于修复复杂度高、时间过短或风险不可控，未授权代理自治修复。结果：现场演示仍在所有人面前失败，但这次经历清晰展示了“场景感知+主动通知”的基石价值，以及“自治修复”作为下一阶段的努力方向。</p>
+</li>
+<li>
+<p>关键结论与落地建议
+  结论：场景感知代理的MVP=事件图谱（活动/系统/人）+ 重要性评估 + 时间敏感度 + 主动触达路径。哪怕不具备自治修复，只要把“对的人、在对的时刻、以对的方式”拉进来，就能显著降低重大事故的意外性。
+  落地建议：接通三类数据源（日历/值班表、系统监控/日志、业务关键路径）；标注“高价值时刻清单”（发布会、直播、促销、签约会）；设定提前T分钟（如5/15/30）的多通道提醒策略；将“要不要我修复”的选项变为“建议的安全修复脚本+预估影响”，逐步赢得自治权限。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【五分钟生死线】“提前5分钟，比事后5小时强千倍” + 逻辑：时间敏感+高价值场景下，预警胜过一切花哨功能。</li>
+<li>【会串场景的代理】“日历+监控+人=大脑” + 逻辑：把活动、系统、人和时间织成事件图谱，才知道何时该出手。</li>
+<li>【先提醒后修复】“先把人叫来，再把事做好” + 逻辑：自治修复门槛高，先建立信任链路与可解释建议。</li>
+<li>【重要性优先】“不吵不闹，只报要命” + 逻辑：告警稀缺化与优先级评估，击中关键时刻，避免告警疲劳。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：AI代理的价值在“主动而非被动”</li>
+<li>原文引用：「having this thing that just understands… There&rsquo;s a live demo. These two things are connected… So I should ping him」（中段）</li>
+<li>案例还原：在“dev day”的现场演示前，代理理解“活动很重要+生产宕机+五分钟内将舞台曝光”的情境，主动Ping提醒主人“生产挂了”。这不是被动问答，而是基于场景的主动触达，改变了处置节奏与心态。</li>
+<li>
+<p>解读：对高风险时刻，主动性就是护城河。</p>
+</li>
+<li>
+<p>要点标题：时间窗口决定处置质量</p>
+</li>
+<li>原文引用：「it ping me 5 minutes before the live demo」（中段）</li>
+<li>案例还原：5分钟虽短，却足以触发改用降级方案、预设话术、通知团队。若无此提醒，故障会以“意外”姿态直接暴露，团队毫无缓冲。</li>
+<li>
+<p>解读：监控与提醒的“提前量”是关键参数。</p>
+</li>
+<li>
+<p>要点标题：自治修复需要“人机信任闸门”</p>
+</li>
+<li>原文引用：「do you want me to try and fix it and I don&rsquo;t think you&rsquo;re there yet」（中段）</li>
+<li>案例还原：代理提出“要不要我修复”，但主人否决，说明在高风险现场，未经验证的自动修复可能带来更大不确定性。先以建议和脚本形式，逐步赢得授权。</li>
+<li>
+<p>解读：自治要循序渐进，从建议→半自动→全自动。</p>
+</li>
+<li>
+<p>要点标题：场景理解=事件关联+重要性判断</p>
+</li>
+<li>原文引用：「There&rsquo;s like this production system. There&rsquo;s a live demo. These two are things are connected」（结尾）</li>
+<li>案例还原：代理把“生产系统状态”与“即将开始的live demo”关联，并识别这是“dev day”这种高曝光活动，据此决定立即提醒。关键在于把分散信号合成“此刻重要”的判断。</li>
+<li>解读：没有事件图谱，就没有聪明的代理。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：场景优先的用户旅程建模。先列“高价值时刻清单”（发布会、直播、签约、促销开车），再反推需要接通的信号（日历、监控、工单、值班表）。以“时刻—信号—动作”三元关系做需求分层。</li>
+<li>可借鉴方法：</li>
+<li>关键时刻日记研究：让受访者记录“高压时刻”的前后30分钟发生了什么信号、谁被拉进来、哪个动作最救命。</li>
+<li>事故时间线复盘（timeline mapping）：逐分钟回放，标注“若提前X分钟提醒将做何不同”，量化提前量价值。</li>
+<li>告警负荷测试：评估不同频率和渠道对用户的打扰阈值，优化告警稀缺化策略。</li>
+<li>揭示的坑：忽视“时间敏感度”与“曝光等级”会让功能看似聪明却在关键时刻缺位；或相反，在低价值时刻疯狂打扰，导致告警疲劳。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：以“救命时刻”作为品牌叙事核心——“在你最需要的5分钟，我们在”。把抽象的AI能力具体化为“避免翻车”的真实场景。</li>
+<li>值得研究的手段/路径：</li>
+<li>案例短视频：还原“前5分钟收到Ping”的瞬间，强化情绪记忆。</li>
+<li>与日历/会议/直播平台的生态合作，作为场景入口（安装即联动关键时刻）。</li>
+<li>分层触达：对高价值时刻的告警信息可走更强触达通道（短信/电话/紧急Slack），其余走弱通道，传达“只在重要时刻打扰你”的品牌承诺。</li>
+<li>增长策略：围绕“高价值时刻模板”（如直播/路演/上新）提供一键预设，降低激活成本，提高首日留存。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略：把“大促/直播开车/上新”纳入“高价值时刻清单”，将代理接入交易监控、库存、支付健康、CDN状态与直播排期；在开车前T分钟进行健康巡检与多渠道提醒。</li>
+<li>转化路径与用户旅程新发现：最后5-15分钟是“事故可逆区间”。在此窗口内的精准提醒，可决定是否及时切静态页、限流、临时降级支付通道，从而守住转化峰值。</li>
+<li>案例映射：把“live demo”替换为“大促直播”，把“生产宕机”替换为“库存服务抖动/支付回调延迟”，代理在开播前5分钟发出“库存缓存预热失败”提醒，即可避免首波用户白屏与流失。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI可发挥作用的阶段：在MD/电子设计demo与路演阶段，代理可监控固件版本、传感器自检、云端服务健康、会场网络质量、演示脚本一致性，并在T分钟内给出“可演示清单/降级建议/备用机切换提示”。</li>
+<li>边界：硬件层面的临场物理故障（连线、供电、传感器硬损）仍需人现场排查；自治修复应限制在可逆、可回滚、低风险操作（如重启子系统、切换到离线演示模式）。</li>
+<li>工具与流程变化信号：将“演示清单+自检脚本+健康监控”沉淀为自然语言可调用的Runbook；通过“建议→一键执行→受控自动化”的三段式授权，逐步扩大AI代理在demo前后的自治半径。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「the live demo just failed right you know in front of everyone」 （开头）——一锤定音地呈现了高压场景与后果，强调“错过窗口”的代价。</li>
+<li>「it ping me 5 minutes before the live demo」 （中段）——点明时间窗口的关键性，“提前5分钟”的记忆点极强。</li>
+<li>「There&rsquo;s a live demo. These two are things are connected… So I should ping him」 （结尾）——揭示代理的核心能力：场景关联与主动触达。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>需要在高曝光时刻“零失误”的人：产品发布/路演/直播电商/运维与SRE。</li>
+<li>正在打造AI代理/助理产品的PM与工程负责人：理解“从问答到场景主动”的跃迁路径。</li>
+<li>市场与增长团队：寻找“救命时刻”式的高信任品牌叙事与转化场景。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
