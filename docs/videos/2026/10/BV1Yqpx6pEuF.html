@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>一听就懂的傅里叶变换</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>一听就懂的傅里叶变换</h1>
+      <div class="reader-meta">B站 · 隔壁的程序员老王 · BV1Yqpx6pEuF</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用探针筛频与星座指纹，傅里叶让手机在嘈杂里秒认歌。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>1) 从“声音是起伏的数字”到“正弦是最小零件”
+- 背景：视频从咖啡店五秒识歌引入，回到声音本质：空气一紧一松，被麦克风以每秒44100次（CD采样率）变成一串数字，即波形。
+- 核心观点：正弦波是声音的“基元”。频率决定音高、振幅决定响度、相位决定“起步早晚”。同一音高的不同乐器之所以能一耳分辨，是因为含有不同强度的“泛音”（基频的2倍、3倍、4倍…）。
+- 案例：方波拆解。先加同频正弦，觉得“太圆”；再叠加3倍频率且振幅为1/3、5倍频率为1/5、7倍频率为1/7…持续加奇次谐波，方波的“棱角”越发像真方波。历史上拉格朗日也曾不信，直到后来才被傅里叶的理论说服。
+- 关键结论：几乎任何可听波形，都能“用一堆正弦加起来”重建；音色=泛音“配方”。</p>
+<p>2) “探针法”：用乘法和平均做出“会筛频的筛子”
+- 背景：如何知道一段声音里有没有440 Hz？不用高等数学，只要乘法与加法。
+- 核心观点：构造一个纯440 Hz的“探针”（正弦波），与待测声音点乘（逐点相乘再求平均），得到“440 Hz 的得分”。若待测恰是440 Hz，乘积大多为正，平均后得分显著为正；若频率不对，一会儿正一会儿负，相互抵消，得分接近零。
+- 案例：把一段声音A（440 Hz）+B（660 Hz）+C（1000 Hz）叠加后与440 Hz探针相乘。线性分配使得总得分=各自与探针得分之和，其中440 Hz部分高、其余两项因步调不合而趋近0，最终“筛”出440 Hz。
+- 关键结论：用“探针”频扫（1、2、3…Hz），将每个频率的得分画成频谱，就得到“这段声音的配方表”。</p>
+<p>3) 相位的“坑”与复数的“一步到位”
+- 背景：只用正弦探针，有时会“翻车”。
+- 核心观点：若待测的440 Hz比探针“慢”四分之一个周期（相位差90°），正负恰好对消，得分为零。解决：再增设“余弦探针”（与正弦错开1/4周期）。对同一频率，得到“正弦得分”和“余弦得分”两维度。
+- 案例：把两维得分画到平面上——横轴余弦、纵轴正弦。点到原点的距离（勾股）=该频率的真正强度；点的朝向=相位。用欧拉公式 e^{iθ}=cosθ+i sinθ，将正余弦打包成“一个复指数探针”，一次积分就同时拿到强度与相位。
+- 关键结论：相位再怎么变，强度（向量长度）不变；复数让“测强度+测相位”一步完成。</p>
+<p>4) 从算得对到算得快：FFT的决定性一跃
+- 背景：朴素傅里叶变换计算量巨大，N个采样点要算约N个频率，每个频率要乘N次，总量~N^2。
+- 核心观点：1965年库利-图基提出FFT（快速傅里叶变换），把复杂度从N^2降到N log N。
+- 案例：一段约20秒、一百万采样点的声音，朴素需要约一万亿次乘法；用FFT仅约两千万次。结果从几乎不可用，变为实时可用。趣闻：高斯1805年左右已想到类似思路但未发表。
+- 关键结论：算法把“理论可行”变成“工程可用”。FFT让傅里叶真正走进手机、相机、Wi‑Fi、5G与多媒体。</p>
+<p>5) 嘈杂咖啡馆里“秒认歌”：星座指纹的实战套路
+- 背景：整首歌做一次频谱对比不行，因为它只给“用了哪些食材”，不给“先后顺序”，不同歌可能有相似频谱。
+- 核心观点：切片+时频联合。先把音频切成几十毫秒的小块，逐块做傅里叶变换，排成“声谱图”（横轴时间、纵轴频率、亮度为强度）。只保留每帧“最亮的那些点”，就像一张“星座图”。
+- 案例（Shazam 方案）：将相近的两颗“星”连成一对，记录三元组（f1, f2, Δt）作为“指纹”。海量歌曲库预先存好指纹；手机录到的5秒音乐生成几十上百个指纹去匹配；若大量指纹指向同一首歌且时间先后对齐，即判定成功。环境噪声（人声、杯碰声）通常难以盖过歌曲里最强的频率峰，因而“星座”多能保真。
+- 关键结论：把“复杂波形”变“稀疏关键点”，用“关系哈希”（两频+时间差）做高置信检索，鲁棒且高效。
+- 延伸：耳蜗天然“分频”，不同位置对不同频率敏感；自然早已“内置”频率分解。老子“万物负阴而抱阳，冲气以为和”，今日读来，更像正弦起伏叠加成万象的隐喻。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【筛子探针】正对正、错对消，分高才有频。逻辑：点乘+平均=相关性，高分=同频同相，低分=步调不合被抵消。</li>
+<li>【正余双箭】相位错，余弦补；合成向量看长短与朝向。逻辑：正弦+余弦两得分→复平面向量，长度=强度，角度=相位。</li>
+<li>【方波拼图】奇次谐波1/n叠，棱角一层层长出来。逻辑：正弦基底可重建尖角波形，音色即配比。</li>
+<li>【慢工变快刀】N平方到N对数，FFT让手机会“听”。逻辑：复杂度骤降，时频分析从纸上谈兵到实时落地。</li>
+<li>【星座指纹】峰连成对三元组，投票对齐即中标。逻辑：峰值稀疏+关系哈希，对噪声不敏感，数据库高效检索。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>要点标题：任何波形都能正弦化</li>
+<li>原文引用：「几乎任何波形都可以拆成一堆正弦波的叠加。」</li>
+<li>案例还原：UP主用方波示范：先加同频正弦“不够方”，再叠3倍频1/3幅、5倍频1/5幅、7倍频1/7幅……几十项后已“非常非常像方波”。历史上拉格朗日也曾质疑，傅里叶15年后才正式发表。</li>
+<li>
+<p>解读：复杂信号可“配方化”，为分析、压缩、合成奠基。</p>
+</li>
+<li>
+<p>要点标题：点乘平均=会筛频的相关器</p>
+</li>
+<li>原文引用：「第一个数和第一个数相乘…再把它们平均一下，最后就只剩下一个数字了。我们管它叫440赫兹的得分。」</li>
+<li>案例还原：把A(440)+B(660)+C(1000)与440探针相乘，线性分配后仅A与探针相关为正、B和C因相位错位相互抵消。高分意味着“含有并且对齐了该频率”。</li>
+<li>
+<p>解读：匹配滤波/相关的直观版，工程里无处不在。</p>
+</li>
+<li>
+<p>要点标题：相位“陷阱”与复数“补位”</p>
+</li>
+<li>原文引用：「假如要测的440赫兹，恰好比探针晚了四分之一个周期…得分就变成了零。…这种错开了四分之一周期的正弦波有个专门的名字，叫做余弦波。」</li>
+<li>案例还原：仅用正弦探针对“晚90°”信号评分为0，误判为“没有”。加入余弦探针后，两得分构成平面点；长度给强度，方向给相位，避免因相位错位而漏检。</li>
+<li>
+<p>解读：好特征需对“相位/表述差异”鲁棒。</p>
+</li>
+<li>
+<p>要点标题：FFT让理论落地</p>
+</li>
+<li>原文引用：「一共大约就要算一万亿次…快速傅里叶变换 FFT，把计算量降低到了大约两千万次。」</li>
+<li>案例还原：20秒、100万点音频，朴素法要10^12次乘法，几乎不可算；FFT降至约2×10^7次，实时可行，傅里叶由“纸面数学”变“手机日常”。</li>
+<li>
+<p>解读：算法复杂度决定产品形态与可达边界。</p>
+</li>
+<li>
+<p>要点标题：星座指纹识歌的鲁棒检索</p>
+</li>
+<li>原文引用：「只保留声谱图中最亮的点…把相近的两颗星连起来…这三个数字就是一个指纹。…如果很多指纹都指向同一首歌，而且时间先后也对得上，那基本就是它了。」</li>
+<li>案例还原：对短录音做声谱图→峰值保留→连边成（f1,f2,Δt）→与预建库匹配→多数投票+时间对齐判定。人声与杯子声难以覆盖主峰，因此在嘈杂中依然稳健。</li>
+<li>解读：稀疏关键点+关系哈希=高效、抗噪的工业方案。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>时频思维：别做“整首频谱”的笼统结论，要像声谱图一样“时间切片”，观察特征何时出现与消失。</li>
+<li>探针评估：为每个假设构造“探针指标”（与目标行为高度相关的测度），用点乘式打分验证，不被噪声拉偏。</li>
+<li>相位鲁棒：同一动机可能以不同表述/时机出现，单一视角可能“相位错位为零”。用“正余双视角”（定量+定性、行为+态度）交叉确认。</li>
+<li>可借鉴的调研方法：</li>
+<li>滑窗用户旅程：把长旅程切成短窗口观察“峰值时刻”（关键触点）。</li>
+<li>峰值选择：在一堆指标里只保留能解释行为变化的“最亮峰”，而非面面俱到。</li>
+<li>指纹化画像：将两类关键信号与它们的时间差组合成“关系指纹”，用于人群细分与相似人群召回。</li>
+<li>被揭示的坑：</li>
+<li>只看总量不看时序（整首频谱之弊）。</li>
+<li>单一打分导致相位错配（只用正弦不加余弦就“看不见”真实信号）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>主频策略：锁定2-3个“最亮卖点”（品牌主频），围绕其构建“星座图”（卖点之间的关系与先后叙事）。</li>
+<li>片段化投放：把内容切片A/B，寻找“发生转化的窗口”和“共现关键词”的Δt。</li>
+<li>值得研究的手段：</li>
+<li>“指纹归因”：记录两卖点共现+时间差作为传播指纹，用于渠道溯源和创意组合优化。</li>
+<li>抗噪信息架构：在嘈杂平台环境中，优先确保“峰值卖点”的可见度与重复率，而非平均分配注意力。</li>
+<li>传播路径启发：</li>
+<li>让受众在短时间内捕捉到“主频峰值”，并设计“峰与峰之间的间隔”（Δt）形成可记忆的节奏。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考的策略/案例：</li>
+<li>转化“频域化”：将流量与转化数据做滑窗分析，识别高频触点（峰值SKU、峰值时段），只保留“亮点”做重点资源倾斜。</li>
+<li>指纹化路径：把点击→加购→支付三点及其时间差当作“关系指纹”，用于识别高意向链路与复刻优胜路径。</li>
+<li>新发现（转化路径/旅程）：</li>
+<li>相位=节奏：同样优惠若“错相位”（时机不对），可能“得分为零”。配合内容与库存节奏做“正余双检”，确保不同人群都“相位对齐”。</li>
+<li>FFT式提效：用聚合+特征提取（降维）先粗筛，再细算（类似FFT先定位能量集中的段），降低实时运营系统负担。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>能真正发挥作用的阶段：</li>
+<li>前端信号处理：麦克风阵列/传感器数据的帧化、加窗、FFT/STFT、梅尔滤波等特征提取，上设备端MCU/DSP即可完成（CMSIS-DSP、KissFFT、cuFFT等）。</li>
+<li>低功耗识别：基于峰值/指纹的轻量匹配（如唤醒词前级筛选），减少云端开销与传输时延。</li>
+<li>边界与PM必做：</li>
+<li>AI能自动产出特征与原型，但应用定义（使用情境、功耗/延迟/成本权衡、容错与误报后果）仍需PM拍板。</li>
+<li>天线/射频、声学腔体、安规与DFM等涉及物理与合规边界，需要资深工程师与PM共同把控。</li>
+<li>工具/流程变化信号：</li>
+<li>端侧“谱域优先”：把“在频域做大部分事”前置为默认策略（降噪、回声消除、关键词检测）。</li>
+<li>模块化链路：麦克风→预加重→分帧加窗→FFT→特征峰选/梅尔→小模型推断→事件回传。PM需定义可插拔模块与功耗分配。</li>
+<li>原型效率：用合成数据（谐波叠加、相位扰动）快速扩充训练集，提高鲁棒性；以“相位不变强度”为指标验收。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「答案就藏在一个二百多年前的数学工具里：傅里叶变换。」（开头）——一锤定音，把“古老数学”与“现代手机”强关联，建立观看动机。</li>
+<li>「几乎任何波形都可以拆成一堆正弦波的叠加。」（中段）——本视频的思想支点，支撑后续所有工程与应用。</li>
+<li>「探针就像一个筛子，无论声音多么复杂，它只对自己的频率有反应。」（中段）——把抽象“内积/相关”可视化为“筛子”，极具传播力。</li>
+<li>「把相近的两颗星连起来…这三个数字就是一个指纹。」（后段）——Shazam方案的精华句，展示“稀疏+关系”的工业智慧。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想用通俗方式快速入门傅里叶变换的学生与开发者：用“探针”“星座指纹”即可直达要义。</li>
+<li>做音频/视觉/通信/AI的工程师与PM：理解“从时域到频域”的工程化落地路径与算力边界。</li>
+<li>内容、运营、营销从业者：借“峰值—关系—时序”思维提升在嘈杂环境中的有效识别与转化。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
