@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI冲击数学界对我们有什么影响？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI冲击数学界对我们有什么影响？</h1>
+      <div class="reader-meta">B站 · 晓辉博士 · BV1biph6bEPv</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI攻入数学圣殿，重排价值链，也重塑我们的个人选择。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与里程碑：AI的“水位图”原以科学与艺术为最后两座高峰，但最新进展正在改写共识。视频中提到，OpenAI一次性给出了对4000多道数学命题中700多道的解决方案，其中一部分还提供了Lean形式化证明。形式化证明意味着机器逻辑可严格验证定理被正确解决（当然前提是形式化与原命题语义一致）。有人对比难度后调侃：这批问题里“右侧格子”的任何一篇，都足以在985/211拿到教职。这不是“会做题”的炫技，而是把原以为AI最难攻克的“创造性、严格性、抽象性”同时击中。关键结论：AI在纯数学上的突破，标志“解决定理”这一步正从稀缺的人类首创能力，部分转变为可被规模化调度的“算力+工具链”能力。</p>
+</li>
+<li>
+<p>社区反应与核心争议：发布后，数学界出现分歧：有人称“启发巨大”，也有人批评“不负责任”。理由有二：一是“海量似是而非的解法”抛出后，人类数学家要花大量时间消化核验；二是“谁来定题、定向？”原本难题是学术共同体的“灯塔”，带着学生、办会议、形成讨论生态，如今被AI公司一口气“点亮”，方向被外部力量重排。典型案例是陶哲轩：他长期拥抱AI，主动学习Lean、搭建社区、发文鼓励学生；但近期也与25位菲尔兹奖得主联署，指出“AI在数学研究领域的严重错位”，并转发人类数学家联合会的抵制声明。他不反对工具本身，而是担心研究目标（解定理）与社区目标（共同繁荣、传播、育人）错位；再加上此前少数公司在“首发、抢第一、credit不全”上的做法，进一步刺激了反弹。关键结论：真正的分歧不在“AI能不能解”，而在“谁来定节奏、如何分工、如何给credit”。</p>
+</li>
+<li>
+<p>价值重排与“Math 2.0”：陶哲轩提出“max2.0（Math 2.0）”愿景：从“谁先提出证明”转向“谁能讲明白、教会别人、让社区吸收传播”。过去像“王宏得菲尔兹奖”是因攻克顶难题；未来“首证”的稀缺性可能下降，解释、形式化、教育与知识编排的价值会上升。反面疑问是：AI会不会也很快把“消化—讲清”拿下？短期看仍需专业数学家打磨：把AI草案转为严整论文、建立概念桥梁、在社区中标准化与传承；中长期可能逐步协作分工。案例：此次700多题里，只有两百多题完成形式化，剩余题目与大量未解问题仍需长期攻坚；并且“把AI证明翻译成人类可学习的结构化知识”是一条新上游供应链，涉及教材化、课程化、Lean库建设与验证生态。关键结论：价值链从“单点首证”转向“体系化传递”，新角色、新分工正在形成。</p>
+</li>
+<li>
+<p>对普通人的影响与选择：冲击不是数学家的专属——程序员、设计师、剪辑师、翻译、棋手都经历过“被AI超车”的震荡。两点现实：一是扩散很慢，技术到达高校—中学—全社会要多年；二是筛选效应，真正热爱数学的人会留下，其他人会找到更合适的赛道。案例一：柯洁选择“被AI超过也自洽”，仍能在人类对局中取胜，并转向传播与教育；案例二：数学家的角色或从“十年一题”逐步转向“让数学服务现实问题”，如生命科学、材料发现、气候、传染病、财富分配等跨学科战场。关键结论：别用“岗位是否被替代”来定义自我，而要用“你想解决什么问题、愿为之投入一生”来定义。</p>
+</li>
+<li>
+<p>具体行动与当下可做：视频主强调“学好AI、用好AI”，把它当成导师与加速器，同时清楚它在指令理解、流程协作上的局限。案例：他在打磨视频工作流时，发现模型虽能攻克难题，但在复杂长链任务与人类模糊表述的对齐上仍需大量“人类编排”，比如拆解任务、明确验收、迭代提示。由此可见，近期最可落地的价值是“把人类的摩擦成本，挪到更值得的地方”——把精力留给抽象思考、跨域阅读、场景设计与复盘，借助AI处理繁琐环节。关键结论：AI不是替你活，而是替你“挪开路上的石头”；会用者先赢。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【灯塔被照亮】AI把“难题灯塔”一口气点亮，航线却要重画——难题不再稀缺，节奏与分工才是核心。</li>
+<li>【从夺旗到传火】过去拼首证“夺旗”，未来拼解释、教学、形式化“传火”——知识要能被社区吸收。</li>
+<li>【破冰船定律】AI像破冰船开路，人类负责建航道与港口——从点突破转向体系建设与治理。</li>
+<li>【别和AI赛跑，学会骑AI】会用AI的人更快抵达——把精力挪到价值密度更高的环节。</li>
+<li>【慢扩散，快上手】技术扩散慢、机会窗口长——越早上手，越能占据新分工的高地。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>要点标题：AI在纯数学上跨越“最后高地”</li>
+<li>原文引用：「OpenAI一次发布了700多份研究成果……其中也有一部分AI给出了形式化证明。」（开头）</li>
+<li>案例还原：一次性对4000多题中700多题给出解法，并用Lean完成部分形式化验证，意味着机器可在严格逻辑框架内自洽地完成证明，难度对标世界级难题，有人甚至称在“右侧难度格子”里发一篇就足以拿到985/211教职。</li>
+<li>
+<p>解读：标志“解定理”从稀缺首创走向“算力+工具链”。</p>
+</li>
+<li>
+<p>要点标题：研究目标与社区目标发生“错位”</p>
+</li>
+<li>原文引用：「AI的发展现在确实能够在证明定理上起到一定的作用，但是……我们的目标是让这个社区共同繁荣。」（中段）</li>
+<li>案例还原：陶哲轩长期拥抱AI与Lean，但近期联署声明，质疑公司主导的题目选择与发布节奏会挤压社区对难题的“走弯路—生新知”的空间；大量“似是而非”的解法需要人类去验证、讲解、教学，成本外溢到学界。</li>
+<li>
+<p>解读：治理与节奏设计变得比“谁先解”更重要。</p>
+</li>
+<li>
+<p>要点标题：“Math 2.0”：从首证到传播与形式化</p>
+</li>
+<li>原文引用：「接下来可能这个第一步这个动作没有那么重要了……谁能够讲清楚、让社区消化理解，变成更重要的事情。」（中段）</li>
+<li>案例还原：以往如“王宏得奖”强调攻克难题；如今700多题里只有两百多题被形式化，说明“把证明编织进人类可学的知识体系”是更大工程：要教材化、课程化、构建Lean库与验证生态，并在学界内形成可传承的表达与范式。</li>
+<li>
+<p>解读：知识编排与传递成为新稀缺。</p>
+</li>
+<li>
+<p>要点标题：冲击是普遍现象，路径依旧多样</p>
+</li>
+<li>原文引用：「这种冲击感在程序员、艺术家、剪辑视频的阶段，我们都已经感受到了。」（中段）</li>
+<li>案例还原：从AlphaGo到Midjourney、到代码自动化，职业先后被AI“超车”；柯洁选择自洽转型，依旧在人类对局里保持领先并开展教学传播。数学家也可转向跨学科应用（生命科学、材料、气候等）。</li>
+<li>
+<p>解读：不要用“是否被替代”定义自我，而要用“要解决的真实问题”。</p>
+</li>
+<li>
+<p>要点标题：当下最好的策略是“拥抱+编排”</p>
+</li>
+<li>原文引用：「要学好AI、用好AI，把它当成一个很好的工具、一个助手……但要理解它的局限性。」（结尾）</li>
+<li>案例还原：UP主打磨视频工作流时，发现模型虽能解难题，但在人类模糊指令、长链协作中仍需大量“任务拆分—验收—迭代”编排；把机械环节交给AI，把人的时间释放到阅读、抽象、设计、复盘上。</li>
+<li>解读：谁能把AI嵌入工作流，谁先获得复利。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：研究与社群目标可能“错位”。对应到调研，单点结论（答案）不等于真实需求被吸收；需要“从发现→解释→组织采纳”的闭环。</li>
+<li>方法借鉴：建立“AI助理+人类主持”的调研工作流——AI先做大规模语义聚类与对比，研究员负责框架化与洞察叙事，把“可执行含义”讲明白。</li>
+<li>踩坑提醒：别把“AI一次性吐出的大量洞察”直接丢给业务方；要做验证、溯源与优先级管理，否则信息过载反噬决策。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：从“爆点发布”转为“节奏化共创”。学界反弹提示：一次性堆料易引发信任赤字；改为里程碑式公开、邀请KOL验证与共建。</li>
+<li>值得研究的路径：把“Proof→Explain→Teach”的三段传播链打通——首发讲突破，二发讲如何验证，三发讲如何被用户/开发者使用。</li>
+<li>运营建议：建立“credit机制与开源协作板”，清晰署名贡献者，降低社区反感，形成正向口碑飞轮。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>参考策略：把“解题”思维迁移到“解释—转化”链路。产品详情页不仅给答案（参数/价格），还要给“可理解的价值证明”（场景化、对比、测评与第三方背书）。</li>
+<li>转化路径新发现：用AI做A/B海量生成，用人做“价值叙事模板与审核标准”。先破冰（流量测试），再筑港（内容体系化与FAQ知识库）。</li>
+<li>案例启发：像Lean形式化一样，为核心卖点建立“可验证证据库”（质检报告、用户实验、退换数据），减少用户认知负担提升CVR。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「AI在数学研究领域的严重错位。」（中段）——点明矛盾不是“能不能解”，而是“解题目标与社区目标”的结构性错位，值得所有知识行业警惕。</li>
+<li>「接下来可能这个第一步这个动作没有那么重要了……谁能够讲清楚、让社区消化理解，变成更重要的事情。」（中段）——预示从“夺旗”到“传火”的价值重排，是内容与教育工作者的重大机遇。</li>
+<li>「你要学好AI、用好AI，把它当成一个很好的工具、一个助手……但要理解它的局限性。」（结尾）——最务实的行动指南：拥抱与编排并重。</li>
+<li>「人不会找不到意义感……上一个工业时代留下来的那些找到意义感的方式，正在被AI冲击与重塑。」（结尾）——提醒我们用“长期意义”而非“岗位存续”来规划人生。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想理解AI对高端知识工作（尤其数学与科研）真实冲击的人。</li>
+<li>处于教育、科研、内容生产、产品与运营岗位，需要把AI嵌入工作流、又担心失序的人。</li>
+<li>正在做职业与人生方向再选择、希望将“解题能力”转化为“解释与传递能力”的专业人士。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
