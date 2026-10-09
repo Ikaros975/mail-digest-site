@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>工作中压力太大，害怕犯错，怎么办？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>工作中压力太大，害怕犯错，怎么办？</h1>
+      <div class="reader-meta">B站 · 课代表立正 · BV1Bspx6hEsE</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用身体练安全感，用三板斧驯服职场恐惧。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与隐喻：视频以学习 Onewheel（单轮板）为主线，讲“紧张是身体感觉，不是嘴上劝得开的”。UP 主一开始连“跳下板子”都不敢，尽管看了很多教程，脑中总是自动播放“骨折”的画面。直到换到草地等“柔软、可控”的环境，真跳一次，身体才确认：安全。结论是，光靠看书或想明白没用，必须让身体亲历一次“可控失败”，安全感才会被写进神经系统。</p>
+</li>
+<li>
+<p>Facebook 高压实录：她入职 Facebook 时，职责复杂、基础技能（如 SQL）短板明显，且项目被多位高层盯着。一位强势 PM 领导公开为难、反馈苛刻，团队工程经理和 PM 先后被“清洗”。在这种“没有有效正反馈”的环境里，她进入“战或逃”的冻结态：越害怕犯错，越表现失常，进一步失眠、饮酒、焦虑——典型恶性循环。转机来自两个动作：其一，主动在凌晨失眠时私信上级，请求明确指导与成长空间；随后 +2、+3 级领导给了具体指引与“可试错的可见度”，帮她站稳；其二，通过抓住“关键任务”建立筹码（做了一个关键分析，成为对方推进工作不可或缺的签字人），并在 Clubhouse 爆发期快速涨粉 1 万，令对方重新评估其影响力。最终从“被轻视、被推搡”转为“相互成事的合作”。</p>
+</li>
+<li>
+<p>三板斧方法论（从板到班再落地到班子）：
+  1) 少想“摔倒”，先干后检：做事时尽量进入“自动驾驶”状态，别边做边预演老板会怎么骂；检视阶段再集中 20% 的精力做“失败清单—复盘—修正”。她强调：如果你把50%心智花在“出错想象”，多半是在徒增精神内耗。对应板上经验：一边和观众聊天，身体自然找平衡，骑行更稳；一旦脑中浮现“会不会突然断电”，立刻发僵、出错率上升。
+  2) 先造“安全垫”，再练“可控错”：板上戴齐护具、挑软地练“跳下”；工作中，提前和老板约定试错空间与汇报节奏，让组织“承保你的成长”；对“优等生”尤其重要——他们少犯错，身体没学会“错了也不会社会性死亡”。她在 FB 就是这样，从高层获得“保护与时间”，再通过不断小试错，身体逐渐确认“我行且安全”，信心随之回升。
+  3) 具体化可视化：借谷爱凌的“多视角脑内预演”（第一视角、俯视、旁观等），把关键动作一步步在脑中“定镜头”。工作里，把你最怕被问的问题、最糟情境写下来，做“小规模实验”去验证“现实后果≈想象后果吗？”多次对照后，大脑会更新“威胁权重”，从而脱离“脑内死循环”。</p>
+</li>
+<li>
+<p>环境判断与势能经营：情绪工作之外，还有“简单那部分”——辨别是否是“毒性环境”。若是系统性毒性，尽量远离；若是局部毒性（个别强势同事），就“减权 + 结盟”：一方面通过承担关键路径工作，把对方对你“可为难空间”转化为“必须合作依赖”；另一方面，借助上级背书与个人影响力（如外部平台快速涨粉），改变权力感知。视频中，这两步直接改写对方态度，从“看不起与施压”转向“尊重与共赢”。</p>
+</li>
+<li>
+<p>创伤与重塑：她因电量耗尽中途断电而摔伤，此后只要提速，脑中就自动浮现“会不会又断电”。这便是“创伤=永久改变行为的经历”。不论过错归因于谁，你若一直“怪罪—回避”，只会把自己困在恐惧回路。出路是“安全地重启”：从更小速度、更多护具、更多成功体验开始，逐步把“安全感”和“胜任感”写回身体。睡眠方面，她过去靠酒精，现在用“彻底换台”—用与工作无关的爽剧、脑洞故事转移注意，切断“想不明白—更焦虑—失眠—更差表现”的链条。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【先干后检20%】顺口溜：先干不乱想，复盘占两成。逻辑：做的时候降噪情绪，检的时候定量校正，避免50%心智耗在“预演失败”。</li>
+<li>【软地+护具】比喻：给大脑上保险，身体才敢起飞。逻辑：通过护具/老板约定试错，制造“可控跌倒”，把安全感写进神经。</li>
+<li>【谷爱凌四视角】比喻：上台先拍分镜，落地自然稳。逻辑：多视角可视化+小实验，让“想象灾难”被现实数据改写。</li>
+<li>【筹码换尊重】顺口溜：关键路径在手，态度自然改口。逻辑：抓关键任务+上级背书+外部影响力，化被动为互相依赖。</li>
+<li>【创伤重启】比喻：从一档起步，频给大脑“安全样本”。逻辑：分级暴露+正反馈，逐步覆盖“自动紧张”的条件反射。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>目标专注，减少“失败预演”</li>
+<li>原文引用：「if, for anything you do, you first start thinking, “How might this go wrong? … you truly can’t get it done.”」</li>
+<li>案例还原：骑板时只要想到“会不会突然停电”，身体立刻发僵；转而专注聊天、让身体自动接管后，骑行更稳。工作同理，先做完，再用约20%时间检查与修正。</li>
+<li>解读：降低执行期情绪噪音，提升完成度与速度。</li>
+<li>先谈好“试错条款”，再冲锋</li>
+<li>原文引用：「I might make some mistakes, and I hope you’ll help me improve… our shared goal is for me to get good at this task」 </li>
+<li>案例还原：在 FB 失眠期间，主动给 +3 发信息，请求明确指导与成长空间；随后 +2/+3 提供具体指引与可见度，缓和了强势 PM 的针对，她据此逐步建立信心与业绩。</li>
+<li>解读：制度化“安全垫”，把成长成本前置沟通。</li>
+<li>可视化与小实验，更新大脑威胁模型</li>
+<li>原文引用：「She’d map out every single step… visualizing each one clearly via images.」</li>
+<li>案例还原：把担心的质疑写清，演讲时故意制造一个小失误，发现同事只是点出并未上纲上线；用真实反馈修正“灾难化想象”，降低恐惧强度。</li>
+<li>解读：用数据纠偏恐惧，形成可复制的演练流程。</li>
+<li>势能经营：关键路径与背书改变关系</li>
+<li>原文引用：「this very key task of his later required me to provide analytical support… my boss’s clout extended to me.」</li>
+<li>案例还原：她承担关键分析，变成对方推进工作必须依赖的签字人；叠加上级势能与外部涨粉 1 万的影响力，原本强势 PM 转而尊重、合作顺畅。</li>
+<li>解读：当对方需要你，关系从博弈变协作。</li>
+<li>创伤是“自动程序”，要用安全样本覆盖</li>
+<li>原文引用：「a traumatic experience is one where you have an experience that permanently alters your behavior.」</li>
+<li>案例还原：因断电摔伤后，一提速就紧张；她用戴护具、低速分级练习、积累顺利样本的办法，逐步把“安全感”写回身体。</li>
+<li>解读：分级暴露是走出职场创伤的最短路径。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>把“恐惧预演”改为“20%复盘”：研究设计时先快速落地，预留固定比例做误差分析与修正，避免在前期过度完美化导致进度瘫痪。</li>
+<li>书面化“最怕被问的问题清单”（Assumption log）：像视频里“写下最怕的质疑”，把关键假设形成验证路线图，逐条小实验验证。</li>
+<li>安全沙盒：先在“柔软地带”试水（小样本、低成本渠道），获得“身体级”信心后再扩容。</li>
+<li>可借鉴的调研方法：</li>
+<li>预演四视角走查：受访者视角/研究者视角/旁观者视角/决策者视角，逐步排除模糊地带。</li>
+<li>刻意制造“小错”：在内部评审或灰度发布中嵌入可控瑕疵，观察组织真实反应，修正对“失败后果”的过度想象。</li>
+<li>暗坑揭示：</li>
+<li>没有正反馈/无效反馈的环境，最容易把团队推入“冻结态”；需要通过设定阶段性里程碑与明确评价标准，恢复可预期性。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>“护具思维”的活动设计：预算分层（探测—放大—收割）、创意灰度测试与硬性止损点，形成可控试错闭环。</li>
+<li>“四视角分镜表”做创意评审：消费者/媒体/竞品/监管四视角，预判舆情与风险点。</li>
+<li>值得研究的手段：</li>
+<li>用“可控失败故事”做人设与内容（像 UP 主讲摔倒、失眠）：拉近距离，降低受众“我学不会/品牌太完美”的心理距离。</li>
+<li>借“关键路径筹码”做渠道博弈：在重点平台形成不可替代的内容或数据资产，逼迫合作方从博弈转向协作。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略/案例：</li>
+<li>护具=风控：小预算冷启+SKU 灰度+A/B 测试+一键回滚，先在“软地”求稳，再提速。</li>
+<li>20%复盘例行化：活动结束强制留出固定复盘时段与 check-list，重点校正“想象后果”与“真实后果”的偏差。</li>
+<li>转化路径/用户旅程新发现：</li>
+<li>可视化用户异议清单（价格、物流、信任、售后），逐条用页面组件/客服话术做“小实验”验证，逐渐把“成交恐惧”从系统中剔除。</li>
+<li>在团队层面设“试错豁免额度”，缓解一线对“背锅”的恐惧，提升上新与测试频率。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「this tension—it’s truly a physical feeling, and your mind finds it tough to just make it go away.」（开头）理由：从源头纠偏，把问题从“想开点”转为“让身体学会安全”。</li>
+<li>「If you’re thinking about it fifty percent, that means your mental health is starting to show some issues.」（中段）理由：给了可执行的“心智配比”标准，立判自查。</li>
+<li>「She’d map out every single step… visualizing each one clearly via images.」（中段）理由：把顶级运动员的方法迁移到职场，具体、可照做。</li>
+<li>「a traumatic experience is one where you have an experience that permanently alters your behavior.」（中段）理由：精确定义创伤，提示“分级暴露”是重塑路径。</li>
+<li>「once your body truly feels safe, you can then shed that tense state.」（结尾）理由：收束主题，答案回到“让身体先相信”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>在高压环境中容易紧张、害怕犯错的职场人、管理者与应届生。</li>
+<li>经历过职场“创伤”（被否定、公开质疑）后总是“自动发紧”的人。</li>
+<li>常因焦虑失眠、反复内耗、效率低下者。视频提供“先让身体确认安全”的可操作路径与实证案例。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
