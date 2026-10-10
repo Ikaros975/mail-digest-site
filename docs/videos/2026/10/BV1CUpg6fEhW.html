@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>从家电、眼镜到机器人，AI如何走进生活？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>从家电、眼镜到机器人，AI如何走进生活？</h1>
+      <div class="reader-meta">B站 · 晓辉博士 · BV1CUpg6fEhW</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>把AI塞进场景、拆出能力、连成飞轮，家电到机器人全面焕新。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数与时长相配）</h2>
+        <ul>
+<li>
+<p>背景与主张：对话聚焦“AI如何从数字世界走向实体产业”。TCL CTO孙励明确：落地不是一刀切的“元年”，而是一个渐进、工程化极强的过程。真正的拐点在于“自闭环飞轮”是否被激活——AI改造的产品能被高频感知、可负担、并通过数据-优化-体验的循环持续增益。两个抓手最关键：一是场景回归（锁定产品的物理本质和用户价值核），二是能力开放（设备原子化接口，便于AI编排）。</p>
+</li>
+<li>
+<p>论点一：AI必须紧贴“产品的物理本质”去创造价值（而非只做人机对话或表面智控）。案例一：空调节能重构。TCL未盲目上大模型，而是用小模型+工程特征先在PC仿真约20%节能，再整机集成后在复杂工况下峰值可到约40%（到达稳定工况前一度达45%），随后上云做强化学习，继续“挤”出约18%的节能潜力。这说明：1）AI价值来自对“压缩机+环境+使用习惯”等多维数据的推理与策略；2）大模型不必中置端侧，小模型+云端RL的“端云协同”更经济有效；3）消费者能清晰感知价值（耗电账单下降），飞轮开始转动。结论：落地从“能耗、稳定、成本”这种物理KPI起步，优先做可量化的刚需提升。</p>
+</li>
+<li>
+<p>论点二：AI让“电视理解能力”显著跃迁，靠工程化把成本打到“能落地”。案例二：电视语音/搜索系统。将大模型限定在“电视Domain”，集中蒸馏+量化（4bit）+场景微调（FT），全部部署在云端。验证指标不是“分数”，而是“兜底闲聊”占比锐减——意味着意图识别更准、服务命中更高。最关键的数据：单台电视用户一年AI大模型云端推理成本≈0.03元。结论：实体产品的AI化，核心是“到达用户阈值以上的感知提升”，同时把推理成本压低到能随产品规模化吸收，不强卖“功能付费”。</p>
+</li>
+<li>
+<p>论点三：从“规则驱动IFTTT”到“原子能力+AI编排”的新范式。案例三：全屋协同的CLI/原子化接口。传统智能家居把“上网+App/音箱控制”当终点，仍是规则预设、长尾无解。TCL提出：把设备能力“原子化”公布到公共Hub（API/CLI化），让AI按自然语言把功能自由组合。例如用户只说“我回家了”，系统自动联动开灯、拉帘、热水、频道等；或用户抱怨“屏幕有点灰蒙蒙”，AI理解成画质/亮度/白平衡等深层菜单项联动调整。技术要求：设备OS重构、接口颗粒度下探、安全授权与商业模式并重（如与比亚迪车机打通车-家语音控制，体验即价值，开放即被更多入口引用）。结论：新范式的关键是“设备能力可被AI随取随用”，让长尾需求由AI而非工程师填坑。</p>
+</li>
+<li>
+<p>论点四：多模态与传感器，打开“个性化场景的大门”。案例四：冰箱“电子鼻”+摄像头+多传感器融合，识别食材、管理进出与保鲜需求，在成本与隐私约束下，组合多源传感减少死角；睡眠场景则以毫米波雷达代替摄像头，感知翻身/在离床/方位，实现隐私友好的动态控温。结论：AI的聪明建立在“看见/闻到/感知”的充分输入上，传感器是智能化的起点。</p>
+</li>
+<li>
+<p>论点五：端云边界与算力路线图：长期共存，缓慢南移。受限于端侧算力、存储带宽（HBM/近存计算成为趋势）与实时/隐私要求，前沿大模型将长时间驻云；端侧承担隐私敏感与强时延任务。未来有三种家庭算力形态并行：1）机器人成为“家庭大脑”并协调其他设备；2）独立边缘算力盒；3）传统设备升级成“协同中枢”。但共识是：可负担、工程可行、稳定可靠优先，边界下移是长期趋势而非短期一蹴而就。</p>
+</li>
+<li>
+<p>论点六：AI原生硬件的两条路径：AR眼镜与家庭机器人。案例五：AR眼镜雷鸟系列。TCL以显示链优势切入：自研光机（绿豆大小彩色微投）、Micro-LED高亮以抵消光路损耗、在玻璃中加工光学阵列；并针对“不可能三角”（重量/续航/功能）做产品分型：有摄像+全彩（第一视角记录、语音助手、环境识别、提词器、骑行导航、驾驶读短信）、或无摄像+单色绿显（更轻、更长续航）。芯片已到4nm，但仍需在电池、生态上迭代。愿景是“空间计算”：从信息叠加走向手势/凝视/多模交互与3D重建（NeRF等）。案例六：陪伴机器人AMY。定位“先情感+陪伴+多模态理解+全屋控制”，以可爱安全形态进入家庭，承担看/说/理解/互动与设备编排；未来随着具身智能范式（感知-规划-行动）突破，逐渐走向家务执行，但ToC家用形态应以“柔和、安全、可亲近”为首要（避免金属重形态对家庭安全的潜在风险）。结论：AI-Native硬件不以“炫技”为目标，而以“确定性场景价值+工程化可交付”为牵引，逐级解锁能力。</p>
+</li>
+<li>
+<p>论点七：组织的AI化比产品的AI化更难更关键。名句：“你开发了一个AI的产品，并不代表着你这个组织就很AI了。”方法论：先把低垂果子摘净（质量/财务/HR/运营的报表、路由、搜索、洞察自动化），再推进企业架构重塑（权限到字段级、数据治理对AI友好、跨部门Agent协同、安全与合规），以“人+Agent”的混编组织提升项目产出密度（同预算做双倍项目的实践已出现）。飞轮的本质：越开放（能力/API/生态），越被多入口调用，越有价值沉淀；一旦闭环形成，竞争范式切换，后进者难追。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【省电不靠嘴，靠压缩机会“思考”】小模型+云端强化学习，让空调按环境与习惯自我优化，先省后稳再挤潜力。</li>
+<li>【电视少闲聊，说明真听懂】看“兜底闲聊”骤减，代表意图识别命中；云端量化蒸馏把年成本打到三分钱。</li>
+<li>【家电像乐高，AI来编排】把能力原子化上架到公共Hub，AI用自然语言自由组合长尾场景。</li>
+<li>【传感器是AI的眼耳鼻】毫米波看睡眠、电子鼻识食材，多模态输入才有个性化输出。</li>
+<li>【产品AI容易，组织AI最难】先把报表等低垂果子自动化，再重构权限与数据，飞轮一转难逆。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（5条）</h2>
+        <ul>
+<li>重要性回归场景本质</li>
+<li>原文引用：「当AI要实现它的价值的时候，它一定回到这个产品本身的核心的场景。」</li>
+<li>案例还原：空调先用小模型在PC仿真约20%节能，整机集成在真实工况下峰值达约40%（短时达45%）；稳定后边际递减，再在云端做强化学习，继续挤出约18%的节能潜力，用户在电费上直接感知。</li>
+<li>
+<p>解读：优先攻坚可量化刚需KPI。</p>
+</li>
+<li>
+<p>工程化把AI成本打穿落地线</p>
+</li>
+<li>原文引用：「您猜一个电视一个用户一年这个大模型的成本是多少……三分钱。」</li>
+<li>案例还原：大模型限定电视领域，做量化（4bit）+蒸馏+场景FT，部署云端，关键指标“兜底闲聊”锐减，说明理解/命中大幅提升，同时把单位用户年成本压至0.03元，避免功能单点收费。</li>
+<li>
+<p>解读：低成本+高命中是规模化前提。</p>
+</li>
+<li>
+<p>从IFTTT到“原子化能力+AI编排”</p>
+</li>
+<li>原文引用：「你所有的设备你得把你的能力把它暴露出来，放到一个公共的hub上，这样AI就可以自己去组合这些能力。」</li>
+<li>案例还原：用户说“我回家了”，AI自动联动灯、窗帘、热水、频道等；遇到“屏幕灰蒙蒙”这类模糊诉求，AI理解并下钻到深层设置项联动调整，长尾需求不再依赖工程师预设规则。</li>
+<li>
+<p>解读：接口颗粒度决定智能上限。</p>
+</li>
+<li>
+<p>端云长期协同，边界缓慢南移</p>
+</li>
+<li>原文引用：「frontier的model毫无疑问全部跑在云端……端云协同的架构会长期存在。」</li>
+<li>案例还原：端侧承担隐私/时延任务（如相机实时处理、毫米波雷达），云侧承担通用大模型推理；随近存计算/HBM等演进，家庭可能出现“机器人中枢/边缘算力盒/老设备升级为中枢”等多形态，但前沿模型驻云是长期现实。</li>
+<li>
+<p>解读：路线清晰，节奏务实。</p>
+</li>
+<li>
+<p>产品AI≠组织AI，飞轮要靠架构与治理</p>
+</li>
+<li>原文引用：「你开发了一个AI的产品，并不代表着你这个组织就很AI了。」</li>
+<li>案例还原：TCL推动AI原生组织试验（如“洪湖实验室”），用AI替代报表/PPT/数据路由等低垂工作，提高项目完成密度；同时重构权限至字段级，打通跨部门数据与Agent协同，确保安全合规。</li>
+<li>解读：组织是最大“产品”，先治地基再谈跃迁。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>以“可感知价值阈值”为边界定义MVP：优先攻克能耗、时延、命中率这类能被用户直接感知的指标，再扩展花哨功能。</li>
+<li>用“兜底闲聊率”或“命中率”作为智能理解KPI，比满意度更直达本质。</li>
+<li>构建“场景-能力”地图：把设备能力原子化，盘点并映射到高频语句/任务，观察AI编排成功率与复用度。</li>
+<li>可借鉴的调研方法：</li>
+<li>传感先行的情境日记研究：在合法合规前提下，通过毫米波/温湿度/环境音等低侵扰传感收集睡眠、回家、观影等关键时段数据，结合用户自述，校准AI策略。</li>
+<li>长尾需求挖掘：收集用户自然语言吐槽（如“屏幕灰”“屋里闷”），反推需要开放的原子能力与系统默认策略。</li>
+<li>端云成本感知实验：A/B不同量化/蒸馏策略下的命中率、推理成本、用户留存/复购意愿。</li>
+<li>被揭示的坑：</li>
+<li>认为“接入大模型=体验飞跃”的幻觉；算力、带宽、成本与OS颗粒度是更关键约束。</li>
+<li>只做App/音箱入口，忽视接口开放，导致长尾体验缺失。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>用“工程化事实”讲AI：比如“电视AI年成本3分钱”“兜底闲聊锐减”“空调节能可见”等，建立可信技术形象。</li>
+<li>讲好“回家一句话”的跨品类协同故事，展示长尾能力解决真实痛点。</li>
+<li>跨域联名示范价值：如与汽车（比亚迪车机）打通车-家场景，形成“泛在入口”心智。</li>
+<li>值得研究的传播路径：</li>
+<li>用真实生活流视频（第一视角AR眼镜/陪伴机器人互动）展示“自然语言到动作”的全过程，比TVC更具说服力。</li>
+<li>以“安全与隐私”作为差异化主张（卧室毫米波代摄像头、字段级权限），建立长期信任资产。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略/案例：</li>
+<li>场景化捆绑：睡眠优化套装（空调+毫米波雷达+床品建议）、回家场景包（门锁+灯光+热水器+电视）。</li>
+<li>“AI感知证据”上架：节能账单对比、兜底闲聊率曲线、量化/蒸馏的成本节约说明，提升转化。</li>
+<li>会员/服务化：提供“场景编排模板库+个性化调优”订阅，比单卖功能更可持续。</li>
+<li>转化路径新发现：</li>
+<li>用户更愿为“自动化省心+省钱”付费，而非抽象的“AI”。先用节能/省时ROI带动决策，再推高阶能力。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI在哪些阶段真正发挥作用：</li>
+<li>需求/场景工程：用对话式Agent梳理“场景-能力-约束”，生成原子能力清单与优先级。</li>
+<li>算法与系统共设计：选择端/云分工，自动化量化/蒸馏/剪枝方案搜索，评估命中率vs成本曲线。</li>
+<li>HIL与仿真：在硬件在环中以合成/回放多模态数据测试策略（如空调在不同气候/使用习惯下的节能曲线）。</li>
+<li>生态编排：基于Matter/自有Hub对接第三方，验证“被引用频次”的增长对留存与口碑的贡献。</li>
+<li>AI的边界（PM必须亲自做）：</li>
+<li>安全与合规边界设定（卧室禁摄像、儿童/老人安全策略、权限到字段级）。</li>
+<li>关键指标与商业约束定义（到底“多便宜才行”“多快算实时”）。</li>
+<li>组织与流程重构（人-Agent混编职责、验收标准、事故问责）。</li>
+<li>工具/流程/岗位演变信号：</li>
+<li>OS“为AI友好”的重构成为新基建（原子能力层介于API与App之间）。</li>
+<li>出现“场景编排PM/能力商店运营/AI成本管控官”等新角色。</li>
+<li>ID→MD→EE→FW链路被Agent贯穿，但可靠性/Safety/合规测试与量产爬坡仍需PM握总控。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（4条）</h2>
+        <ul>
+<li>「有人说今年可能是AI在实体产业落地的元年……我只是觉得它是个渐进的过程。」（开头）提醒避免“元年冲动”，重视工程长期主义。</li>
+<li>「当AI要实现它的价值的时候，它一定回到这个产品本身的核心的场景。」（中段）点明“场景本质论”，是所有落地的北极星。</li>
+<li>「您猜我们这个一个电视一个用户一年这个大模型的成本是多少……三分钱。」（中段）以成本锚定现实落地的关键门槛，极具传播力。</li>
+<li>「你开发了一个AI的产品，并不代表着你这个组织就很AI了。」（结尾）把问题从产品带回组织飞轮，是企业级转型的要害。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>家电/智能硬件/机器人从业者、AI产品与工程负责人，想把AI真正落到“省电/省时/更懂你”的物理场景。</li>
+<li>市场/运营/品牌团队，寻找“可感知价值+可负担成本”的叙事与转化抓手。</li>
+<li>关注AI原生组织与企业架构升级的管理者，借鉴“飞轮”与“原子化能力”两大杠杆，推动端到端重构。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
