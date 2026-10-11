@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>这么厉害的开源模型，你的手机上也能部署?</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>这么厉害的开源模型，你的手机上也能部署?</h1>
+      <div class="reader-meta">B站 · 课代表立正 · BV1BwpV6ZEcR</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>三步拆JAF：接起来、换掉它、再打赢它，还把小模型蒸馏进手机跑起来。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>背景与问题脉络：为什么JAF出圈？
+  视频起点是“对标”与“可测量”的方法论。JAF（一个专为“快速多选决策”打造的托管模型/API）之所以在发布日就炸裂，是因为某AI网关CEO披露“13%的活跃团队当天就打开了JAF”。JAF的卖点极“产品”：系统一式决策、约100ms的云端往返、每局吃豆人成本不到1美分、零本地部署门槛。但它真正走红的，不是“工单分流”演示，而是一个更能打破直觉的“快游戏实时操控”场景——让大家看到“语言模型也能边看边打游戏”。</li>
+</ul>
+<p>作者团队为此开源了一个可精确实验的吃豆人环境：完全文本输入（模型不看屏幕），靠“适配层”把画面转为约380 tokens的局面描述（每个可能方向附带：鬼/豆/能量豆的距离、下一路口距离等），用固定30 FPS时钟、固定随机种子、迟到即作废的严格实时规则评测，输出是受限JSON（方向+概率），每次请求总token约600（含JAF自己的固定指令）。这个“家门口”实验里，JAF在公网RTT约115ms下，10局平均吃到178颗豆，成为要被超越的基线。</p>
+<ul>
+<li>
+<p>实验一：先“接起来”——把JAF接入游戏，搞清它到底看见什么、怎么决策
+  核心观点：JAF并不“看图”，它靠的是你写的适配层和一段结构化文本。关键案例：实录每一次路口的输入输出——上半部分是状态与四个方向的“数值化摘要”，下半部分是JAF输出的方向与各选项概率。比如“后退方向6.3格外有一只鬼”、“能量豆最近在x格”，JAF常常并不十分确定（概率胶着），但在能量豆刷新后能做出“吃掉变蓝鬼”的追击动作。结论：JAF的“实时力”更多来自工程与接口协同，而非“神秘的多模态魔法”。</p>
+</li>
+<li>
+<p>实验二：再“换掉它”——普通开源小模型也能打？能！
+  核心观点：把相同的文本状态喂给普通LLM，不做“决策专训”，同样能跑、且能赢。关键案例：
+  1) 决策专模：Together的TAV-Decision 4B吃148颗，JAF吃178颗。
+  2) 普通LLM：Qwen 3.5 4B吃197；Gemma 4 4B吃230；Phi-4 Mini（3.8B）吃232。逐种子配对对局，Phi-4 Mini平均每局比JAF多吃54颗（标准误24）。
+  3) 可靠性：约6000次决策里，三种普通LLM在JSON约束下“0次格式错误”。说明“输出干净”并不是一定要用专模。
+  4) 泛化力外证：开源复刻项目SAMIF（原OpenJeff）用冻结的Qwen 3.5 4B在JAF官方102个判断任务里得分84.5%，JAF是88.3%；但在220题的JF Bench“难题集”上，JAF 74.1%，SAMIF 59.5%。结论：很多任务上普通开源LLM已够用甚至更强，但也有难题JAF更稳。务必“测你自己的任务”。</p>
+</li>
+<li>
+<p>实验三：最后“打赢它”——工程提速+大模型思考+蒸馏，小模型真机跑更强
+  1) 速度工程三板斧（开源圈72小时内就复刻到位）：</p>
+<ul>
+<li>前缀缓存：同一局面重复问题的公共前缀只算一次，整体时长从333s降到72s；</li>
+<li>批处理并行：同一局面多问合批，降到38.8s；</li>
+<li>窄输出读取：不给JSON，改让模型用A/B/C字母“投票”，直读偏好（logits或单字符），从5.33s降至1.02s。代价是输出变窄，但速度爆表。
+ 辅助数据：4B模型在NVIDIA GPU上比Mac M3快约7倍，JSON模式确保解析稳健。
+  2) 更聪明但更慢：上27B大模型（Qwen 3.8 27B），引入lockstep（每步都等模型）精确上限评估。不思考时吃301颗（过第一关244上限，已到第二关）；允许“思考链路”（长推理）后吃531颗，但每次决策需约2.4s（即无法实时）。
+  3) 教会小模型：蒸馏。用27B离线“打标签”，训练一个0.8B学生模型只看同样的380-token状态。结果：实时（严格时钟）平均55ms/决策，吃425颗，性能&gt;2×JAF；并且iPhone 16 Pro Max上实测约0.5s/决策，真机可用。代价：通用判断题上掉分——194道通用判断集：TAV-1 0.8B得0.66；我们蒸馏0.8B仅0.53；JAF已发布分数为0.89。部分差距来自学生起点是“通用基座”而非“决策专训基座”，但更关键是“专才换来窄域”。</li>
+</ul>
+</li>
+<li>
+<p>怎样选：托管vs自建，凭“不可妥协的角色”做取舍
+  1) 留在JAF（托管）：如果你要零配置、广谱判断力、稳定可靠、价格也不差（&lt;1美分/局，~100ms/次）。别为了几分钱去盲目迁移。
+  2) 转向自建：若你必须更低时延（本地0.8B可到~55ms）、离线/隐私（端侧iPhone可跑）、或你就是“单点业务权重极高”，则自建能持续打磨到更优。
+  方法论底座：描述真实情境→配对评测（固定种子/严格时钟/基线）→看清权衡（速度vs输出自由度、聪明vs等待、专才vs广谱）→在自己的任务上“测后再决策”。更高一层的洞察：任何爆款都“问题常青+当下包装”两件套，包装会换名，问题会长存。下次看到新爆款，问自己两句：“如果模型好10倍，这还重要吗？”“它解决的到底是什么问题？这个问题在我这里是不是刚需？”</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【三步拆JAF】接→换→赢：先接通看清输入，再换成开源小模型，最后靠工程与蒸馏赢过它。逻辑：对标-实验-迭代，问题导向而非品牌导向。</li>
+<li>【速度三板斧】“缓存前缀、合批并行、读字母”，三刀下去速度飞起。逻辑：减少重复算、提升吞吐、缩短生成序列。</li>
+<li>【大力出奇迹，蒸馏上车】大模型离线想清楚，小模型在线跑得快。逻辑：teacher-student蒸馏，离线求智、在线求速。</li>
+<li>【专才换广谱】“专精一项能翻倍，通用判断会掉线。”逻辑：任务特化提高峰值，牺牲breadth（广度）与迁移性。</li>
+<li>【测量先于决策】“不测量，不优化。”逻辑：固定种子/严格时钟/统一输入，才能有有效对比与可信结论。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>要点标题：JAF出圈靠“快游戏”，产品力靠“快决策”</li>
+<li>原文引用：「What made Jeff go viral was actually games&hellip; A game doesn&rsquo;t wait for you.」 </li>
+<li>案例还原：作者自研开源吃豆人环境，模型不看图，只看适配层的380-token描述；在30FPS、迟到即丢决策、固定种子下对齐评测。JAF公网往返约115ms，10局均值178颗，成本&lt;1美分/局，展现“系统一”式快判断的产品力与可用性。</li>
+<li>解读：快与稳是产品落地的硬通货，场景选择决定叙事传播力。</li>
+<li>要点标题：普通开源小模型并不“笨”，还能赢</li>
+<li>原文引用：「On this task, nothing here is unique to JAF&hellip; the best one actually score higher.」</li>
+<li>案例还原：换成Qwen 3.5 4B(197)、Gemma 4 4B(230)、Phi-4 Mini(232)，全部用同一输入与JSON约束，0格式错、对局配对公平。Phi-4 Mini对同种子平均多54颗（SE=24），说明“决策专训”不是吃豆人制胜的唯一要素。</li>
+<li>解读：开源模型+好工程=可替代性，关键是“测你的任务”。</li>
+<li>要点标题：速度=工程，三招直降两数量级</li>
+<li>原文引用：「They have a benchmark&hellip;333 seconds&hellip; with prefix cache&hellip;72&hellip; batch&hellip;38.8&hellip; letters&hellip;1.02 seconds.」</li>
+<li>案例还原：在SAMIF的&gt;700决策基准上，前缀缓存把重复上下文算一次；合批把多问变一问；读字母/读logits将输出极窄化。总时长从333s降至1.02s级别；同时在NVIDIA上4B推理比M3快约7倍。</li>
+<li>解读：把“生成”变“分类”，拥抱系统工程，速度立竿见影。</li>
+<li>要点标题：极致聪明≠可用，蒸馏是把聪明搬进实时的桥</li>
+<li>原文引用：「With thinking&hellip;531&hellip; each decision takes about 2.4 seconds&hellip; That&rsquo;s exactly what fine-tuning is for.」</li>
+<li>案例还原：27B大模型在lockstep+思考下吃531颗，但每步2.4s无法实时。改为teacher-student蒸馏到0.8B，实时55ms/步平均425颗；端侧iPhone 16 Pro Max约0.5s/步可跑。代价是在194题通用判断集上仅0.53（TAV-1同尺寸0.66，JAF 0.89）。</li>
+<li>解读：离线要“智”，在线要“速”，蒸馏把两者连起来。</li>
+<li>要点标题：真正的选择题是“不可妥协项”</li>
+<li>原文引用：「Start from one role your product can&rsquo;t compromise on&hellip; Please don&rsquo;t switch just to save on price.」</li>
+<li>案例还原：若你要零配置+广谱判断，托管JAF足够好；若你要更低时延/离线/单点极致，自建小模型更灵活。团队遵循“描述-评测-取舍”闭环，不迷信包装，盯住“问题常青”。</li>
+<li>解读：不要被爆款带节奏，回到你的延迟、可靠、离线、成本等硬约束。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>用“配对评测法”隔离变量：固定种子、严格时钟、统一输入格式，才知道“模型/工程/提示词”各自贡献。</li>
+<li>以“角色不可妥协项”定义需求优先级：延迟、离线、广谱判断、成本，哪一项不退让决定策略走向。</li>
+<li>区分“问题常青”与“当下包装”：产品定位与竞品分析别被爆款叙事带偏。</li>
+<li>可借鉴方法：</li>
+<li>搭建“小任务沙盒”（如吃豆人）模拟真实约束，快速A/B不同模型与推理策略（JSON vs 字母、批处理等）。</li>
+<li>先建评测再写提示（dataset/metric/baseline先行），用数字指导迭代。</li>
+<li>暴露的坑：</li>
+<li>只看平均，不看时序与错误类型（格式错/超时/错向）会误判。</li>
+<li>用“托管API演示图省事”，忽略本地/端侧在真实用户约束里的价值。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>技术走红=“强记忆符号”（快打游戏）+“打破直觉”（LLM也能实时）。内容营销应抓住“可视化、可对抗、可量化”的场景。</li>
+<li>“系统一”标签、成本&lt;1美分、100ms延迟这类“一锤定音指标”易扩散。</li>
+<li>值得研究的路径：</li>
+<li>开源+复现实验+可跑Demo远胜口号：提供代码、评测脚本、可下载模型，降低受众怀疑成本，形成二次传播。</li>
+<li>讲清“取舍与边界”反而增强信任：明确何时选托管、何时自建，用户更愿意采纳建议。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略：</li>
+<li>决策型场景优先落地：商品审核、客服分流、风控策略匹配、优惠策略路由等，本质是“多选一”，可直接套“字母读取+批量评估”提速。</li>
+<li>端侧/边缘部署：门店端机或导购设备离线可用，隐私敏感数据不出端；通过蒸馏把“大脑”带到“指尖”。</li>
+<li>转化路径新发现：</li>
+<li>延迟敏感环节（客服实时应答、交互推荐）优先用小模型+工程优化；策略复核或高价值单点可用“大模型思考+异步确认”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI能发挥作用的阶段：</li>
+<li>推理侧：将大模型“离线标注+思考”转为小模型“在线决策”，在端侧（手机/IoT/车机）达到&lt;100ms级别。</li>
+<li>工程侧：前缀缓存、批处理、窄输出读logits，配合NPU/GPU推理框架（如Core ML/Metal/NNAPI）形成“模型-系统”一体优化。</li>
+<li>AI的边界：</li>
+<li>结构与材质（ID→MD堆叠）仍需PM统筹多维权衡（散热、射频、空间、电池），AI更多辅助仿真与参数搜索；</li>
+<li>数据与评测集构建必须由PM定义业务真约束（时钟、失败代价、错误容忍、隐私合规）。</li>
+<li>工具/流程/职责演变信号：</li>
+<li>“Teacher-Student蒸馏+端侧Benchmark”将成为硬件AI功能标配流程；</li>
+<li>PM需要会读“延迟-功耗-准确率”三角图，会拿工程三板斧做系统优化；</li>
+<li>端上A/B（固件灰度+数据回传）替代纯云端A/B，闭环更快。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「Measure first and then decide, because you cannot improve anything you cannot measure.」（开头）这是一切实验设计与产品取舍的总纲。</li>
+<li>「What made Jeff go viral was actually games&hellip; A game doesn&rsquo;t wait for you.」（中段）点明传播学的抓手：“快游戏”打破直觉、形成记忆点。</li>
+<li>「On this task, nothing here is unique to JAF&hellip; the best one actually score higher.」（中段）去神化，鼓励基于任务实测做技术选型。</li>
+<li>「Every hot technology bundles two things: a problem that lasts and the packaging from its moment.」（结尾）提醒从“问题常青”中抽取可迁移方法，别被当下包装迷惑。</li>
+<li>「Please don&rsquo;t switch just to save on price.」（结尾）务实提醒：技术迁移要围绕不可妥协项，而非廉价冲动。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想把开源小模型落到真实产品（尤其是低时延决策、端侧/离线场景）的人；需要在“托管API vs 自建部署”间做选择的技术/产品负责人。</li>
+<li>需要建立“先评测、后迭代”的工程化方法论，而非被爆款技术牵着走的从业者。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
