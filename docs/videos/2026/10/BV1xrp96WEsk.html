@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>国产模型能Computer Use吗？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>国产模型能Computer Use吗？</h1>
+      <div class="reader-meta">B站 · 黄益贺 · BV1xrp96WEsk</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>同场实测见真章：国产模型能点开网页，却在填好一张表时掉链子。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数视视频长度而定，上不封顶）</h2>
+        <ul>
+<li>
+<p>测试背景与方法
+UP主用欧拉玛按月订阅（20美金）统一调用多家模型，在OpenAI Codex的Computer Use环境里做同一任务：用Chrome在电商站点选三件硬件（CPU、显卡、内存），预算5万元人民币，把结果写入Apple Numbers表格。被测国产模型为Kimi K3、GLM-5.3 Flash（智谱）、DeepSeek V4.1 Flash，并以GPT-6.1作对照。评价重点放在跨应用自动化（浏览器检索+表格规范化录入）与“是否能按预算做出可交付结果”。</p>
+</li>
+<li>
+<p>论点一：浏览器操作“都能跑”，但跨软件协同（特别是表格）才见分水岭
+案例（GLM-5.3 Flash）：先按指令检测可用应用，尝试京东被风控拦截后切到亚马逊。能打开站点与搜索商品，但在Numbers环节频繁卡壳：同一条目三次重复粘贴、执着于“调行高”、还试图新建第二张表，逻辑陷入自纠偏循环，最终被判定“GG”。结论：浏览器侧能力相对成熟，一旦进入非浏览器App（表格/文件系统），鲁棒性骤降。
+案例（Kimi K3）：快速检索到AMD 9800与RTX 5090并入表；首次列头、字段顺序对齐出错，后能自觉发现并更正，最终完成交付。但其选品未严格约束预算（5090明显超5万整机预算），表格结构与说明偏“实习生水平”。结论：跨应用基本可行，但对“财务/结构化约束”的执行不强。
+对照（GPT-6.1）：检索阶段即主动做预算校验，发现5090超预算，自动降级到5080；在Numbers里按“标题-核心项-小计-预留项（主板/散热/电源/机箱/税运）-备注（内存价高、谨防二手混入）”完整出表，保存流程丝滑。结论：跨应用稳定、且能用业务规则自洽地“把事办圆”。</p>
+</li>
+<li>
+<p>论点二：预算与业务约束的“前置验证”，决定结果是否可用
+案例（Kimi K3）：能完成动作链条，但未进行“50,000 RMB整机预算”的全局校验，直接选择5090，导致三大件占用预算过多，整体方案不可落地。其后虽给出汇率、链接与替换显卡建议，但缺乏整体配平（主板/散热/税运）缓冲区。
+对照（GPT-6.1）：在检索期做“预算-显卡级别”动态权衡（5090→5080），同时在表格侧预留不可预见费用与周边件空间，给出“再比价与防二手”提示。该“先约束、后执行、再收尾”的链路，使结果接近“能下单”的真实流程。</p>
+</li>
+<li>
+<p>论点三：Agent的自我恢复与中断处理，是实用化临门一脚
+案例（DeepSeek V4.1 Flash）：两次“莫名暂停”，UP主放弃继续。UP主也考虑是否为平台原因，但其他模型同环境无此现象，故归类为失败。这种“长链路任务的中断-恢复机制”不稳，将直接劝退业务落地。
+案例（GLM-5.3 Flash）：在表格阶段自我循环式修正（调行高、换表）却不收敛，体现“动作执行-状态评估-纠错策略”链条缺失。
+对照（Kimi K3）：虽出错能纠偏，但纠偏后缺“业务合理性核验”；对照（GPT-6.1）则在“前-中-后”每步都有可解释的业务校验点。</p>
+</li>
+<li>
+<p>论点四：价格不是唯一变量——交付质量与时间成本更值钱
+UP主直言：国产模型仍落后顶级国外模型约半年到一年；若不是内网限制，宁愿付费用更稳的Computer Use。经验推荐：日常写作20美金档可够，用作开发与长链路自动化建议100美金档；国产模型中，个人偏好Kimi与DeepSeek，但本次仅Kimi完成交付，且质量不及对照组。</p>
+</li>
+</ul>
+<p>关键结论：
+- “能点网页”不等于“能交付”；跨应用尤其是表格/文件侧决定可用度。
+- 预算等业务约束要前置到检索期，让模型在源头自适应调整方案。
+- 稳定的中断-恢复与收敛策略，是从Demo到生产的门槛。
+- 在同样的时间与试错成本下，顶级模型的“整体交付质量”优势显著。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【网页不等于完工】会搜不会记账，方案就上不了线；浏览器OK、表格崩，成败看“填表力”。</li>
+<li>【先掂量再下单】“先预算、后选型、再留余量”，5090改5080，才是能落地的配置法。</li>
+<li>【纠错要收敛】卡在“调行高”，等于无穷回圈；Agent没收敛，用户就要强制Stop。</li>
+<li>【便宜不省心】低价若换来重试与返工，综合成本更高；能交付的才叫性价比。</li>
+<li>【国产差半拍】同档对打，国产在Computer Use上仍差半年级；先用可用者，再谈情怀。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点：跨应用协作是Computer Use的真考场</li>
+<li>原文引用：「一旦涉及到其他方面的能力 操作其他的软件的时候 你看这个麻烦就出来了」（中段）</li>
+<li>案例还原：GLM-5.3 Flash从浏览器搜价转向Numbers后，出现重复粘贴、无效“调行高”、新建第二张表等无效操作循环，最终放弃。Kimi能发现表头错位并修正，但表格结构仍显粗糙；GPT-6.1完整成表并保存，结构化强。</li>
+<li>解读：跨App链路稳定性，是能否投入业务自动化的分水岭。</li>
+<li>要点：预算与业务规则需前置并贯穿流程</li>
+<li>原文引用：「5080…5090已经超过了整机的预算 会改成5080」（中段）</li>
+<li>案例还原：Kimi直接录入5090，导致预算爆表；GPT-6.1在选型期动态降级显卡，并在表格中预留主板/散热/税运等缓冲，产出可执行清单。</li>
+<li>解读：把“约束”放在第一步，能显著降低返工。</li>
+<li>要点：Agent的中断与恢复机制决定可用度</li>
+<li>原文引用：「不知道为什么…突然暂停了…停了两次了 我不想再给他机会了」（中段）</li>
+<li>案例还原：DeepSeek V4.1 Flash两度无故暂停，UP主放弃测试；同环境下Kimi与GPT-6.1可持续完成。这种不稳定使长链路任务难以落地。</li>
+<li>解读：长流程任务必须可恢复、可收敛，否则生产不可用。</li>
+<li>要点：“填表力”=结构化输出+可解释备注</li>
+<li>原文引用：「像个实习生的填写…而GPT6.1填的清清楚楚的…还会有购买建议」（中段）</li>
+<li>案例还原：Kimi完成但结构松散；GPT-6.1有标题、小计、预留项与风险提示（内存价高、防二手混入），并保存归档，像成熟导购/采购买手。</li>
+<li>解读：结构化与可解释性，是交付质量的核心指标。</li>
+<li>要点：同档期国产模型整体仍落后</li>
+<li>原文引用：「国产模型还是落后国外的顶级模型…至少半年吧」（结尾）</li>
+<li>案例还原：三款国产仅Kimi完成交付；GLM-5.3 Flash陷入表格死循环，DeepSeek多次暂停；对照组GPT-6.1全流程顺滑并符合预算逻辑。</li>
+<li>解读：评估与选型要以“可交付结果”而非“宣传参数”为准绳。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>以“端到端可交付”作为比较标准：同题同环境（站点风控、跨App、预算约束）对齐评测，避免单点指标迷惑。</li>
+<li>将“业务约束”转化为测试点：预算校验、二手识别、税运预留，纳入SOP与评分表。</li>
+<li>可借鉴方法：</li>
+<li>设计四段式链路评分：前置校验（约束/环境探测）→检索（命中/去重/时效）→结构化成表（字段对齐、格式规范）→收尾（保存/可解释备注）。</li>
+<li>记录中断与自愈：统计暂停率、死循环次数、用户介入点，量化鲁棒性。</li>
+<li>暗坑提示：</li>
+<li>国内站点风控触发（京东平控）会影响结论，需设置平替站点并计入“环境适应性”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：</li>
+<li>用“可交付实测视频”替代夸大文案：把Agent如何在表格里对齐字段、做预算校验、输出购买建议，全程上屏。</li>
+<li>手段/路径：</li>
+<li>设计“真实场景挑战赛”（跨境购物+税运+反二手），用一次过关率、返工率、时间成本对比，形成易传播的“榜单图”。</li>
+<li>启发：</li>
+<li>UP主对“吹过头”的反感提醒：技术品牌的信任建立在“录屏里能复现”的真功夫。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略：</li>
+<li>把Computer Use用于“采买清单半自动化”：抓取SKU-价税运-汇率-可替代型谱，输出Numbers/Sheets标准模板。</li>
+<li>转化/用户旅程新发现：</li>
+<li>在“选型页”前置预算校验与“二手混入提醒”，减少退货与售后；对高价核心件自动给出“降级替换方案”与“预留配件预算”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>可发挥作用的环节：</li>
+<li>需求澄清与BOM雏形：AI在早期可从电商抓价、做BOM草案、估算税运与功耗匹配的预算预留，导出标准表单。</li>
+<li>边界：</li>
+<li>ID/MD/电子设计的工程细节与合规验证仍需PM/工程师主导；AI更像“采购/规划助理”，不等于“结构/电气负责人”。</li>
+<li>信号与流程变化：</li>
+<li>工具上更依赖具备多App控制与文件操作的Agent框架；流程上需把“预算与约束”写成显式系统提示，建立“中断-恢复-审阅-归档”的闭环SOP。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「最早的时候其实是叫什么browser use…一旦涉及到其他方面的能力…操作其他的软件的时候…麻烦就出来了」（中段）——点明分水岭：从浏览器到表格/文件，难度陡增。</li>
+<li>「5090已经超过了整机的预算 会改成5080」（中段）——体现优秀Agent的“前置预算校验与动态降级”能力。</li>
+<li>「像个实习生的填写…而GPT6.1填的清清楚楚的…还有购买建议」（中段）——把“填表力”与“可解释备注”上升为评估标准。</li>
+<li>「国产模型还是落后国外的顶级模型…至少半年吧…从这么简单一个测试就能看得出来」（结尾）——给出直观结论与时间差评估。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>想把LLM用于真实业务自动化（电商采买、财务表、跨App协作）的产品与工程团队。</li>
+<li>评估国产/海外模型落地能力、需要制定Agent选型与SOP的研发/运营负责人。</li>
+<li>内容与增长团队，准备用“实测而非宣发”建立模型品牌信任者。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
