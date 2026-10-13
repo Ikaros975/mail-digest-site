@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>OpenAI Just Changed What It Means To Do Math</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>OpenAI Just Changed What It Means To Do Math</h1>
+      <div class="reader-meta">YouTube · Two Minute Papers · z_sXLlLVUls</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI三小时一篇，722项数学结果引爆“结果与理解之争”。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（字数视视频长度而定，上不封顶）</h2>
+        <p>1) 背景与问题框架<br>
+OpenAI一次性释出722篇由AI生成的数学成果，据称平均每篇仅约3小时计算完成。这在数学界掀起两股对立情绪：有人兴奋于“问题被快速解决”，有人忧虑“证明毫无美感与洞见”。Two Minute Papers本期不纠缠争议口水，直接挑出两条他最爱的结论来讲清“新东西究竟是什么”，然后再回到他“既兴奋又纠结”的感受：如果证明像神经网络权重那样是一坨让人读不动的数字，那么“数学的目标”该如何被重新定义？</p>
+<p>2) 案例一：三角镜室里的光线——非有理三角形台球的遍历与等时分布<br>
+- 背景：把台球问题换成更酷的“光学”版：在三角形镜面房间里打入一束激光，让它无限反射。若三角形中至少一个角对π而言是“非有理角”，就意味着轨迹很难落入可重复的周期模式。<br>
+- 难点：传统证明手段依赖“周期/对称/有理性”来抓住结构，但非有理角让一切“抓手”失效，“像想抬起一个球，却找不到下手的位置”。<br>
+- AI声称结果：几乎所有光线最终都会“走遍每个位置、朝各个方向、且在各处花费的时间均等”。这等价于一种强的遍历与等分布性质，过去久攻不下。<br>
+- 过程与价值：OpenAI声称对每个满足条件的三角形都给出证明。这不是“数值实验看着像”，而是“形式上证明成立”。若为真，它一举扫平大量边角情形，极具“普适性”与“终结性”。<br>
+- 结论：若站在“要结果”的立场，这是硬核突破；但站在“要洞见”的立场，当下证明像“机器吐出的复杂构造”，人类难以从中学到新的直觉。</p>
+<p>3) 案例二：把“丑陋平面”洗成圆——共形变换圆化复杂洞域<br>
+- 背景：在平面上画出一个极其丑陋的区域，里头有奇形怪状、甚至数量众多且互相缠绕的洞。施加“保角变换”（不改变角度的拉伸/扭曲）。<br>
+- 难点：当洞无限变小、甚至相互“打结”时，极限控制变得可怕，经典技巧常常失灵，因此先前只在较“规整”的情形里知道能把洞“圆化”。<br>
+- AI声称结果：无论多丑、多缠绕，经过保角变换后，这些洞总能被送成“完美的圆或点（被压缩掉）”，角度结构依然保留。<br>
+- 过程与价值：这等于把一个“杂乱、不可控的边界”，在理论上规整成最易分析的圆与点，把许多分析工具“一把通吃”。<br>
+- 结论：如果这类“极端一般性”成立，它将重塑一大批复分析、几何函数论与应用场景（例如网格生成、保角纹理）的技术边界。然而当前证明不够“优雅”，难以供人类学习出更直观的机制。</p>
+<p>4) 结果与理解之争：数学究竟在追求什么<br>
+- 观点对撞：<br>
+  - 结果派：要的就是“是/否”“N或N平方”这样的答案；像在流体/烟雾模拟中，若神经网络更快得出可用结果，内部细节“不重要”。<br>
+  - 理解派：毕达哥拉斯定理有100种证明，不是为了“更证”，而是“更懂”。每一种不同的思路，点亮不同的心智之窗。AI证明若只是“另一坨难以人读的数”，几乎不给洞见。<br>
+- 类比：这些AI证明像“网络激活值与权重的堆叠”，要靠另一台AI才能解读。对于“把工具用起来”的工程心态当然没问题，但对想“学到新原理”的学者来说，这就像被“用消防水枪往外喷结论”，却要大家自己把水里的宝石一颗颗拣出来。<br>
+- 作者态度：他自称只是“学生”，能理解两边。既被成果的力度震撼，也对“理解的丧失”保持担忧，因此“兴奋与纠结”并存。</p>
+<p>5) 短短六年：能力曲线与“可及性”的隐忧<br>
+- 时间线案例：6年前，模型还“连加法都不稳”；2年前“连高中竞赛题都不稳”；1年前“连IMO金牌都不稳”；一个月前，关于“纳维-斯托克斯方程”是否被攻克的讨论甚嚣尘上；而如今，几百个结果平均3小时一篇。无论争议如何，这个斜率令人心惊。<br>
+- 可用性问题：这些能力目前被锁在少数前沿实验室内部。“大俱乐部”里的人在用，其他人没门票。作者直言“不舒服”，并呼吁“开放权重”，让人人可跑、可复现、可拥有。<br>
+- 民主化案例：视频等待“尘埃落定”后再发，结果看到已有3篇论文在社区反馈下撤回——且很可能连“查错本身”也是用LLM完成。这正是“开放即纠错、众智即加速”的实证。<br>
+- 结论：若AI真能以此速度推动数学与科学，社会应把“可及性”当作基础设施议题来建。开源权重、复现平台、社区联测，决定了这股力量是“昂贵玩具”还是“公共引擎”。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【镜室雨】“三角镜室下起‘等时雨’”：非有理角三角形里，几乎所有光线遍历全域且等时分布——难点在无周期可抓。  </li>
+<li>【圆化洗衣机】“保角变换像洗衣机，把丑洞洗成圆或点”：再乱的洞域也能被规整圆化，角度结构不变，分析工具全面生效。  </li>
+<li>【一坨数的证明】“证明变成一坨数，要用AI看AI”：结果能用，但人类直觉难生长，引发“结果vs理解”之争。  </li>
+<li>【六年四级跳】“不会加法→竞赛题→奥赛→疑似千禧”：能力曲线陡峭，速度与广度前所未见。  </li>
+<li>【开源是刹车也是油门】“开放权重=人人能跑、人人能纠错”：撤稿三例说明社区+LLM能自我校验，民主化带来安全与加速。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li>要点标题：AI在“非有理三角台球”上给出强遍历等时结论  </li>
+<li>原文引用：「If the triangle has at least one angle that is irrational relative to pi, then almost every ray ends up visiting every spot&hellip; spending an equal amount of time everywhere.」  </li>
+<li>案例还原：作者把台球问题换成“激光在三角镜室反射”。因非有理角导致轨迹无周期、无常规把手，传统技巧失灵。OpenAI声称对所有此类三角形给出证明，推出几乎所有光线的遍历与等时分布。若成立，这是长期悬而未决难题族群的统一性进展。  </li>
+<li>
+<p>解读：对动力系统、光学与计算机图形中的能量分布建模有启发。</p>
+</li>
+<li>
+<p>要点标题：保角“圆化”在极端复杂洞域上的一般性  </p>
+</li>
+<li>原文引用：「Apply a stretch that keeps angles intact&hellip; you can watch the holes morph into perfect circles or points while angles are preserved&hellip; now OpenAI claims that this always works.」  </li>
+<li>案例还原：在充满微小、缠绕洞的丑陋平面域上施加保角变换。此前人类只掌握较规整情形。AI声称“一般情形总能圆化”，将复杂边界规整为圆/点，使后续分析与计算显著简化。  </li>
+<li>
+<p>解读：对复分析、网格生成、保角纹理和工程仿真中的边界处理意义重大。</p>
+</li>
+<li>
+<p>要点标题：证明的“黑盒化”引发结果派与理解派的分歧  </p>
+</li>
+<li>原文引用：「These are not elegant proofs. Some of them are a big ball of barf&hellip; The answer is a big bunch of numbers.」  </li>
+<li>案例还原：作者类比神经网络的“更快但不可解释”的烟雾/流体模拟：能用，却不知其所以然。AI证明往往需“另一AI”解读，人类难从中习得新洞见。理解派认为数学的价值在“启发心智”，而非仅仅“宣布答案”。  </li>
+<li>
+<p>解读：决定“如何发布与解释AI证明”的新规范，将影响学术文化与教育。</p>
+</li>
+<li>
+<p>要点标题：能力曲线的陡峭与“可及性”的不平等  </p>
+</li>
+<li>原文引用：「Now they have hundreds of results, each of which took them about 3 hours to compute on average&hellip; It&rsquo;s a big club and we ain&rsquo;t in it.」  </li>
+<li>案例还原：6年间从“加法不稳”到“几百成果3小时/篇”。但目前能力被关在少数前沿实验室模型里，普通研究者不可用。作者据此呼吁“开放权重”，让全体学者共享加速红利。  </li>
+<li>
+<p>解读：技术-组织-政策三线合围的问题；决定创新的广度与安全。</p>
+</li>
+<li>
+<p>要点标题：社区与LLM联动校验的撤稿实例  </p>
+</li>
+<li>原文引用：「Three papers had been withdrawn due to feedback from the community&hellip; likely also using an LLM to find out about it.」  </li>
+<li>案例还原：作者延迟发布，观察到已有3篇AI论文在社区反馈下撤回，且查错也可能由LLM辅助完成。这是“民主化工具链”在事后审计与质量控制上的实证。  </li>
+<li>解读：为“先发布、再联测、快速纠错”的新科研流程提供现实背书。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：  </li>
+<li>双峰需求画像：用户分为“要结果”(效率、覆盖)与“要理解”(可解释、可学习)。调研需分层提问，区分KPI型与启发型价值。  </li>
+<li>Ever-receding-argument识别：当技术快速迭代，用户的反对理由会“后撤式变化”，要做纵向面板追踪，记录“反对点迁移”以预测拐点。  </li>
+<li>可借鉴方法：  </li>
+<li>社区联测法：组织用户与开源LLM共同审阅新功能/新模型输出，收集可复现实证（如撤稿案例），形成“众包审计”闭环。  </li>
+<li>成果-洞见双轨评分：对同一功能分别打“结果分”(速度、成功率)与“洞见分”(可解释、可教性)，避免单一指标误判。  </li>
+<li>被揭示的坑：  </li>
+<li>用“好用”替代“可理解”的偏误。短期转化高，但长期心智资产低，复购与口碑风险大。  </li>
+<li>闭源即盲测：若模型不可用，调研样本将严重偏向“俱乐部内”，外部画像失真。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：  </li>
+<li>叙事分层：以“结果vs理解”冲突为主线，构造双线内容矩阵（效率奇迹+人类洞见）。用真实案例（镜室遍历、圆化变换）做“硬核证据”。  </li>
+<li>参与式纠错：发布“结果包”+悬赏审阅/复现挑战，借社区与LLM共审。撤稿不再是丑闻，而是“开放科学”的可信信号。  </li>
+<li>值得研究的传播路径：  </li>
+<li>Proof drop→Community audit→Insight distillation→Teaching content。把低可读证明转译成人类可学的“微课卡片”，形成品牌的“洞见增值链”。  </li>
+<li>可及性议题共情：强调“让每个人都能用”的价值观，降低精英主义反感，扩大外圈用户粘性。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略/案例：  </li>
+<li>A/B像“722篇/3小时”的极限试验文化：小流量多并发，先看“结果面”(点击/转化)，再引入“洞见面”(路径解释、可复用策略)。  </li>
+<li>社区质检：上线“众包找茬”机制，结合LLM做规则审计（类比撤稿三例），缩短发现-修复闭环。  </li>
+<li>转化路径/用户旅程新发现：  </li>
+<li>黑盒可带来短期转化，但长期留存依赖“可解释的收益路径”（为什么这次买，为什么下次还会买）。将推荐理由、价格变动解释、使用教程前置，提升信任与复购。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI能真正发挥作用的阶段：  </li>
+<li>电子/物理仿真前置：借鉴“流体/烟雾模拟”类比，用AI快速近似CFD/热-力学仿真，做早期可行性筛选与参数搜索。  </li>
+<li>约束检查与证据生成：将“机器可读证明”理念挪用于可靠性/安全约束校验，输出可审计的测试工况覆盖报告。  </li>
+<li>设计空间探索：在ID方案→MD堆叠→BOM权衡中做大规模组合搜索，产出Pareto前沿候选。  </li>
+<li>边界：  </li>
+<li>用户体验与合规责任不可外包：人体工学、法遵与可维护性需要PM主导；AI结论需人审与可追溯证据链。  </li>
+<li>“黑盒优选”需“白盒复核”：结果好≠可量产；需引入规则/物理约束可解释器。  </li>
+<li>工具/流程变化信号：  </li>
+<li>引入“开源可自托管模型”作为内网算力基座，沉淀企业私域权重；  </li>
+<li>评审会多一页：AI建议-人类裁决-对赌验证；  </li>
+<li>岗位演变：新增“模型审计工程师/验证策展人”，专管数据与约束的合规性。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「These are not elegant proofs. Some of them are a big ball of barf.」（中段）——直击争议核心：结果巨大、证明难读，点出“美感与洞见缺位”的痛点。  </li>
+<li>「You are seeing a miracle unfold before your eyes, but not so fast.」（中段）——一半惊叹一半刹车，精准传达“能力高涨、可及性堪忧”的张力。  </li>
+<li>「It&rsquo;s a big club and we ain&rsquo;t in it.」（中段）——犀利地描述了闭源与权限不平等，引发对开放权重的强烈诉求。  </li>
+<li>「Three papers had been withdrawn due to feedback from the community&hellip; likely also using an LLM.」（结尾）——用事实证明“社区+LLM”的纠错能力，给“开放即质量”的论点加码。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>关注AI与基础科学结合的研究者、工程师与高校师生：可快速了解AI证明的两大硬核案例与方法论冲突。  </li>
+<li>科研管理者与政策制定者：把握“开源权重/可及性”对创新与安全的结构性意义。  </li>
+<li>产品/运营/营销从业者：借“结果vs理解”的叙事与“社区联测”机制，升级实验文化与用户沟通方式。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
