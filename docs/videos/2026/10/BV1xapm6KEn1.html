@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🎁 效率工具 1️⃣5️⃣ Codex Reset：ChatGPT 订阅重制的“解码器” ㊙️</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🎁 效率工具 1️⃣5️⃣ Codex Reset：ChatGPT 订阅重制的“解码器” ㊙️</h1>
+      <div class="reader-meta">B站 · 沧海九粟 · BV1xapm6KEn1</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>盯紧Codex产品官的推特，用&rdquo;重置规律&rdquo;把AI编程订阅的token榨干用尽。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这是一期不到8分钟的工具介绍视频，UP主&rdquo;沧海九粟&rdquo;推荐了一个叫 <strong>Codex Reset</strong> 的网站，专门服务于长期使用 ChatGPT / Codex 进行编程的订阅用户。核心命题只有一个：<strong>如何预测 Codex 什么时候会重置用量，从而把手里的 token 用到极致。</strong></p>
+<p><strong>背景：一个&rdquo;甜蜜的烦恼&rdquo;</strong></p>
+<p>Codex 现在处于性价比极高的阶段，官方频繁发放&rdquo;重置&rdquo;机会，用户的周用量因此被大幅拉高。但问题在于——<strong>你根本不知道它什么时候重置</strong>。于是经常出现两种憋屈场景：一是你辛辛苦苦用到了 90% 多，突然来了次重置，之前的节制全白费，&rdquo;感觉非常亏&rdquo;；二是你三四天就把额度用光，只能干等着赌它重置，而距离七天自然重置日还远。</p>
+<p><strong>核心线索来源：产品官的推特</strong></p>
+<p>答案很明确：线索来自 Codex 首席产品官（视频中音译为&rdquo;table/TIO&rdquo;）的 Twitter。很多类似网站都是从这个推特扒线索帮用户记录判断。UP主选的 Codex Reset 是其中信息最全、维度最多的一个。</p>
+<p><strong>案例：28天挑战拿到3次重置</strong></p>
+<p>产品官最近搞了一个&rdquo;28天挑战&rdquo;：在这28天里，要么发布一个重要功能，要么就给一次重置机会。结果在挑战开始短短十天里，用户已经白拿到<strong>三次周重置</strong>。这就是典型的重置红利期——如果你正好把额度用完了还等着，这波重置给你带来的 token 直接转化为能做更多事情的空间。</p>
+<p><strong>网站四大功能（UP主逐一演示）</strong></p>
+<ol>
+<li>
+<p><strong>重置时间标记</strong>：首页明确告诉你&rdquo;上一次重置发生在什么时候&rdquo;，比如视频拍摄前两天的13号1点左右，并标注线索来源是产品官推特。有时产品官会直接发推说&rdquo;今天结束时会重置&rdquo;，网站就会显示&rdquo;大概还有多少小时&rdquo;，提醒大家抓紧用。</p>
+</li>
+<li>
+<p><strong>重置日历</strong>：橙色=最近一次重置，绿色=历史重置，<strong>虚线框=Banked Reset（储备重置）</strong>。这里UP主给了一个关键提醒：储备重置本质是官方送的&rdquo;重置券&rdquo;，<strong>默认需要你手动使用</strong>。Codex 设置里有开关可以让你在对话中烧完流量后自动使用重置券，但必须手动勾选，否则就是手动模式——<strong>千万别浪费这些重置券</strong>。</p>
+</li>
+<li>
+<p><strong>节奏图与间隔天数</strong>：这是用来做推测的。UP主指出，正常自然重置是7天，但最近的重置周期中位数大约是<strong>4天</strong>，最近30天甚至是4天、3天。基于此，用户就可以&rdquo;赌&rdquo;——比如国庆后重置频率约4天一次，那你可以比平时更激进地用 token、用好模型、做平时舍不得做的事。</p>
+</li>
+<li>
+<p><strong>用量对比小工具</strong>：在 Codex 里用斜杠命令 <code>/status</code> 拿到 weekly limit 信息，粘贴进网站的 status 工具，就能看到当前消耗情况并给出大致预测。</p>
+</li>
+</ol>
+<p><strong>底层逻辑：重置不是固定承诺</strong></p>
+<p>网站也解释了重置机制的由来——最早是一种补偿，后来发现用户很受欢迎，加上用户量增长需要拉新，就演变成发重置券、搞活动等市场化手段。所以它<strong>不是固定的，官方也不承诺将来一定会有</strong>，现在只能靠产品官推特去分析。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【赛博义父】</strong> 产品官推特=AI程序员的&rdquo;赛博义父&rdquo;，他说重置就重置，跟着义父有肉吃——对应核心逻辑：重置线索的唯一权威来源是产品官推文。</li>
+<li><strong>【4天赌场】</strong> 自然重置7天是&rdquo;官价&rdquo;，最近4天是&rdquo;黑市价&rdquo;，赌的就是这个时间差——对应逻辑：根据近期重置间隔中位数，激进规划 token 消耗。</li>
+<li><strong>【别让券睡觉】</strong> 储备重置券是默认手动挡，不勾自动就躺着睡大觉——对应逻辑：Banked Reset 需手动启用，否则白白浪费。</li>
+<li><strong>【90%的冤种】</strong> 用到90%突然被重置，是最亏的一批人——对应逻辑：不了解重置规律会导致用量规划失误。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点标题</strong>：重置线索来自产品官推特，而非官方公告</li>
+<li><strong>原文引用</strong>：「答案也是很明确的，有哪里呢？就是来自于这个codex的首席产品官table啊，他的twitter。」</li>
+<li><strong>案例还原</strong>：视频中演示网站首页明确标注&rdquo;上一次重置在13号1点左右&rdquo;，并注明线索来源是产品官推特。有些时候产品官会直接发推文官宣&rdquo;我们就要重置了&rdquo;，网站就会标出&rdquo;还有多少小时&rdquo;，提醒用户抓紧用。UP主还提到推特上出现了&rdquo;table赛博义父&rdquo;的相关内容，因为他会直接告诉大家 ChatGPT 和 Codex 大概何时重置。</li>
+<li>
+<p><strong>解读</strong>：告诉用户权威信息源的定位方式，对重度 AI 工具用户意义重大。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：28天挑战=重置红利窗口期</p>
+</li>
+<li><strong>原文引用</strong>：「我在这28天里面，我亦或是我会announce一个重要的功能，亦或是我就会给你一次重置的机会。」</li>
+<li><strong>案例还原</strong>：产品官发起28天挑战，承诺在这28天内要么发布重要功能，要么给一次重置。结果挑战开始仅十天，用户就白拿到三次周重置。UP主以此说明：在这种活动期，重置频率远超自然7天的节奏，是集中&rdquo;薅&rdquo;红利的黄金时间。</li>
+<li>
+<p><strong>解读</strong>：识别活动周期，是提高订阅ROI的关键操作。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：储备重置券默认手动，别浪费</p>
+</li>
+<li><strong>原文引用</strong>：「默认是需要你去手动使用的啊……否则默认是手动重置，手动去使用重置券的啊。大家一定记得这个，不要浪费了那些重置券。」</li>
+<li><strong>案例还原</strong>：网站在日历上用虚线框标记 Banked Reset（储备重置）。UP主解释：这是官方送的&rdquo;重置券&rdquo;，Codex 设置里有开关可让你在流量烧完后自动使用，但默认不开，必须手动勾选。如果不注意，券就会一直闲置。</li>
+<li>
+<p><strong>解读</strong>：一个开关的忽略，可能损失大量可用额度。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：用节奏图&rdquo;赌&rdquo;重置，激进化用 token</p>
+</li>
+<li><strong>原文引用</strong>：「最近30天是四天、三天，我们正常的重置是七天自然重置……你可以比之前更激进的去用你的token。」</li>
+<li><strong>案例还原</strong>：UP主展示节奏图得出&rdquo;最近重置周期中位数约4天&rdquo;。结合国庆后4天一次的频率，他给出的策略是：可以更激进地用 token、用好的模型、做平时舍不得做的事。他本人也承认&rdquo;我已经用了抄了（超了）&rdquo;，因为就是在赌最近4天会重置一次。</li>
+<li><strong>解读</strong>：数据化节奏判断，把&rdquo;节俭&rdquo;变成&rdquo;高效激进&rdquo;。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：这个案例本身就是一次绝佳的&rdquo;信息源挖掘&rdquo;示范——官方没承诺的东西，反而藏在产品负责人的个人社媒里。用户研究者应当意识到，<strong>关键行为信号往往不在官方文档，而在&rdquo;人&rdquo;身上</strong>。</li>
+<li><strong>可借鉴方法</strong>：把&rdquo;权威个人言论&rdquo;作为数据源纳入监测体系（这里是推特），并建立时间序列记录（重置日历）找出中位数节奏，这是一种低成本、高频率的<strong>行为预测式调研</strong>。</li>
+<li><strong>被揭示的坑</strong>：用户的真实痛点不是&rdquo;额度不够&rdquo;，而是&rdquo;信息不对称导致规划失误&rdquo;（用到90%被重置=亏）。这是典型的<strong>决策焦虑型需求</strong>，比功能性需求更隐蔽。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：&rdquo;28天挑战&rdquo;是极聪明的增长手段——把&rdquo;发功能&rdquo;和&rdquo;发福利&rdquo;绑定成二选一承诺，制造持续期待感，频繁的&rdquo;重置&rdquo;又不断给用户惊喜，形成<strong>高频正反馈循环</strong>。</li>
+<li><strong>传播路径</strong>：官方不发公告，改由产品官个人推特放料，再由第三方网站（Codex Reset）聚合传播。这是一条&rdquo;<strong>个人权威→社群解读→工具承接</strong>&ldquo;的轻量传播链，比官方公告更有话题性和可信感。</li>
+<li><strong>值得研究</strong>：不确定性本身成了营销资产——&ldquo;你不知道什么时候重置&rdquo;反而让用户频繁回访网站、关注推特，形成粘性。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：&rdquo;储备重置券&rdquo;就是一种<strong>满减券/加赠券</strong>的设计，默认手动=默认不自动核销，制造&rdquo;需要用户主动领取&rdquo;的参与感，也可作为促活钩子。</li>
+<li><strong>转化路径发现</strong>：网站把&rdquo;用量status查询→粘贴→预测&rdquo;串成一条轻量工具链，本质是一个<strong>复访触发器</strong>。当用户用量快用完、券又没了时，就会回来刷网站找线索——这就是天然的复访入口。</li>
+<li><strong>用户旅程新发现</strong>：用户的决策节点是&rdquo;赌不赌下一次重置&rdquo;，运营若能提供节奏预测，就等于参与了用户的用券决策，直接影响消耗行为。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>本期视频虽为软件工具类内容，但对智能硬件 PM 仍有隐喻价值：
+- <strong>AI能发挥作用的阶段</strong>：本视频展示的是&rdquo;数据聚合+规律预测&rdquo;型 AI 应用（抓取推特线索→日历可视化→推测重置节奏），这类<strong>信息整合与趋势预测</strong>能力，同样可迁移到硬件 PM 的前期市场判断、竞品节奏监测上。
+- <strong>AI的边界</strong>：产品官&rdquo;发不发重置&rdquo;&ldquo;发什么功能&rdquo;这种<strong>人为的、非承诺性的决策</strong>，AI完全无法预测，只能靠人盯人、靠经验判断。对应到硬件 PM——ID 审美取舍、MD 堆叠的工程妥协、电子设计 demo 的方向拍板，仍必须 PM 亲自做，AI 只能提供辅助信息。
+- <strong>岗位信号</strong>：出现了&rdquo;靠个人社媒放料+第三方工具承接&rdquo;的新信息生态。智能硬件 PM 也应意识到：<strong>自身产品的关键节奏信息，可能散落在老板、KOL、社群里</strong>，建立外部信息监测能力正在成为 PM 的新职责。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ol>
+<li>「你可能用到90%几，然后你吃到一次重置，你会感觉非常的亏。」（中段）——精准戳中所有订阅制用户的共同痛点，一句话让观众产生强烈共鸣，值得记住因为它定义了整个视频要解决的问题。</li>
+<li>「我亦或是我会announce一个重要的功能，亦或是我就会给你一次重置的机会。」（中段）——产品官28天挑战的核心规则原文，是理解&rdquo;重置红利期&rdquo;的关键，值得记住因为它是用户判断活动价值的依据。</li>
+<li>「否则默认是手动重置，手动去使用重置券的啊。大家一定记得这个，不要浪费了那些重置券。」（中段）——最实用的一句提醒，直接帮用户避免真实损失，值得记住因为它可立即执行。</li>
+</ol>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>长期订阅 ChatGPT / Codex 进行编程或高强度使用的付费用户，尤其是经常在&rdquo;要不要省着用&rdquo;&ldquo;要不要赌重置&rdquo;之间纠结的人。花 8 分钟看完，能立刻学会用 Codex Reset 网站查历史节奏、查储备券、预测重置时间，把每一分订阅费的 token 都用到刀刃上。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
