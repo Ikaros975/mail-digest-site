@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>模型这么强，AI产品还难在哪？｜微软CoreAI副总裁Marco Casalaina × 课代表立正</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>模型这么强，AI产品还难在哪？｜微软CoreAI副总裁Marco Casalaina × 课代表立正</h1>
+      <div class="reader-meta">B站 · 课代表立正 · BV1yXJt6uEx3</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>模型再强也只是“发动机”，产品成败取决于“底盘+司机”：数据语境、身份与权限、可检验的Rubric评估。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与总论：模型不是产品，Harness才是“落地器”
+  Marco反复强调“Models by themselves don&rsquo;t do anything.” 大模型只会逐 token 预测，必须被放进“harness（挂架/承载框架）”里，才能在真实场景里运转。微软将其具体化为两类路径：一是通用能力的承载（如 M365 Copilot、GitHub Copilot）；二是场景化、边缘化与定制化（如本地听写、文档智能）。以他自己为例，他在本地用 Whisper 做语音转写，并做过定制（人名/术语纠错），效果显著优于“开箱即用”。另一类是微软的文档智能套件：不止“读懂文字”，还能结构化识别文档布局，把跨页表格拼回去；其“文档翻译”还能在英→阿/希等 RTL 语言时自动“翻版式”，把左右方向整体翻转。这些都不是“通用大模型”天然长项，体现了“专用模型+特别的 harness”对落地的价值。
+  关键结论：再强的基座模型，也要通过“场景承载+数据语境+工具整合”才能发力；专用模型（或定制）在确定性强、结构化强的任务上往往更优。</p>
+</li>
+<li>
+<p>企业 vs 消费者：代理的“身份与权限”是分水岭
+  消费级“个人代理”常以“我”的安全上下文行事（实质是“冒充我”）。微软在企业侧发布了“Autopilots”（具备自身身份的代理）：它们有独立的 Teams 收件箱、邮箱地址、文件空间，运行在独立的安全上下文。优点是可以按“最小权限原则”精准授权：默认看不见你的文件，更不可能“替你删库跑路”，只有你明确授予的资源它才触达。这背后，微软在目录/权限体系（Entra ID）上的积累成了基础设施优势。对于员工“AI会不会抢我活”的担忧，Marco的定位是“它向你汇报”，用以承接被委派的工作（如助理、客服、伙伴支持等），让人把时间投入到更高杠杆的工作。
+  关键结论：企业级代理必须从“冒充人”转向“具名体”，将权限抽象为可治理资产，才能规模化落地。</p>
+</li>
+<li>
+<p>许可（permission）与“愉快转型”：从被动推送到自愿拥抱
+  组织层面的“Happy AI 转型”离不开“许可”。Marco讲了个人经历：他长期抗拒视频软件内置的“AI剪辑”，直到某天自愿尝试，发现剪辑效率从1小时缩短到15分钟（基于“转写文本即剪辑”的工作流）。他据此主张：与其“把AI硬塞到用户脸上”，不如让人明确授权分层访问（邮件/日历/消息），并把交互从 CLI 迁移到更自然的语音/多模态界面，让更多人“愿意用、用得明白”。
+  关键结论：让用户与员工“自愿给出许可”，并用自然交互降低门槛，是顺滑导入期的关键。</p>
+</li>
+<li>
+<p>案例重头戏：BMW MDR，用6个月“数据词典”换来全员可用的工程洞察
+  BMW 的 MDR（移动数据记录）项目在全球布置“满车传感器”的测试车，每辆车约5000个传感器，单车行驶可产出 TB 级遥测。过去，只有少数“查询巫师”能写出跨系统/跨域的复杂查询，业务团队（如制动系统工程师）要排队等结果。BMW 决定用代理能力“普惠化查询”，但并非“丢给大模型就行”。他们花了约6个月“全厂走访”，建立“数据词典”：为每类传感器定义含义、阈值、术语与人们平时的说法（包括缩写/行话），并梳理交互方式。Marco亲测后直接用自然语言问：“过去一周的‘湿地急刹’都有哪些？”系统自动编排查询、给出清单，并可深挖“当时制动温度/制动距离”等细节。成果是：工程师从“等巫师”变为“自己查、能复盘”，同时车辆质量与安全指标具备快速闭环的能力。
+  关键结论：强 AI 的背后是“重体力”的知识工程。没有明确的数据语义与业务语境，大模型无法替你“猜懂”制动事件。</p>
+</li>
+<li>
+<p>评估范式迁移：从“通用指标”到“Rubric（规则表）评估”，并做到“信任但校验”
+  传统评估偏通用：扎根性（是否基于检索数据）、相关性、连贯/流畅，或工具调用指标（工具选择/输入准确/输出利用）与任务指标（意图解析/任务完成/任务遵循）。问题是：这些指标不懂你的业务目标。以“公寓定价代理”为例：你上传房源表，它回你“已填好价格”的表，通用的“任务完成度”会打高分；但你打开一看，三居价格明显偏离市场。Rubric-based 评估改为“用自然语言自定义维度与权重”，将“该任务该遵守的规则”写清楚：每次定价必须考虑“卧室/卫生间/面积”、同类可比房源、设施溢价等；银行类任务可以把“合规不越界”权重大于“微小金额的准确回退”。Rubric 既是“评估标准”，也是“设计时的成功定义”。更重要的是持续“Rubric 精炼”：让领域专家在“标注错在哪”时必须写出“为什么错”，把“为什么”沉淀回 Rubric，或者新增维度（如“带电磁炉加价”），并在必要时把 Rubric 显式注入给代理作为上下文。
+  关键结论：思维从“教步骤”切到“定规则/验结果”。管理上坚持“信任但校验”：信任来自持续的 Rubric 评估与用户反馈闭环。</p>
+</li>
+<li>
+<p>组织与方法：长试点期、新岗位与“多试多练”
+  Marco建议“异常地长”的试点期：AI很容易拼装上线，但“容易”带来“草率上线的坏点子”。让真实用户充分试用、用反馈反哺 Rubric 再评，再决定规模化。随之出现两类新角色：Evals Team（专职构建/迭代评测集、运行业务 Rubric、设定阈值）与 FDE（Forward Deployed Engineer，前线部署工程师，和客户一起梳理语境/权限/评估/上线节奏）。同时，他建议每位工程师都要“动手玩所有东西”，把学 AI 当“手艺”而非“读文档”，因为迭代太快，不上手很难真正理解能力边界。
+  关键结论：流程上“先定Rubric—长试点—再扩展”，组织上“评测与前线实施双轮驱动”，个人上“练为先”。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【发动机不等于汽车】模型是发动机，Harness是底盘，数据词典是油，权限是刹车。逻辑：落地=模型×场景承载×数据语境×可治理权限。</li>
+<li>【名片才给钥匙】个人代理“冒充你”，企业代理“有身份证”。逻辑：最小权限+独立身份=可控可审计的企业级代理。</li>
+<li>【先立规后验果】别教步骤，写Rubric；先定义“什么是对”，再让代理自己找路。逻辑：从通用指标转向业务规则与加权评估。</li>
+<li>【错要说为什么】“这价不对还要说为啥不对”。逻辑：错误解释→Rubric新维度/权重→下一轮更准。</li>
+<li>【六个月换一个“懂你”的AI】BMW用半年做数据词典，换来全员可查的工程洞察。逻辑：语义/术语/阈值的知识工程决定可用度。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>模型不做事，Harness才让它落地</li>
+<li>原文引用：「Models by themselves don&rsquo;t do anything&hellip; they have to be embedded within a harness.」（开头）</li>
+<li>案例还原：他在本地用 Whisper 做听写，并定制人名与术语，显著优于“云端通用听写”。微软文档智能可拼接跨页表格、文档翻译还能自动翻版式，都是“专用模型+专用承载”的成果。</li>
+<li>
+<p>解读：产品经理必须先设计“承载与场景”，而不只“选模型”。</p>
+</li>
+<li>
+<p>专用/定制模型优于通用模型（在确定性任务）</p>
+</li>
+<li>原文引用：「As hardware becomes more capable&hellip; you&rsquo;ll see an explosion of models with custom purposes, like transcription.」（开头）</li>
+<li>案例还原：他用本地 Whisper 做听写，微调术语后邮件口述可直接成文，稳定可靠；微软文档翻译对 RTL 语言的版式翻转，是“通用大模型”难以稳定完成的专门能力。</li>
+<li>
+<p>解读：边缘端+专用模型，是企业稳定性的关键拼图。</p>
+</li>
+<li>
+<p>代理的身份与最小权限，是企业AI治理基石</p>
+</li>
+<li>原文引用：「Our autopilots have their own Teams box, email, file space&hellip; they run in their own security context.」（中段）</li>
+<li>案例还原：对比“个人代理冒充你”，Autopilot是“独立用户”；它默认看不见你的文件，只有被授予才能访问，避免“权限外溢”。员工把它当“下属”分派工作，组织可审计与收回权限。</li>
+<li>
+<p>解读：构建企业级代理，先设计“身份/权限/审计”再谈能力。</p>
+</li>
+<li>
+<p>从通用评估到Rubric评估，“信任但校验”</p>
+</li>
+<li>原文引用：「You can&rsquo;t just say, &lsquo;This price is wrong.&rsquo; You have to say, &lsquo;&hellip;and here&rsquo;s why,&rsquo; because that why goes into the rubric down the line&hellip; trust but verify.」（中段）</li>
+<li>案例还原：公寓定价任务里，“任务完成度”会被表面“填了价格”误导；Rubric把“卧室/卫生间/面积/可比房”写成规则并加权，专家在复核时必须写出“错因”，沉淀为新维度，评估→修正→再评估迭代。</li>
+<li>
+<p>解读：Rubric是“可操作的业务验收标准”，是AI产品的“测试用例2.0”。</p>
+</li>
+<li>
+<p>长试点期与新岗位：Evals/FDE成标配</p>
+</li>
+<li>原文引用：「You want to have an abnormally long pilot period&hellip; And increasingly, you find folks focused on evals as a job.」（后段）</li>
+<li>案例还原：微软 M365 Copilot 内部有专职 Evals 团队；微软还有“前线部署工程师（FDE）”到客户侧共建最佳实践。长时间小规模试用、收集拇指反馈与原因，回灌到评测集与Rubric。</li>
+<li>解读：AI上线“慢就是快”，评估与落地是一门独立工程。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点！）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：</li>
+<li>从“需求→流程”转为“需求→Rubric（目标与约束）”。Rubric是“可执行的需求说明书”，含维度、权重、合规底线与可接受误差。</li>
+<li>用户反馈必须“附因”，否则无法进入“Rubric 精炼”闭环。将“错因”标准化为可复用条目，形成“可解释的评审历史”。</li>
+<li>可借鉴的调研方法：</li>
+<li>术语/语义走访法：像 BMW 一样，对关键人群做“语义/缩写/阈值”盘点；形成“数据词典+话术词典”。</li>
+<li>可用性分层许可测试：设计不同数据/功能“许可层级”，观察用户在何种许可下愿意持续使用。</li>
+<li>被揭示的坑：</li>
+<li>把“任务完成”误认为“用户满意”。没有Rubric就无法在评测中“看到业务错位”。</li>
+<li>把“AI强”当作“免做知识工程”。没有数据语境，代理无法稳定复现“领域常识”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路/案例：</li>
+<li>“代理有身份”的概念可延展到品牌：为品牌客服/渠道代理设置“品牌身份证”，独立邮箱/话术库/权限，既可个性化又可审计。</li>
+<li>Permission 叙事：别“硬推AI”，讲“自愿许可换来可见好处”（如剪辑从60分钟降到15分钟），用明确的 before-after 证据转化犹豫用户。</li>
+<li>传播路径：</li>
+<li>以“Rubric思维”讲性能：用业务可理解的维度（如“回复必须引用官方政策原文+可追溯链接”）对外公示，让 B 端客户感到“可控可检验”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略/案例：</li>
+<li>定价/选品决策引入 Rubric 评估：把“类比商品、库存压力、节日因子、毛利底线、广告位成本”写成维度与权重；让买手/运营的“错因”回灌，长期稳态优于拍脑袋。</li>
+<li>“代理有身份”管控店铺动作：为自动化上新、改价、报活动的代理设独立账号与最小权限，且所有动作留痕可审。</li>
+<li>转化路径新发现：</li>
+<li>让用户“授予权限换效率”是关键门槛（如读取历史订单/偏好以加速复购推荐）；用渐进式许可+立竿见影的小胜利建立信任。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>AI可真正发挥作用的阶段：</li>
+<li>边缘侧智能优先：本地听写、关键词唤醒、场景检测、传感器融合（像 BMW 案例）更适合“专用/小型模型”落地，提升实时性与私密性。</li>
+<li>从“ID/MD/EE流程”看：AI可在ID早期概念生成与语音/交互故事板上提供灵感；在MD/EE阶段，AI可辅助“器件选型建议、约束校核、BOM一致性检查、接口协议转写”，但需以“Rubric化的工程约束”驱动。</li>
+<li>AI边界与PM必须亲自做的：</li>
+<li>领域约束与可制造性权衡（成本、良率、安全、法规）仍需 PM 牵头沉淀成“Rubric/设计规则”；传感器语义、阈值、工况优先级必须由团队确认（知识工程不可外包给通用模型）。</li>
+<li>工具/流程/岗位演变信号：</li>
+<li>“设备级代理有身份”：为设备侧代理配置“独立身份与权限域”（本地数据、云端数据、OTA边界），从“冒充人”转为“设备自治体”。</li>
+<li>“评测工程”前置：把可靠性/功耗/时延/误报率写入Rubric，做长试点（灰度 OTA），以“验证-精炼-再验证”代替一次性验收。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「Models by themselves don&rsquo;t do anything&hellip; they have to be embedded within a harness.」（开头）
+  价值：一锤定音地纠偏“唯模型论”，提醒所有人先设计承载与场景。</li>
+<li>「There are literally 5,000 sensors on these cars&hellip; they spent like six months&hellip; gathering a data dictionary.」（中段）
+  价值：把“知识工程”的艰苦与必要性具象化，给决策层设定真实预期。</li>
+<li>「Our autopilots&hellip; run in their own security context&hellip; principle of least privilege.」（中段）
+  价值：点明企业级代理与消费级代理的本质差异——身份与权限治理。</li>
+<li>「You can&rsquo;t just say, &lsquo;This price is wrong&rsquo;&hellip; &lsquo;here&rsquo;s why&rsquo;&hellip; that why goes into the rubric down the line.」（中段）
+  价值：把“错因”转为“规则”的方法论金句，直指可持续优化之道。</li>
+<li>「You want to have an abnormally long pilot period&hellip; it&rsquo;s easy to put ideas into production, and a lot of bad ideas got into production.」（结尾）
+  价值：为“慢就是快”的上线策略背书，约束团队克制冲动发布。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>B2B/大型组织里的产品/技术/数据负责人：本视频提供“从模型到产品”的系统路径（身份与权限、Rubric评估、知识工程与长试点）。</li>
+<li>行业解决方案/顾问/FDE/架构师：可直接借鉴 BMW 与 Rubric 评估的落地打法。</li>
+<li>想把 AI 真正用于生产的运营/电商/营销人：用“许可+Rubric”的方法，把可控与可验收落到每个环节。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
