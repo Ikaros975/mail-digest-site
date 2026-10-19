@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🚀特斯拉的车飞起来了，AI能造出可信的“试验场”吗？实测Atlas世界模型！未来一年能用AI预演现实吗？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🚀特斯拉的车飞起来了，AI能造出可信的“试验场”吗？实测Atlas世界模型！未来一年能用AI预演现实吗？</h1>
+      <div class="reader-meta">B站 · AI超元域 · BV1bmnV6gEUv</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>实测Atlas世界模型：能否稳住同一场景、多角度少胡编、深度可信，给AI造“试验场”打分。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <ul>
+<li>
+<p>背景与问题设定：特斯拉新跑车腾空演示引出“AI能否预演现实”的追问。World Labs（李飞飞联合创办）推出的Atlas，把AI从“给人看的视频”推进到“有空间约束、可反复取景、可被工具使用的场景”。本期用其云端API实测：输入图片+相机参数+可见表面深度，生成目标机位视图。与仅靠提示词不同，Atlas可显式指定相机位置/朝向/内参，检验三个问题：1）换视角，布局是否稳定？2）补证据，会不会少胡编？3）深度几何，是否靠谱？</p>
+</li>
+<li>
+<p>实验搭建（完整案例）：用提示词让Codex生成“试车场”参考图：坡道、L型护栏、四个锥桶、墙后紫色箱子。分两组输入Atlas：A组仅入口参考角度；B组多给两个额外角度（其中一张能看到紫箱），两组都附带相机位姿/内参与可见表面深度。各组各调用3次，目标机位固定为“入口旁边”和“墙后”，共12张生成图。未上传任一目标机位“答案图/答案深度”，提示词也不提“紫色箱子”，防止泄题。</p>
+</li>
+<li>
+<p>测试1：换视角是否仍是同一场地？对“入口旁边”视角对比：坡道与地面的连接大体保住，L型护栏无明显断裂，四个锥桶可辨、排列大致不变；但墙面纹理、护栏粗细、地面标线在细节/阴影上变化明显，两段移动镜头中纹理与光影也在变。结论：全局结构“看着对”，但还达不到“坡度/物体位置两准”。</p>
+</li>
+<li>
+<p>测试2：补证据是否少胡编？看“墙后”视角。A组（只给入口图）三次生成：两次把紫箱处补成空地，一次多出一面墙挡住，均看不到紫箱——因入口图本就看不到，不能直接判错。B组（多给两个角度，其中一张看到紫箱且带深度）三次生成均出现紫箱，位置接近参考，但箱子侧面偶有竖槽，远处会多出建筑或锥桶。结论：多视角/多证据显著提升“补全”，但并非全局还原，更不是“所有隐藏物体都能找回”。</p>
+</li>
+<li>
+<p>测试3：深度几何靠谱吗？不再看画面，改查API随图返回的深度。对齐紫箱区域，只比较双方都有“有效深度”的像素，按米制标定：三轮平均，单图输入误差≈1.67米；三图输入误差≈2.67厘米。再看护栏与转角墙：虽在图像中清晰可见，但“全部没有有效深度”，不是误差为0，而是无可用远近数据，无法评估。结论：看起来“像真的画面”不等于“完整可靠的空间数据”；能转着看的三维预览≠可直接当作可信三维场景。</p>
+</li>
+<li>
+<p>意义与预测：对比已有三维重建/新视角渲染（如2023三维高斯），Atlas的看点在“把空间条件与生成能力结合”，在指定机位生成并补全未观测区，可用于场景原型、测试环境素材。World Labs另一研究显示：双臂机器人立方体交接中，“模拟里表现更好的策略，在真实也更好，成功/失败区域相似”，说明“虚拟试验场”能提前暴露现实错误。作者不主张取消实测，而是把“高成本试错先迁移到虚拟环境”。明确预测：未来一年，世界模型将开启“预演现实”阶段。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>-【三把尺】“换角度不乱、补证据不编、深度要准”——判断世界模型能否当试验场的三项硬标准。
+-【多角度胜过多花言】“相机参数&gt;提示词花活”——多视角/位姿/深度让补全靠谱，而非靠描述瞎猜。
+-【像真≠是真】“好看不等于好用”——逼真画面常缺关键深度，不能直接当三维真相。
+-【虚拟先错、现实少疼】“先在仿真摔跤，再上路飞奔”——把高成本试错前置到可控的虚拟场，降成本提安全。
+-【证据驱动补全】“看见的越多，猜错的越少”——可见面深度与额外视角显著降低补全走样。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>目标从“看着爽”到“空间可用”</li>
+<li>原文引用：「把AI生成的目标从一段供人观看的画面推进到一个有空间约束，能够反复取景，继续补全并被其他工具使用的场景」</li>
+<li>案例还原：以“试车场”为例，不仅生成一段运镜，而是固定同一场地，指定两处机位反复取景，并尝试在墙后补全不可见区域。</li>
+<li>
+<p>解读：评估从“视频质量”升级到“空间一致性/可复用性”。</p>
+</li>
+<li>
+<p>接口可控性优于提示词</p>
+</li>
+<li>原文引用：「艾特拉斯的接口允许你提供明确的目标相机参数……而不是只能在提示词里描述向哪里移动」</li>
+<li>案例还原：为每次生成传入精确的位姿/内参与可见面深度，对比不同输入组对“紫箱”补全与误差的影响。</li>
+<li>
+<p>解读：工程化可控性更适合测试与生产。</p>
+</li>
+<li>
+<p>换视角：结构大体稳，细节仍漂移</p>
+</li>
+<li>原文引用：「坡道与地面的连接大体保住了……四个锥桶也都能辨认……但放大以后墙面的纹理、护栏的粗细、地上的标线还是会变化」</li>
+<li>案例还原：入口旁机位6张图中，大构型稳定但纹理/阴影随视角漂变，显示几何与材质解耦仍不稳定。</li>
+<li>
+<p>解读：做可视化尚可，做精确几何/定位仍不足。</p>
+</li>
+<li>
+<p>多证据输入显著降低“胡编”</p>
+</li>
+<li>原文引用：「这一回三次都出现了紫色箱子，位置也接近参考图……远处还会多出建筑或者锥桶」</li>
+<li>案例还原：仅入口图时墙后多为“空”或“新墙”，加入能看到紫箱的视角与深度后，三次均成功出现紫箱但细节有噪声。</li>
+<li>
+<p>解读：补全依赖证据密度，非“凭空还原”。</p>
+</li>
+<li>
+<p>深度可信度分化：精区准、缺区空</p>
+</li>
+<li>原文引用：「单图约差1.67米，三图约差2.67cm」「画面数据像是真的不等于空间数据完整」</li>
+<li>案例还原：紫箱ROI多视角深度精度达厘米级；护栏/转角墙虽显眼却无“有效深度”，无法评估，揭示空洞区域。</li>
+<li>解读：可用于局部量化评估，但全局几何完整性不足，慎作高风险决策。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察（重点）</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察/方法论：用世界模型快速搭“虚拟场景原型”，在可控机位反复观察同一布局的“可见性/遮挡/动线”。收集多角度+相机参数+可见面深度，避免单视角导致的“补全伪影”干扰判断。</li>
+<li>可借鉴方法：拍摄实地多机位参考（含位姿标定），用Atlas生成替代视角做“可见性热力图”，对关键ROI（如货架端头、标识牌）检查深度有效率与误差。</li>
+<li>被揭示的坑：看起来很像真的画面，可能在关键ROI缺深度；必须报告“有效深度覆盖率”，否则洞察失真。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：把素材制作从“提示词走位”转为“参数走位”，在同一场景内稳定复拍不同机位，做一致风格的多端素材包。</li>
+<li>值得研究的手段：多视角参考提升“道具/LOGO”稳定性；在未拍到的区域不要强行补全用于广告正片，以免“胡编”元素误导品牌信息。</li>
+<li>传播路径：用虚拟试验场先做A/B运镜测试与构图验证，再上实拍，降低踩坑成本。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>运营策略：用Atlas做“固定场景+多机位”的SKU展示，生成可循环拍摄角度的详情页动图/短视频，保障布局一致，减少返工。</li>
+<li>转化与旅程：对关键卖点区域（接口、材质细节）要求多视角实拍或高保真输入；仅当ROI深度误差达“厘米级”才用于尺寸/适配说明。</li>
+<li>风险提示：页面中避免使用“未有证据的补全区域”作为卖点图，需标记或用实拍替换。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>能发挥作用的阶段：环境/场景原型搭建、传感器机位验证（相机/雷达视域）、早期策略评估（如路径规划/抓取场景的可见性）。与Unity/ROS联动可做“证据驱动”的仿真素材。</li>
+<li>边界：Atlas当前不等于完整3D；空洞区常无有效深度，物理属性（摩擦、接触）与高精度几何尚不足；对MD堆叠/电子设计demo仅能做可视化与视域验证，不能替代结构/热/EMC等工程分析。</li>
+<li>工具与流程信号：收集多机位标定数据成为“标配输入”；从“提示词产线”转为“参数化产线”；验证指标需加入“有效深度覆盖率”“关键ROI厘米级误差”“补全可信度分数”。AI可以加速ID外观预演与场景搭建，但MD/电子仍需工程闭环与实测。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「把AI生成的目标从一段供人观看的画面推进到一个有空间约束，能够反复取景，继续补全并被其他工具使用的场景」（开头）——点题“从看见到可用”的跃迁。</li>
+<li>「艾特拉斯的接口允许你提供明确的目标相机参数……而不是只能在提示词里描述向哪里移动」（中段）——工程可控性的关键优势。</li>
+<li>「画面数据像是真的不等于空间数据完整」（中段）——警惕“像真”的陷阱，是评估世界模型的金句。</li>
+<li>「未来一年，世界模型将把高成本的现实试错迁移到虚拟世界里，进入真正的预演现实时代」（结尾）——给出明确时间窗的强预测。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <ul>
+<li>关心自动驾驶/机器人仿真、三维内容生产、AIGC在工程落地的从业者与学生。</li>
+<li>需要在“成本/速度/可信度”间做权衡的PM、数据/算法/视觉工程师、内容制作与电商运营。看完可快速把握世界模型的“能与不能”。</li>
+</ul>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
