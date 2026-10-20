@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🚀MiniMax M3.1 Flash客观深度实测！我用OpenCode挑战3个长程开发任务，最难一项耗时5小时，性能与细节能否经得起检验？能否超越DeepS</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🚀MiniMax M3.1 Flash客观深度实测！我用OpenCode挑战3个长程开发任务，最难一项耗时5小时，性能与细节能否经得起检验？能否超越DeepS</h1>
+      <div class="reader-meta">B站 · AI超元域 · BV1p1nN6zEG6</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>MiniMax M3.1 Flash：能建3D房、能复刻飞船，但让Mac发烫、让开发者等5小时。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与测试设定</strong></p>
+<p>UP主在DeepSeek V4.1 Flash之后，实测MiniMax新发布的M3.1 Flash。官方基准测试显示其编程能力与「GBT5.6」「so5模型」「op45模型」相差无几（字幕原话如此），因此UP主在OpenCode中设计了三道长程开发任务，另有网页版两道任务作为补充。全部测试素材与token消耗均由后台统计。</p>
+<p><strong>网页版测试：3D室内空间与艺术史动画</strong></p>
+<p>第一题给出一张室内平面图，要求用three.js或更合适的Web3D技术栈构建可第一人称自由探索的3D室内空间。结果：客厅、卧室、餐厅、厨房、二层卧室、书房均被还原，沙发分色、地板瓷砖、俯视图与指定房间跳转都能用，配色不错。缺点是探索两三分钟后电脑发烫、风扇转得厉害——与DeepSeek V4.1 Flash一样「并没有对性能做优化」。第二题生成艺术发展史动画：窗外景色逼真、壁画可圈可点，但「画的这只猫反而又不太像猫」，人物喝水时胳膊与人体有分离感，总体严格遵循提示词但细节失准。</p>
+<p><strong>OpenCode三题：案例前前后后</strong></p>
+<p>案例一，Apple Music风格Mac OS原生音乐播放器：耗时<strong>2小时40分钟</strong>（近3小时），完成后导入音乐、播放、音量调节、音乐列表/专辑/歌手、迷你播放器、侧边栏隐藏与搜索都可用，且运行时不发烫——性能优化到位，但速度「不如DeepSeek V4.1 Flash模型要快」。</p>
+<p>案例二，研究科幻小说中的极光号飞船并用前端技术复刻：耗时<strong>3小时32分钟</strong>。运行后有引擎音效、可调音量、可放大看中心轴与载人舱、星空背景不错，能导航到计算核心、居住区域（建筑亮灯、绿地、穹顶），方向键可探索、右上角可切换整体/主轴/推进装置视角。缺点是电脑发烫、风扇呼呼转，前端性能未优化；且效果不如上次DeepSeek V4.1 Flash的版本。</p>
+<p>案例三，前端复刻巴塞罗那圣家堂：耗时<strong>5小时51分钟</strong>，是三题中最难的一题。高画质下，远景未百分百还原外部结构，可切换角度查看细节并进入内部，彩色玻璃和光影变换效果不错；缺点是电脑发烫、风扇狂转。UP主评价「确实有一定的挑战，但总体还原得还算可以」。</p>
+<p><strong>补充测试与成本</strong></p>
+<p>UP主在Hermes中调用该模型，画出鹈鹕、渡渡鸟、几维鸟在黑洞吸积盘上骑自行车的动画，鸟骑车的动作细节和吸积盘都完整呈现；又生成了从早晨8:30骑车到中午出现特效变表的全天动画。最终统计：完成这些开发约消耗<strong>8.95亿token</strong>，缓存命中率约<strong>97.2%</strong>。</p>
+<p><strong>关键结论</strong></p>
+<p>能力上，长程任务可交付、部分场景性能优化好（音乐播放器不发烫）；短板是耗时长（2.5~6小时）、复杂3D前端性能差（网页版3D房间、飞船、圣家堂均发烫），细节还原不稳定（猫不像猫、圣家堂外部不精确）。优势在于缓存命中率极高、token成本可控。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【三小时播放器、六小时教堂】</strong> 简单任务2小时40分，最难5小时51分——长程开发&rdquo;能交卷但拖堂&rdquo;，速度不及DeepSeek V4.1 Flash。</li>
+<li><strong>【发烫三兄弟】</strong> 3D房、飞船、圣家堂全部风扇狂转，唯独Mac原生播放器冷静——&ldquo;WebGL重负载不优化，原生应用才降温&rdquo;。</li>
+<li><strong>【猫不像猫、胳膊分离】</strong> 艺术史动画严格听提示词，但人物与动物细节失真——&ldquo;结构对、灵魂差&rdquo;。</li>
+<li><strong>【97.2%缓存命中】</strong> 8.95亿token里绝大多数命中缓存——&ldquo;跑得慢，但账单不吓人&rdquo;。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：长程任务可交付，耗时是硬伤</strong></li>
+<li><strong>原文引用</strong>：「他开发这款音乐播放器耗时比较久，耗时两小时40分钟……像这个速度，我认为是不如deep sc v4.1flash模型要快的」</li>
+<li><strong>案例还原</strong>：Apple Music风格播放器从提示词到可运行成品耗时2小时40分钟，功能完整（导入、播放、音量、列表、搜索、侧边栏），但UP主明确对比DeepSeek V4.1 Flash更慢。</li>
+<li>
+<p><strong>解读</strong>：对需要快速迭代原型的开发者，速度可能比&rdquo;能做完&rdquo;更关键。</p>
+</li>
+<li>
+<p><strong>要点：前端性能优化是模型短板</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我探索了23分钟这个画面，然后电脑开始发烫，风扇转的比较厉害，这说明它deep sk v4.11样，并没有对性能做优化」</li>
+<li><strong>案例还原</strong>：网页版3D房间探索两三分钟即发烫；圣家堂高画质运行后&rdquo;风扇狂转&rdquo;；仅Mac原生播放器不发烫——原生与WebGL负载的差异暴露了优化盲区。</li>
+<li>
+<p><strong>解读</strong>：交付3D/前端项目时，必须人工补性能优化环节。</p>
+</li>
+<li>
+<p><strong>要点：还原精度&rdquo;结构稳、细节飘&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「他画的这只猫反而又不太像猫……可以看到这些胳膊跟人体是有这种分离的感觉」</li>
+<li><strong>案例还原</strong>：艺术史动画窗外景色逼真、壁画不错，但猫不像猫、喝水胳膊错位；圣家堂&rdquo;并没有百分百为我们还原出这个建筑的外部结构&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：视觉验收要盯细节，不能只看第一眼惊艳。</p>
+</li>
+<li>
+<p><strong>要点：成本结构健康</strong></p>
+</li>
+<li><strong>原文引用</strong>：「消耗的token大概是八点95亿token……今天的缓存命中率大概是97.2%」</li>
+<li><strong>案例还原</strong>：三个长程OpenCode项目总计约8.95亿token，97.2%走缓存命中。</li>
+<li><strong>解读</strong>：长任务高token量下，缓存命中率决定了实际成本可承受度。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <p>视频本身即一份&rdquo;实测型竞品调研&rdquo;范式：固定测试集（3D房、飞船、圣家堂三题跨模型复用）+双环境对照（网页版vs OpenCode）+量化指标（耗时、token、缓存命中率）+定性体验（发烫、细节失真）。对用研的启发是：评测模型能力不能只看官方基准（&rdquo;与GBT5.6相差无几&rdquo;），要看任务级交付质量与资源消耗。被揭示的坑是：官方基准与真实长程任务表现存在落差，且性能类体验问题只有实际运行才暴露。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <p>可借鉴的传播路径是&rdquo;可运行demo即内容&rdquo;：3D房间第一人称漫游、极光号飞船探索、圣家堂内部光影——这些成果自带视觉冲击力，适合做短视频切片传播。UP主的叙事结构（先官方宣称、再实测、最后亮缺点）本身是高可信度的种草模板：坦承&rdquo;猫不像猫、电脑发烫&rdquo;，反而强化了结论可信度。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <p>视频提供了&rdquo;长程任务成本核算&rdquo;样本：8.95亿token、97.2%缓存命中——提示运营侧在评估AI工具时要把token用量与缓存命中率纳入ROI模型，而非只看单次生成速度。转化路径上的启发：耗时2.5~6小时的交付意味着&rdquo;排队型产能&rdquo;，适合提前批量化下单、错峰使用。</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>本视频未涉及智能硬件PM的ID/MD/电子设计流程，仅涉及纯软件前端开发与3D场景生成，故不展开硬件流程判断。可迁移的信号是：模型能在&rdquo;从需求到可运行原型&rdquo;阶段独立交付（播放器、飞船、教堂），但性能优化与细节精度仍需人工兜底——这与硬件PM&rdquo;AI出原型、人做工程收敛&rdquo;的分工逻辑同构，但视频本身未提供硬件侧证据，此处仅为推论。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「这说明他对这个性能优化的还是比较不错的」（中段，评Mac播放器）——同款模型在不同任务上优化表现两极，提醒验收要看任务类型而非整体印象。</li>
+<li>「像这个速度，我认为是不如deep sc v4.1flash模型要快的」（中段）——直接对比结论，是选型时最实用的一句话。</li>
+<li>「今天的缓存命中率大概是97.2%」（结尾）——长程开发成本可控的关键数据。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在为大模型编程选型、尤其做前端/3D类长程任务的开发者；以及想了解MiniMax M3.1 Flash真实耗时、性能与token成本的团队决策者。10分钟即可获得三题实测的完整结论，省去自己跑5小时圣家堂的时间。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
