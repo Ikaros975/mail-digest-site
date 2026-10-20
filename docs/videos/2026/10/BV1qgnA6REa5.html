@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>不会设计，也能用 Codex 做出有高级感的个人网站。我把自己的实操过程整理成了4步：找参考、写 DESIGN.md、生成页面、优化细节。</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>不会设计，也能用 Codex 做出有高级感的个人网站。我把自己的实操过程整理成了4步：找参考、写 DESIGN.md、生成页面、优化细节。</h1>
+      <div class="reader-meta">B站 · 清华姜学长 · BV1qgnA6REa5</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>不会设计也能做高级感网站：先抄参考，再写&rdquo;设计说明书&rdquo;，最后才让AI写代码。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这是一支5分钟的高密度实操视频，UP主“清华姜学长”坦承自己没有设计背景，却用Codex完整做出了一个个人网站。他的目标是三件事：访客点进来第一眼知道“我是谁”、第二眼知道“我在做什么”、同时感受到一点个人表达，且页面必须足够炫酷。整支视频的价值在于：他把“感觉”这种模糊的东西，拆成了一条AI能执行的流水线——<strong>找参考 → 写 DESIGN.md → 生成页面 → 对着真实页面优化</strong>。</p>
+<p><strong>第一步：找参考，不要让Codex瞎猜。</strong> UP主开篇就点破了AI做设计的最大陷阱：像“高级一点、简约一点、有设计感”这样的词，对人来说都模糊，对AI更是只能“抽卡”。抽卡的结果他描述得很具体——一个黑色背景、自然渐变、几个发光按钮、再放一排熟悉的卡片，“不能说难看，只是很难说和你的内容会产生什么样的关系”。所以必须先找两三个自己真正喜欢的网站。他本人重点参考的是某个“MFI”的个人站，看中的是深色背景、大字排版，以及最亮眼的鼠标交互——让人还没读完内容就已经感受到这个人的表达。他甚至给出了分场景的参考库：个人站和作品集看 minimal gallery，落地页看 LBOOK，产品界面和完整操作流程看 MOBIN；如果连风格方向都没有，就去 Pinterest 搜 editorial collage、Pixel、minimal 这类关键词。但他特别提醒：千万不要一次收藏几十个，最后自己都会看晕，两三个方向一致的参考就够。找到之后也不是自己硬啃，而是直接发给Codex，让它分析你喜欢的到底是什么——是配色、字体、留白、内容层级，还是某个首屏构图。</p>
+<p><strong>第二步：让Codex提取设计规则，生成 DESIGN.md。</strong> 这是整支视频最核心的“方法论抓手”。UP主强调，找到参考后先别急着写代码，而是给Codex下这样一段指令：分析我提供的参考，提取它们在配色、字体、排版、留白、组件和动效上的设计规则，再结合我的网站内容生成一份 DESIGN.md，保留参考的设计语言但不要直接复制它们的页面，现在先不要修改代码。他把 DESIGN.md 定义为“一份专门写给AI看的设计说明”。这份文件的魔力在于：把“我觉得这个很好看”这种模糊感觉，翻译成可以直接执行的规则——网站整体是什么气质、颜色怎么搭、标题和正文用什么字体、页面留多少空间、动效做到什么程度；甚至连“哪些设计看起来很热闹但不适合这个网站”也可以明写进去。如果不想从空白文档开始，他还指了条捷径：GitHub 上的 awesome design 项目整理了海量网站和产品的设计规则，先选一个接近的方向，再让Codex按自己的内容调整，能省很多时间。</p>
+<p><strong>第三步：先确认 DESIGN.md，再让Codex写代码。</strong> 这一步他明确说“不要跳过”。你不需要像设计师那样逐个检查术语，但必须看三件事：整体感觉是不是你想要的；有没有漏掉你特别喜欢的东西；有没有混进你一眼就不想要的元素。确认之后，再让Codex把这份文档作为网站的设计规范开始实现页面，并且后续新增或修改内容都遵循同一套规则。他用自己的网站做了完整示范：近黑色背景配灰米色大字，只用陈红强调重点；首屏先用一句话讲“我在做什么”，往下依次是介绍、作品文字和分享；鼠标移到“大字”上会像打开一扇圆形的窗，露出另一份表达；标题逐渐出现，栏目在悬停时从中间展开。他强调，这些互动借鉴的是参考站的设计语言，但<strong>内容还是自己的</strong>；手机上不用鼠标也能正常阅读。这些设计单看都不复杂，但因为遵循同一套规则，放在一起就统一了。如果还想要更细的动效，可以去 Magic UI 这类开源组件库找现成效果直接预览，但他建议少量使用——动效要么帮用户理解页面，要么突出真正重要的内容，不需要每个区块都动起来；他这次的动效是按网站内容单独实现的，没有直接引入组件。</p>
+<p><strong>第四步：对着真实页面做测试和审美优化。</strong> 他坦承，有些感觉在页面真做出来之前很难说清楚，自己也是看到成品后才发现“这里有点挤”“那里重点不够突出”“某个效果单独看挺好，放进整个网站就是不太对”。修正方式是让Codex打开页面，对照 DESIGN.md 检查视觉层级、移动端适配和整体一致性，再去改。他会特别检查动效有没有影响阅读——鼠标移开后内容还能不能看清，到手机上没鼠标时这块还能不能正常用。“漂亮的效果也得经得起”这类检查。如果装了 Taste Skill 或 IMPACTABLE，还可以作为最后一轮检查工具，比如其中的 critical polish 和 audit 可以用来检查设计表达细节和页面质量——不过这一步是可选的，他这次是先对着真实页面自己查。</p>
+<p><strong>结尾的定调</strong>是整支视频最值得记住的一句判断：AI能帮你把很多东西做出来，但“想让别人看到什么”，这件事仍然需要你来决定。他也提到，如果没有设计背景，不必一开始就把所有设计知识学一遍，拿一个自己真想做的网站，按这四步跑一次就够了。文末他提供了自己实际使用的 DESIGN.md 和录屏素材，供观众交给Codex后替换成自己的内容与规则。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【抽卡陷阱】</strong> “高级一点”说给AI听，等于让它闭眼抽卡——抽出来的永远是黑底渐变发光按钮那套模板，跟你的内容毫无关系。</li>
+<li><strong>【设计说明书】</strong> DESIGN.md 是把“我觉得好看”翻译成“AI能执行的条款”，相当于给装修队一份施工图，而不是只说“装得高级点”。</li>
+<li><strong>【先立规矩后动工】</strong> 先确认DESIGN.md再写代码，就像先定菜单再开火，否则菜炒到一半才发现方向错了。</li>
+<li><strong>【借语言不借页面】</strong> 参考站借的是“设计语言”（配色、留白、交互逻辑），抄的是页面就变成山寨——UP主原话：保留参考的设计语言，但不要直接复制页面。</li>
+<li><strong>【动效是调料不是主食】</strong> 不必每个区块都动，动效要么帮理解、要么突出重点，否则会干扰阅读——鼠标移开后内容还看得清吗？</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：模糊指令是AI设计的头号敌人</strong></li>
+<li><strong>原文引用</strong>：「你看高级一点、简约一点、有设计感，这些词对人来说都是很模糊的，AI呢就更只能去抽卡了。」</li>
+<li><strong>案例还原</strong>：UP主描述了AI在模糊指令下的典型输出——黑色背景、自然渐变、几个发光按钮、一排熟悉的卡片。他没有说它难看，而是指出真正的问题：这些元素和你的内容产生不了任何关系。解决办法是先找两三个真正喜欢的参考站，甚至直接发给Codex让它分析“你喜欢的到底是什么”。</li>
+<li>
+<p><strong>解读</strong>：任何用AI做视觉的人，第一步不是写prompt，而是先找到“具体的好看”。</p>
+</li>
+<li>
+<p><strong>要点二：DESIGN.md 是把审美转成规则的中转站</strong></p>
+</li>
+<li><strong>原文引用</strong>：「请分析我提供的参考，提取它们在配色、字体、排版、留白、组件和动效上的设计规则……现在先不要修改代码。」</li>
+<li><strong>案例还原</strong>：UP主展示了自用DESIGN.md的内容结构：网站气质、颜色搭配、标题正文字体、页面留白、动效程度，甚至包括“哪些设计看起来很热闹但不适合这个网站”也写进去。他还给出省力路径——从GitHub的awesome design项目选一个接近的方向，再让Codex按自己的内容调整。</li>
+<li>
+<p><strong>解读</strong>：这份文档让“审美一致性”变成可复用资产，后续每次改内容都有同一把尺子。</p>
+</li>
+<li>
+<p><strong>要点三：确认环节不能省，只看三件事</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你不用像设计师一样逐个去检查术语，但你主要还是要看三件事情。」</li>
+<li><strong>案例还原</strong>：三件事是：整体感觉对不对、有没有漏掉你特别喜欢的东西、有没有加进你一眼就不想要的元素。确认后才让Codex以这份文档为规范实现页面。他自己的成品是：近黑背景+灰米色大字+陈红强调；首屏一句话讲在做什么；鼠标移到大字上“像打开一扇圆形的窗”露出另一份表达；标题渐现、栏目悬停从中间展开；手机端无鼠标也正常阅读。</li>
+<li>
+<p><strong>解读</strong>：把专业审校降维成三个普通人能回答的问题，是这支视频最实用的门槛设计。</p>
+</li>
+<li>
+<p><strong>要点四：动效要克制，且必须过“可读性测试”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「要么去帮助用户去理解页面，要么突出真正重要的内容，不需要每个区块都动起来。」</li>
+<li><strong>案例还原</strong>：他建议可以去Magic UI这类开源组件库找现成动效直接预览，但自己这次并没有直接引入组件，而是按网站内容单独实现动效。优化阶段他专门检查：鼠标移开以后内容还能不能看清、到了手机上没有鼠标这块还能不能用。</li>
+<li>
+<p><strong>解读</strong>：炫酷的及格线不是“好看”，而是“不挡路”——这是很多人做个人站翻车的地方。</p>
+</li>
+<li>
+<p><strong>要点五：真实页面出来之前，你根本不知道哪里不对</strong></p>
+</li>
+<li><strong>原文引用</strong>：「有些感觉在页面真的做出来之前，你真的很难去说清楚，我自己也是看到成品以后才会发现这里有点挤。」</li>
+<li><strong>案例还原</strong>：他的第四步就是让Codex打开页面，对照DESIGN.md检查视觉层级、移动端适配和整体一致性，再修改。他还提到如果装了Taste Skill或IMPACTABLE，可用其中的critical polish和audit做最后一轮设计表达与页面质量检查，但标注为可选，自己这次是手动对着真实页面查的。</li>
+<li><strong>解读</strong>：AI设计是迭代出来的，不是一次生成出来的——把“看成品再改”写进流程。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频里“高级一点、简约一点”这类词被点名为“模糊需求”的典型——这正是用户研究里最经典的问题：用户说的形容词≠用户的真实偏好。UP主的解法是让用户（自己）去指认具体参考物，再让AI反向分析“你喜欢的到底是什么”（配色/字体/留白/层级/构图），这是一套可迁移的<strong>偏好拆解法</strong>。</li>
+<li><strong>可借鉴方法</strong>：“两三个方向一致的参考”原则可直接用于竞品分析——不追求样本量，追求方向收敛；分场景参考库（作品集/落地页/产品流程各看不同库）也是一种按使用场景切分的调研框架。</li>
+<li><strong>被揭示的坑</strong>：一次收藏几十个参考“最后自己都会看晕掉”——信息过载导致判断力失效，这是用户研究和竞品收集中的常见陷阱。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路</strong>：DESIGN.md 本质是<strong>品牌视觉规范（Brand Guideline）的AI可执行版</strong>——把气质、配色、字体、留白、动效程度写成规则，保证所有页面“单独看都不复杂，放在一起比较统一”。这对品牌一致性管理是直接可复用的思路。</li>
+<li><strong>值得研究的传播路径</strong>：视频结尾用“提供自用DESIGN.md+录屏素材”做钩子引流到AI学习圈和黑客松投票，是典型的“工具型内容+可下载资产+社群转化”的内容营销结构（此为解读）。</li>
+<li><strong>案例启示</strong>：UP主强调参考站“借设计语言、不复制页面，内容还是自己的”——这正是品牌借鉴与山寨的分界线。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考策略</strong>：四步流程（找参考→定规范→生成→真实页面优化）与电商详情页/落地页的制作链路高度同构；他把 LBOOK 列为 landing page 参考库，说明这套方法可直接用于转化页设计。</li>
+<li><strong>转化路径发现</strong>：他明确要求首屏“先用一句话讲我在做什么”，往下才是介绍、作品和分享——这是把“用户3秒内知道你是谁”作为首屏KPI的思路，等价于电商首屏的“卖点前置”。移动端“没有鼠标也能正常阅读/使用”的反复检查，对应电商的多端适配与交互降级问题。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <ul>
+<li><strong>视频给出的阶段信号</strong>：本视频场景是网站而非硬件，逐字稿未涉及ID图、MD堆叠或电子设计demo，因此不能外推AI在这些硬件环节的能力结论。但视频揭示了一个可迁移的<strong>岗位职责演变信号</strong>：UP主把工作拆成“定规则（DESIGN.md）—AI执行—人来验收”三段，人只负责三件事：整体感觉、别漏掉喜欢的、别混进不想要的。映射到硬件PM，即“规范定义+验收判断”可能成为AI时代PM的核心职责，而中间的执行环节可交给AI（此为推论，非视频事实）。</li>
+<li><strong>边界</strong>：视频明确划出的边界是“AI能帮你把很多东西做出来，但想让别人看到什么，这件事还是需要你来决定”——即<strong>目标与表达的定义权归人，产出归AI</strong>。这条原则迁移到硬件PM身上同样成立，但具体到ID/MD/电子demo能替代多少，本视频没有提供任何证据，不应据此下判断。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「AI能帮你把很多东西做出来，但想让别人看到什么，这件事还是需要你来决定。」（结尾）——全片价值观落点，把AI定位为执行者、人定位为决策者，一句话说清人机分工。</li>
+<li>「你看高级一点、简约一点、有设计感，这些词对人来说都是很模糊的，AI呢就更只能去抽卡了。」（开头）——精准命名了“模糊需求→随机输出”的因果链，是理解整条流程为何存在的钥匙。</li>
+<li>「保留这些参考的设计语言，但不要直接复制他们的页面。」（中段）——一句话划清“借鉴”与“抄袭”的边界，也是DESIGN.md指令的核心约束。</li>
+<li>「漂亮的效果呢，也得经得起（检查）。」（结尾）——动效的合格线不是炫，而是不破坏可读性。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>没有设计背景、但想用AI做出个人网站、作品集或产品落地页的人，尤其是被“让AI直接生成页面”坑过、结果得到千篇一律黑底渐变模板的观众。花5分钟看这条流水线，能省下反复抽卡的时间，并拿到一份可直接复用的DESIGN.md写法。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
