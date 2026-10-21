@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🎯 2026-10-21 决策仪表盘</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+
+<style id="stock_reader_overrides">
+/* Stock report visual overrides — brighter + mobile-friendly tables/kv */
+
+:root {
+  --bg-deepest: #12151f;
+  --bg-surface: #1a1e2b;
+  --bg-card: #222736;
+  --bg-card-hover: #2a3042;
+  --bg-elevated: #1c2130;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --text-primary: #f5f7fc;
+  --text-secondary: #d0d5e4;
+  --text-tertiary: #a7aec2;
+}
+
+body {
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+}
+
+.block-card p,
+.block-card ul,
+.block-card ol,
+.block-card li {
+  color: var(--text-secondary);
+}
+
+.block-card strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.reader-meta { color: var(--text-tertiary); }
+
+/* ---- Classic tables (2–3 cols) ---- */
+.block-card .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px 0 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.block-card table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.block-card thead th {
+  background: #323a52;
+  color: #f3f5fb;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.block-card tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.block-card tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.block-card tbody tr:last-child td { border-bottom: none; }
+
+.block-card tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+/* Advice tables: label column fixed-ish */
+.block-card table.table-advice td:first-child {
+  width: 28%;
+  white-space: nowrap;
+}
+.block-card table.table-advice td:last-child {
+  color: var(--text-secondary);
+}
+
+/* ---- KV metric grid (replaces wide OHLC tables on mobile) ---- */
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+
+.kv-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.kv-item .k {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.kv-item .v {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.kv-item.kv-wide {
+  grid-column: 1 / -1;
+}
+
+.kv-item.kv-wide .v {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Stacked advice cards */
+.advice-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+.advice-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.advice-card .advice-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.advice-card .advice-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .kv-grid { gap: 8px; }
+  .kv-item { padding: 10px 11px; }
+  .block-card thead th,
+  .block-card tbody td { padding: 10px 12px; font-size: 13.5px; }
+}
+
+</style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">股票分析 · 全文</div>
+      <h1>🎯 2026-10-21 决策仪表盘</h1>
+      <div class="reader-meta">2026-10-21</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>📊 分析结果摘要</h2>
+        <p>⚪ <strong>驰宏锌锗(600497)</strong>: 观望 | 评分 45 | 震荡
+🟠 <strong>欣旺达(300207)</strong>: 减仓 | 评分 31 | 看空
+🟠 <strong>华锋股份(002806)</strong>: 减仓 | 评分 28 | 看空
+🟠 <strong>阳光电源(300274)</strong>: 减仓 | 评分 27 | 看空</p>
+<hr>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>⚪ 驰宏锌锗 (600497)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 基本面偏多、资金面偏空，技术面尚未确认，整体情绪中性偏谨慎。
+<strong>📊 业绩预期</strong>: 近3日窗口内无新增业绩公告；结构化财报字段（营业收入、归母净利润、经营现金流、ROE、分红）均为N/A，数据缺失，无法基于最新报表量化判断。公开信息显示上半年业绩同比大幅增长，但需以正式披露报告为准，且当前只能定性为“基本面偏多、技术面尚未确认”。</p>
+<p><strong>🚨 风险警报</strong>:
+- 2026-10-20 融资盘连续净卖出：10月16日净卖出2448万元、10月15日净卖出842万元，杠杆资金持续撤离，短期抛压未消化
+- 筹码结构恶化：获利比例仅3.9%，超90%持仓处于套牢状态，现价低于平均成本9.90元约18.6%，任何反弹都面临解套盘抛压
+- 技术面风险：MA5&lt;MA10&lt;MA20强势空头排列、均线发散下行，趋势强度仅10/100，逆势做多胜率低</p>
+<p><strong>✨ 利好催化</strong>:
+- 2026-10-20 上半年业绩向好：营收138.37亿元，同比大幅增长，基本面未出现恶化
+- 估值不高：动态PE 12.76、PB 2.28，处于有色金属板块偏低区间（行情口径，结构化财报字段缺失）</p>
+<p><strong>📢 最新动态</strong>: 【2026-10-20 经济观察网】公司2026年上半年营收138.37亿元、业绩向好，股价回落并非基本面问题；但杠杆资金连续减仓，10月16日融资净卖出2448万元、10月15日净卖出842万元，是这波下跌的助推因素之一。</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>⚪ 观望</strong> | 震荡</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列未修复，不追买，空仓观望、持仓者反弹减磅</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 今日内</p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🆕 空仓者</div><div class="advice-body">空仓者不进场。MA5(7.99) &amp;lt; MA10(8.33) &amp;lt; MA20(8.85) 属强势空头排列，违反趋势交易第一条件；仅可在7.90-8.00缩量企稳后小仓观察，破7.85放弃。</div></div><div class="advice-card"><div class="advice-label">💼 持仓者</div><div class="advice-body">深套者可等反弹至MA10(8.33)附近减仓降低成本；若收盘失守7.90、次日跌破7.85，严格减仓止损，不做逆势加仓摊薄。</div></div></div>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📈 当日行情</h3>
+          <div class="kv-grid"><div class="kv-item"><span class="k">收盘</span><span class="v">8.06</span></div><div class="kv-item"><span class="k">昨收</span><span class="v">7.92</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">8.02</span></div><div class="kv-item"><span class="k">最高</span><span class="v">8.19</span></div><div class="kv-item"><span class="k">最低</span><span class="v">8.01</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">1.26%</span></div><div class="kv-item"><span class="k">涨跌额</span><span class="v">0.14</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">2.27%</span></div><div class="kv-item"><span class="k">成交量</span><span class="v">5338.75 万股</span></div><div class="kv-item"><span class="k">成交额</span><span class="v">4.33 亿元</span></div></div>
+<div class="kv-grid"><div class="kv-item"><span class="k">当前价</span><span class="v">8.06</span></div><div class="kv-item"><span class="k">量比</span><span class="v">0.93</span></div><div class="kv-item"><span class="k">换手率</span><span class="v">1.06%</span></div><div class="kv-item"><span class="k">行情来源</span><span class="v">tickflow</span></div></div>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: MA5(7.99) &lt; MA10(8.33) &lt; MA20(8.85)，空头排列且均线发散下行 | 多头排列: ❌ 否 | 趋势强度: 10/100</p>
+<div class="table-wrap"><table class="table-advice">
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>8.06</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>7.99</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>8.33</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>8.85</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>0.93% 安全</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>7.9</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>8.33</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>成交量</strong>: 量比 0.93 (平量) | 换手率 1.06%
+💡 <em>量比不足1，换手仅1.06%，场内交投清淡，缺乏承接性放量；昨日基数异常导致“放大100.65倍”的倍数失真，已降权处理，不能作为放量突破确认。</em></p>
+<p><strong>筹码</strong>: 3.9 | 9.9 | 18.96 警惕</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <div class="table-wrap"><table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>盘中跟踪，收盘前风控（距常规收盘约10分钟）</td>
+<td>观察，禁止追高</td>
+<td>2026-10-21 15:00 收盘确认，2026-10-22 开盘半小时验证量能与8.00元得失</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>观察条件</strong>:
+- 收盘能否守住8.00元并收在MA5(7.99)之上，决定短线是否只是反抽
+- 明日能否放量收复8.33元MA10，这是空头排列转震荡的第一道门槛
+- 7.90元支撑是否被有效跌破，破位则视为二次下杀开启
+- 融资盘净卖出是否收敛，杠杆资金转向是反弹持续的必要条件</p>
+<p><strong>置信度理由</strong>: 技术数据为partial（intraday_realtime_overlay），今日日线尚未完成，成交量较昨日放大100.65倍属异常基数，量能信号已降权，故置信度定为中而非高。</p>
+<p><strong>数据限制</strong>:
+- technical 为 partial，均线与趋势信号含盘中实时叠加，非完整日线结论
+- 今日最后一根日线尚未走完，不得当作完整日线复盘
+- 成交量较昨日100.65倍为异常基数失真，不能作为放量确认
+- 财报结构化字段缺失，基本面判断仅依赖行情口径与新闻摘要
+- technical: partial</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🎯 理想买入点</div><div class="advice-body">暂不给出买入点：多头排列未成立前不建仓；若后续放量收复MA10(8.33)并回踩不破，才考虑8.20-8.33小仓试探</div></div><div class="advice-card"><div class="advice-label">🔵 次优买入点</div><div class="advice-body">7.90-8.00（前低与MA5重合区）若缩量止跌可轻仓观察，破位立即放弃</div></div><div class="advice-card"><div class="advice-label">🛑 止损位</div><div class="advice-body">7.85元（跌破10月19日低点7.88及7.90支撑即离场）</div></div><div class="advice-card"><div class="advice-label">🎊 目标位</div><div class="advice-body">第一目标8.33元（MA10），第二目标8.85元（MA20）</div></div></div>
+<p><strong>💰 仓位建议</strong>: 空仓者0成；持仓者不超过3成并逢反弹递减
+- 建仓策略: 严禁追高。等待均线由空转平：第一步看收盘站稳8.00，第二步看放量站上8.33，第三步回踩8.20不破再分批介入，单批不超过1.5成。
+- 风控策略: 跌破7.85无条件止损；反弹触及8.33/8.85分批减仓；反弹不放量则不加仓。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——MA5(7.99) &lt; MA10(8.33) &lt; MA20(8.85)，为空头排列，不满足</li>
+<li>✅ 检查项2：乖离率合理——MA5乖离+0.93%，处于安全区间，无追高风险</li>
+<li>⚠️ 检查项3：量能配合——量比0.93、换手1.06%属平量，昨日基数异常倍数为失真信号，已降权</li>
+<li>⚠️ 检查项4：无重大利空——无减持/处罚/业绩变脸，但融资盘连续净卖出构成资金面压力</li>
+<li>❌ 检查项5：筹码健康——获利盘仅3.9%、套牢盘&gt;90%、集中度18.96%偏分散</li>
+<li>✅ 检查项6：PE估值合理——动态PE 12.76、PB 2.28，估值不高</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 24%
+- 📰 新闻舆情: 21%
+- 📊 基本面: 34%
+- 🌐 市场环境: 21%</p>
+<p><strong>🐂 最强看多信号</strong>: RSI(29)超卖叠加价格贴近MA5、乖离率+0.93%的短线反弹条件
+<strong>🐻 最强看空信号</strong>: MA5&lt;MA10&lt;MA20强势空头排列，获利盘仅3.9%、套牢盘超90%</p>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🧩 关联板块</h3>
+          <p>铅锌 / 工业金属 / 有色金属 / 云南板块 / 光纤概念</p>
+<p><em>📋 数据来源：行情与实时增强：tickflow；日线与技术：storage.get_analysis_context（technical 为 partial，含 intraday_realtime_overlay）；筹码：akshare；基本面：realtime_quote（partial）；新闻舆情：Bocha、Tavily 检索聚合（近3日窗口 2026-10-18 至 2026-10-21）</em></p>
+<hr>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>🟠 欣旺达 (300207)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 舆情消息面偏正面（子公司投资、注册资本增加），但市场情绪受技术面走弱压制，短期偏空。
+<strong>📊 业绩预期</strong>: 近3日无明确业绩预告或快报。根据历史研报，机构预测2025-2027年归母净利润有望持续增长，动储业务亏损收窄，消费电池基本盘稳固。但当前技术面尚未确认基本面利好。</p>
+<p><strong>🚨 风险警报</strong>:
+- 风险点1：技术面处于强势空头排列，均线发散下行，趋势明确走坏。
+- 风险点2：筹码结构恶化，获利比例仅10.4%，现价低于平均成本8.9%，上方套牢盘沉重。
+- 风险点3：放量下跌，需警惕主力资金持续出逃。</p>
+<p><strong>✨ 利好催化</strong>:
+- 利好1：2026-10-20 公告全资子公司与专业投资机构共同投资，或为业务拓展布局。
+- 利好2：2026-10-20 欣旺达动力科技股份有限公司注册资本增加，显示公司对动力业务板块的重视与投入。</p>
+<p><strong>📢 最新动态</strong>: 【2026-10-20】欣旺达公告全资子公司与专业投资机构共同投资；【2026-10-20】欣旺达动力科技股份有限公司注册资本增至159.1亿元。</p>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>🟠 减仓</strong> | 看空</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列放量下跌，持仓者应减仓避险，空仓者观望勿抄底。</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 本周内</p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🆕 空仓者</div><div class="advice-body">空仓者建议：当前为强势空头排列且放量下跌，切勿抄底。等待股价企稳并重新站上MA20（19.75元）后再考虑介入，短期以观望为主。</div></div><div class="advice-card"><div class="advice-label">💼 持仓者</div><div class="advice-body">持仓者建议：股价已跌破MA5/MA10/MA20且均线发散下行，趋势明确转弱。建议利用反弹至MA5（18.15元）附近时减仓，跌破17.75元（今日最低）则需进一步降低仓位以控制风险。</div></div></div>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📈 当日行情</h3>
+          <div class="kv-grid"><div class="kv-item"><span class="k">收盘</span><span class="v">17.89</span></div><div class="kv-item"><span class="k">昨收</span><span class="v">18.03</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">18.41</span></div><div class="kv-item"><span class="k">最高</span><span class="v">18.70</span></div><div class="kv-item"><span class="k">最低</span><span class="v">17.75</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">-1.60%</span></div><div class="kv-item"><span class="k">涨跌额</span><span class="v">-0.14</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">5.27%</span></div><div class="kv-item"><span class="k">成交量</span><span class="v">8350.72 万股</span></div><div class="kv-item"><span class="k">成交额</span><span class="v">15.28 亿元</span></div></div>
+<div class="kv-grid"><div class="kv-item"><span class="k">当前价</span><span class="v">17.89</span></div><div class="kv-item"><span class="k">量比</span><span class="v">1.22</span></div><div class="kv-item"><span class="k">换手率</span><span class="v">4.87%</span></div><div class="kv-item"><span class="k">行情来源</span><span class="v">tickflow</span></div></div>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: 空头排列（MA5 &lt; MA10 &lt; MA20），均线发散下行，趋势强度极弱。 | 多头排列: ❌ 否 | 趋势强度: 10/100</p>
+<div class="table-wrap"><table class="table-advice">
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>17.89</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>18.15</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>19.15</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>19.75</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-1.43% 安全</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>17.75</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>18.15</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>成交量</strong>: 量比 1.22 (放量) | 换手率 4.87%
+💡 <em>今日成交量较昨日异常放大（约163倍），但此数据或受异常因素影响需降权解读。结合股价下跌，呈现放量下跌态势，需警惕抛压。</em></p>
+<p><strong>筹码</strong>: 10.4 | 19.63 | 12.78 警惕</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <div class="table-wrap"><table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>盘中跟踪（距收盘约10分钟）</td>
+<td>今日尾盘操作：持仓者若有反弹可考虑减仓，无反弹则持有观察明日走势。空仓者严禁追买。</td>
+<td>今日收盘后复牌，或明日（2026-10-22）开盘前</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>观察条件</strong>:
+- 观察1：尾盘能否收回18.95元（MA10下方）上方，若不能，次日大概率继续走弱。
+- 观察2：是否有主力资金流入迹象，若持续流出则继续看跌。</p>
+<p><strong>置信度理由</strong>: 技术面数据（日线/均线）完整，但盘中实时数据为partial且量能出现异常放大，需降权解读，故置信度为中。</p>
+<p><strong>数据限制</strong>:
+- 技术数据为盘中实时叠加，部分指标可能失真
+- 成交量较昨日变化异常（约163倍），疑似数据异常或一次性冲量
+- technical: partial</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<div class="table-wrap"><table class="table-advice">
+<thead>
+<tr>
+<th>操作点位</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>🎯 理想买入点</td>
+<td>暂无（需等待股价企稳并站回MA20之上，约19.75元）</td>
+</tr>
+<tr>
+<td>🔵 次优买入点</td>
+<td>暂无（需重新形成多头排列，即MA5&gt;MA10&gt;MA20）</td>
+</tr>
+<tr>
+<td>🛑 止损位</td>
+<td>17.75元（跌破今日最低点，果断止损）</td>
+</tr>
+<tr>
+<td>🎊 目标位</td>
+<td>18.15元（MA5附近，超跌反弹压力位）</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>💰 仓位建议</strong>: 建议仓位：0-2成（仅持仓者反弹减仓，空仓者不建议建仓）
+- 建仓策略: 当下不适用买入策略。持仓者应利用反弹分批减仓，例如反弹至18.15元附近减仓1/3，跌破17.75元再减1/3。
+- 风控策略: 严格止损，若股价有效跌破17.75元且无法快速收回，应清仓离场。未企稳前严禁补仓摊低成本。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列（MA5&gt;MA10&gt;MA20）——不满足，空头排列</li>
+<li>✅ 检查项2：乖离率合理（强势趋势可放宽）——乖离率-1.43%，处于安全范围</li>
+<li>⚠️ 检查项3：量能配合——放量下跌，量价配合不健康（但量能异常放大需降权）</li>
+<li>✅ 检查项4：无重大利空——近3日无减持、处罚等重大利空公告</li>
+<li>❌ 检查项5：筹码健康——获利比例极低（10.4%），套牢盘沉重</li>
+<li>⚠️ 检查项6：PE估值合理——动态PE 27.45倍，处于行业中等偏上水平，估值合理但需业绩支撑</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 70%
+- 📰 新闻舆情: 10%
+- 📊 基本面: 10%
+- 🌐 市场环境: 10%</p>
+<p><strong>🐂 最强看多信号</strong>: 乖离率为负且处于安全范围，超跌或有技术性反弹
+<strong>🐻 最强看空信号</strong>: 强势空头排列+放量下跌，趋势明确向下</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>🧩 关联板块</h3>
+          <p>电力设备 / 电池 / 锂电池 / 广东板块 / 虚拟现实</p>
+<p><em>📋 数据来源：分析基于tickflow行情、storage日线数据、akshare筹码数据及公开新闻舆情。技术指标部分基于盘中实时数据叠加，存在一定误差。</em></p>
+<hr>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>🟠 华锋股份 (002806)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 舆情偏冷：中报亏损+主力净卖出，仅短线止跌，缺乏实质催化。
+<strong>📊 业绩预期</strong>: 2026年10月20日报道显示：2026年上半年营收5.82亿元同比微降0.69%，归母净利润-2089.81万元、同比下滑182.54%，扣非净利润-2008.68万元，主营业务盈利能力恶化。更远期业绩指引、全年预告及订单数据缺失，无法判断；业绩层面不构成买入依据。</p>
+<p><strong>🚨 风险警报</strong>:
+- 业绩风险（2026-10-20报道）：2026年中报归母净利润-2089.81万元、同比-182.54%，扣非-2008.68万元，公司处于亏损状态
+- 资金风险（2026-10-20报道）：10月19日主力资金净卖出69.49万元，向上动能不足
+- 估值风险（截至2026-10-21盘中）：动态市盈率-68.02（亏损）、市净率2.56，缺乏盈利支撑，估值无安全边际
+- 技术风险（截至2026-10-21盘中）：MA5&lt;MA10&lt;MA20强势空头排列，价格位于全部均线下方，获利盘仅10.4%，套牢盘沉重</p>
+<p><strong>✨ 利好催化</strong>:
+- 短线企稳迹象（2026-10-20）：收盘报13.51元、上涨0.75%，当日未继续下砸
+- 筹码较集中（截至2026-10-21）：90%筹码集中度10.06%，一旦有效反弹，上方解套性抛压相对分散</p>
+<p><strong>📢 最新动态</strong>: 【最新消息】2026-10-20 收盘华锋股份报13.51元(+0.75%)，换手2.36%、量比0.43；2026-10-20 有报道援引2026年中报数据：上半年主营收入5.82亿元同比-0.69%，归母净利润-2089.81万元同比-182.54%；同期报道显示10月19日主力资金净卖出69.49万元。</p>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>🟠 减仓</strong> | 看空</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列+中报亏损，反弹减仓不加仓</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 今日内</p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🆕 空仓者</div><div class="advice-body">空仓者：不参与。MA5(13.60)&amp;lt;MA10(13.97)&amp;lt;MA20(14.54)为空头排列，且公司处于亏损状态，不满足&amp;rsquo;只做多头排列&amp;rsquo;的进场前提，等均线转为多头再谈。</div></div><div class="advice-card"><div class="advice-label">💼 持仓者</div><div class="advice-body">持仓者：利用尾盘或次日反弹至13.60-13.97元区间减仓至1成以下；跌破13.36元（今日低点）无条件止损离场。</div></div></div>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>📈 当日行情</h3>
+          <div class="kv-grid"><div class="kv-item"><span class="k">收盘</span><span class="v">13.37</span></div><div class="kv-item"><span class="k">昨收</span><span class="v">13.41</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">13.73</span></div><div class="kv-item"><span class="k">最高</span><span class="v">13.75</span></div><div class="kv-item"><span class="k">最低</span><span class="v">13.36</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">-1.04%</span></div><div class="kv-item"><span class="k">涨跌额</span><span class="v">-0.04</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">2.91%</span></div><div class="kv-item"><span class="k">成交量</span><span class="v">340.22 万股</span></div><div class="kv-item"><span class="k">成交额</span><span class="v">4603.25 万元</span></div></div>
+<div class="kv-grid"><div class="kv-item"><span class="k">当前价</span><span class="v">13.37</span></div><div class="kv-item"><span class="k">量比</span><span class="v">0.41</span></div><div class="kv-item"><span class="k">换手率</span><span class="v">2.04%</span></div><div class="kv-item"><span class="k">行情来源</span><span class="v">tickflow</span></div></div>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: MA5(13.604) &lt; MA10(13.967) &lt; MA20(14.542)，均线发散下行，属强势空头排列 | 多头排列: ❌ 否 | 趋势强度: 10/100</p>
+<div class="table-wrap"><table class="table-advice">
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>13.37</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>13.604</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>13.967</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>14.542</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-1.72% 安全（但为负乖离，价格已在MA5之下，非回踩买点而是弱势特征）</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>13.36</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>13.6</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>成交量</strong>: 量比 0.41 (缩量（量比0.41极度萎缩，换手2.04%）) | 换手率 2.04%
+💡 <em>盘中量能明显萎缩，属无量阴跌而非放量出逃；但系统提示&rsquo;成交量较昨日放大55.21倍&rsquo;存在异常数据或一次性冲量，该量能信号必须降权，不作为任何强化确认。</em></p>
+<p><strong>筹码</strong>: 10.4 | 14.52 | 10.06 警惕</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <div class="table-wrap"><table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>盘中跟踪</td>
+<td>禁止追高；持仓者利用尾盘反弹减仓，空仓者不参与</td>
+<td>2026-10-21 15:00 收盘确认，次日(2026-10-22)开盘半小时复核量价</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>观察条件</strong>:
+- 尾盘能否收复MA5(13.60元)与昨收13.51元，若收盘仍在13.36元附近弱势收官则弱势延续
+- 是否有效跌破13.36元今日低点，跌破则视为下行动能确认
+- 次日量能是否由缩量转为放量上攻（真实放量，非异常冲量），无量反弹一律视为反抽
+- MA5与MA10的间距是否收敛，是否出现均线拐头迹象</p>
+<p><strong>置信度理由</strong>: 技术数据为partial（盘中实时叠加）、日线尚未完成、量能存在55.21倍异常放大，因此置信度定为中，不给高置信度结论。</p>
+<p><strong>数据限制</strong>:
+- 今日日线未完成，盘中价格与量能不代表最终收盘形态
+- 技术指标块状态为partial（intraday_realtime_overlay），均线与趋势判定需收盘复核
+- 成交量较昨日放大55.21倍，存在异常数据或一次性冲量，量能信号已降权
+- 基本面块为partial，财报结构字段多为N/A；题材成分股与龙头证据缺失，无法判断其板块地位
+- technical: partial</p>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🎯 理想买入点</div><div class="advice-body">当前不构成买点。条件式：仅在放量收复MA5(13.60元)且回踩不破时，才可轻仓试错，非当前信号</div></div><div class="advice-card"><div class="advice-label">🔵 次优买入点</div><div class="advice-body">若回踩13.00-13.36元区间出现缩量止跌并伴随主力资金转为净流入，可小仓观察（需二次确认）</div></div><div class="advice-card"><div class="advice-label">🛑 止损位</div><div class="advice-body">13.36元（今日低点），有效跌破下一档看13.00元整数关口</div></div><div class="advice-card"><div class="advice-label">🎊 目标位</div><div class="advice-body">反弹减仓目标：13.60元（MA5）→13.97元（MA10）→14.54元（MA20），逐档减仓</div></div></div>
+<p><strong>💰 仓位建议</strong>: 建议仓位：0-1成（空仓者0成，持仓者降至1成以下）
+- 建仓策略: 空头排列期间不建新仓；等待MA5上穿MA10、价格站稳MA10并回踩确认后，再分批介入（首仓不超过2成）
+- 风控策略: 单笔亏损控制在总资金2%以内；跌破13.36元无条件减仓；反弹至MA5/MA10压力位分批卖出，不指望一次性收复MA20。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——MA5(13.60)&lt;MA10(13.97)&lt;MA20(14.54)，为标准空头排列</li>
+<li>⚠️ 检查项2：乖离率——MA5乖离-1.72%，数值在安全区间但为负值，价格运行于MA5下方，属弱势而非买点</li>
+<li>⚠️ 检查项3：量能配合——量比0.41极度缩量，无量阴跌；昨日量能放大55.21倍属异常数据，量能信号降权处理</li>
+<li>⚠️ 检查项4：无重大利空——近3日无减持/处罚公告，但中报亏损、主力资金净卖出构成基本面与资金面压制</li>
+<li>⚠️ 检查项5：筹码健康——集中度10.06%较集中，但获利比例仅10.4%、现价低于平均成本(14.52元)7.9%，套牢盘70-90%，属警惕级</li>
+<li>❌ 检查项6：PE估值——动态PE -68.02为负值，公司亏损，估值无法提供支撑</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 75%
+- 📰 新闻舆情: 10%
+- 📊 基本面: 5%
+- 🌐 市场环境: 10%</p>
+<p><strong>🐂 最强看多信号</strong>: 90%筹码集中度10.06%较集中，MA5负乖离仅-1.72%未深度超跌，短线存技术性反抽空间
+<strong>🐻 最强看空信号</strong>: MA5&lt;MA10&lt;MA20强势空头排列且均线发散下行，获利盘仅10.4%、套牢盘沉重</p>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>🧩 关联板块</h3>
+          <p>底盘与发动机系统 / 汽车 / 汽车零部件 / 广东板块 / 百度概念</p>
+<p><em>📋 数据来源：行情/日线：tickflow 与 storage.get_analysis_context；技术指标：盘中实时叠加（partial，intraday_realtime_overlay）；筹码：akshare；基本面：realtime_quote（partial）；新闻：Bocha、Tavily 近3日检索（8条）。数据质量评分91/100，技术块部分可用。</em></p>
+<hr>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>🟠 阳光电源 (300274)</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>📰 重要信息速览</h3>
+          <p><strong>💭 舆情情绪</strong>: 消息面中性偏暖（储能基金），但技术面空头放量下跌主导，舆情难抵趋势压力。
+<strong>📊 业绩预期</strong>: 结构化财报字段中营业收入、归母净利润、经营现金流、ROE、分红均为N/A，数据缺失，无法判断业绩与分红；仅动态PE 14.27倍可作估值参考，不能据此推断业绩。</p>
+<p><strong>🚨 风险警报</strong>:
+- 2026-10-21盘中：股价放量下跌5.18%，跌破MA5、MA10、MA20，空头排列延续。
+- 2026-10-21：筹码获利比例0%，平均成本88.06元，现价低于平均成本18.1%，套牢盘极高。
+- 2026-10-21：成交量较昨日异常放大150.61倍，量能信号可靠性下降，需警惕一次性冲量。</p>
+<p><strong>✨ 利好催化</strong>:
+- 2026-10-20：公司公告拟与专业投资机构共同设立合伙企业，布局储能领域，基金规模约10亿元，属中期业务延伸。
+- 2026-10-21：动态市盈率约14.27倍，估值不高，若情绪修复具备一定估值支撑，但非短线买点。</p>
+<p><strong>📢 最新动态</strong>: 2026-10-20：公司公告拟与仁发新能等专业投资机构共同设立合伙企业，聚焦储能领域，基金规模约10亿元；2026-10-20收盘76.04元，跌2.11%。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>📌 核心结论</h3>
+          <p><strong>🟠 减仓</strong> | 看空</p>
+<blockquote>
+<p><strong>一句话决策</strong>: 空头排列放量下跌，空仓观望不抄底，持仓反弹减仓。</p>
+</blockquote>
+<p>⏰ <strong>时效性</strong>: 今日内</p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🆕 空仓者</div><div class="advice-body">空仓者：不抄底、不追反弹，等待站回MA5 75.76元且缩量企稳后再评估。</div></div><div class="advice-card"><div class="advice-label">💼 持仓者</div><div class="advice-body">持仓者：利用反弹至75.50-75.76元减仓；跌破71.99元减半，跌破70.00元清仓。</div></div></div>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>📈 当日行情</h3>
+          <div class="kv-grid"><div class="kv-item"><span class="k">收盘</span><span class="v">72.10</span></div><div class="kv-item"><span class="k">昨收</span><span class="v">76.04</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">76.03</span></div><div class="kv-item"><span class="k">最高</span><span class="v">76.04</span></div><div class="kv-item"><span class="k">最低</span><span class="v">71.99</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">-5.18%</span></div><div class="kv-item"><span class="k">涨跌额</span><span class="v">-3.94</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">5.33%</span></div><div class="kv-item"><span class="k">成交量</span><span class="v">5486.25 万股</span></div><div class="kv-item"><span class="k">成交额</span><span class="v">40.25 亿元</span></div></div>
+<div class="kv-grid"><div class="kv-item"><span class="k">当前价</span><span class="v">72.10</span></div><div class="kv-item"><span class="k">量比</span><span class="v">1.71</span></div><div class="kv-item"><span class="k">换手率</span><span class="v">3.46%</span></div><div class="kv-item"><span class="k">行情来源</span><span class="v">tickflow</span></div></div>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>📊 数据透视</h3>
+          <p><strong>均线排列</strong>: MA5 75.76 &lt; MA10 78.03 &lt; MA20 81.51，空头排列且均线发散下行 | 多头排列: ❌ 否 | 趋势强度: 10/100</p>
+<div class="table-wrap"><table class="table-advice">
+<thead>
+<tr>
+<th>价格指标</th>
+<th>当前价</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>当前价</td>
+<td>72.1</td>
+</tr>
+<tr>
+<td>MA5</td>
+<td>75.756</td>
+</tr>
+<tr>
+<td>MA10</td>
+<td>78.029</td>
+</tr>
+<tr>
+<td>MA20</td>
+<td>81.509</td>
+</tr>
+<tr>
+<td>乖离率(MA5)</td>
+<td>-4.83% 安全</td>
+</tr>
+<tr>
+<td>支撑位</td>
+<td>71.99</td>
+</tr>
+<tr>
+<td>压力位</td>
+<td>75.76</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>成交量</strong>: 量比 1.71 (放量) | 换手率 3.46%
+💡 <em>放量下跌，抛压明显；成交量较昨日异常放大150.61倍，存在一次性冲量可能，量能信号必须降权。</em></p>
+<p><strong>筹码</strong>: 0.0% | 88.06 | 32.72 警惕</p>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>🛡️ 盘中决策护栏</h3>
+          <div class="table-wrap"><table>
+<thead>
+<tr>
+<th>行动窗口</th>
+<th>当前动作</th>
+<th>下次检查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>盘中跟踪（距收盘约10分钟）</td>
+<td>止损止盈预警</td>
+<td>2026-10-21 15:00收盘确认；2026-10-22 09:30开盘复检</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>观察条件</strong>:
+- 尾盘能否收回72.00元并守住71.99元今日低点。
+- 收盘成交量是否较盘中峰值萎缩。
+- 明日能否止跌并站回MA5 75.76元。
+- 储能基金公告能否带来持续资金承接。</p>
+<p><strong>置信度理由</strong>: 技术数据为partial且含盘中实时叠加，今日日线未完成；量能异常放大需降权，故置信度定为中。</p>
+<p><strong>数据限制</strong>:
+- 技术面数据部分可用（intraday_realtime_overlay）。
+- 今日最后一根日线未完成，盘中价格非收盘价。
+- 成交量较昨日异常放大150.61倍，量能信号可靠性下降。
+- 财报结构化字段缺失，基本面判断受限。
+- technical: partial</p>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>🎯 作战计划</h3>
+          <p><strong>📍 操作点位</strong></p>
+<div class="advice-stack"><div class="advice-card"><div class="advice-label">🎯 理想买入点</div><div class="advice-body">暂无理想买入点：空头排列禁止抄底；若后市缩量企稳并站回MA5 75.76元，再评估。</div></div><div class="advice-card"><div class="advice-label">🔵 次优买入点</div><div class="advice-body">次优观察：71.99元今日低点附近若出现缩量止跌，仅限极轻仓试探，不构成趋势买点。</div></div><div class="advice-card"><div class="advice-label">🛑 止损位</div><div class="advice-body">70.00元（跌破今日低点71.99元后确认，持仓者执行）。</div></div><div class="advice-card"><div class="advice-label">🎊 目标位</div><div class="advice-body">反弹减仓位：75.50-75.76元（MA5附近）；强压力78.03元（MA10）。</div></div></div>
+<p><strong>💰 仓位建议</strong>: 建议仓位：0-1成（空仓者0成；持仓者降至1成以下）。
+- 建仓策略: 不主动建仓；持仓者利用反弹分批减仓，不在下跌途中补仓。
+- 风控策略: 跌破71.99元减半，跌破70.00元清仓；反弹至MA5附近若量能不济则继续减仓。</p>
+<p><strong>✅ 检查清单</strong></p>
+<ul>
+<li>❌ 检查项1：多头排列——MA5 75.76 &lt; MA10 78.03 &lt; MA20 81.51，空头排列。</li>
+<li>✅ 检查项2：乖离率——当前价较MA5为-4.83%，未追高；但属于下跌乖离，不是买点。</li>
+<li>❌ 检查项3：量能配合——放量下跌，且成交量较昨日异常放大150.61倍，信号降权。</li>
+<li>✅ 检查项4：无重大利空——近3日未见减持、处罚、业绩变脸公告；2026-10-20储能基金公告偏中性。</li>
+<li>❌ 检查项5：筹码健康——获利比例0%，平均成本88.06元，现价低于成本18.1%，套牢盘极高。</li>
+<li>✅ 检查项6：PE估值——动态PE 14.27倍，不算高；但低估值不构成空头趋势中的买入理由。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>🎯 信号归因分析</h3>
+          <p><strong>归因权重</strong>:
+- 📈 技术指标: 43%
+- 📰 新闻舆情: 11%
+- 📊 基本面: 20%
+- 🌐 市场环境: 26%</p>
+<p><strong>🐂 最强看多信号</strong>: RSI超卖（24.1）+储能基金公告
+<strong>🐻 最强看空信号</strong>: 空头排列+放量下跌</p>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>🧩 关联板块</h3>
+          <p>光伏设备 / 电力设备 / 逆变器 / 安徽板块 / 阿里概念</p>
+<p><em>📋 数据来源：行情/日线：tickflow、storage.get_analysis_context；筹码：akshare；新闻：Bocha/Tavily；基本面：realtime_quote（partial）。</em></p>
+<hr>
+<p><em>报告生成时间：2026-10-21 15:02:09</em>
+<em>分析模型：deepseek/deepseek-v4-flash, openai/deepseek-ai/DeepSeek-V4-Flash</em></p>
+        </div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">股票分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
