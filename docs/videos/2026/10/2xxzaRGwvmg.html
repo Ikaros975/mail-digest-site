@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Fix Your SEO Without Leaving WordPress</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Fix Your SEO Without Leaving WordPress</h1>
+      <div class="reader-meta">YouTube · Neil Patel · 2xxzaRGwvmg</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>SEO 修不好，不是因为不会查，而是因为“查完还得跑去改”这一步把人拖死了。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这条视频（Shorts 长度）只讲一件事：<strong>WordPress 站主的 SEO 工作流断在“翻译”环节，Ubersuggest SEO 工具上线官方 WordPress 插件目录，把“发现问题—生成修复—应用修复—确认生效”四步压进同一个后台。</strong></p>
+<p><strong>背景与痛点（视频开头即点明）</strong>：每个 WordPress 站主都在重复同一套流程——发文章，几周后流量掉了，标题太长、页面太慢，于是打开另一个 SEO 工具拿报告，再切回 WP Admin 去改。视频的判断很直接：「That switch is where most SEO work quietly dies.」（那个切换动作，就是大多数 SEO 工作悄悄死掉的地方。）原话进一步指出，所有审计工具都只擅长一件事——告诉你哪里错了：标题太短、meta description 缺失、首页 Core Web Vitals 不达标。但「Fine. Now what?」——还是得有人去写修复、去对应插件里找对字段、粘贴、保存、祈祷它按预期渲染。</p>
+<p><strong>核心归因：问题不是“查”，是“翻译”</strong>。视频用一句话定性：「The audit speaks one language, your site setting speaks another, and most people never finish making the trip between them.」审计说一种语言，站点设置说另一种语言，多数人根本走不完这趟路。这是一个把“工具割裂”重新定义为“语言不通”的表述——解读：它把 SEO 低效归因从“人不懂 SEO”转成了“工具之间没有翻译层”，这是产品定位的关键一招。</p>
+<p><strong>解决方案（视频中段，功能逐一列举，均来自原话）</strong>：
+1. 一键连接 Ubersuggest 账号，无需复制粘贴 API key；
+2. 跑站点审计，得到 on-page SEO 分数，每一页都被爬取，含状态与 Core Web Vitals，全部由 Ubersuggest 驱动；
+3. 比报告多走一步：对标题弱、meta description 缺失、H1 标题有问题的页面，插件生成 AI 修复方案；用户可审阅、可改成自己的话，然后一键应用到单页或全部页面（含首页）；
+4. 修复直接写入 Yoast 或 RankMath，立即渲染，无需重建、无需第二个工具、无需复制粘贴；
+5. 插件修不了的，仍然列出来，让人知道下一步该看哪里。</p>
+<p><strong>结论性主张（结尾）</strong>：视频把它总结成一个闭环——「Find the issue, generate the fix, apply the fix, confirm it worked, all without ever leaving your dashboard.」并给出一句带价值判断的话：「This is what SEO plugins should have been doing for the whole time.」最后是行动号召：在 WordPress 插件目录里搜 Ubersuggest SEO tool 并连接。视频没有给任何数字、价格、时间节省的具体测算——解读：结尾“每月省下几个小时”只是定性表述，无量化证据，属于营销话术而非论证。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【翻译官锚点】审计说外语，后台说方言，中间缺个翻译官——对应“问题是翻译而非检测”的归因逻辑。</li>
+<li>【换乘锚点】SEO 死在“换乘站”，不死在“诊断室”——对应“切换动作杀死 SEO 工作”这句原话。</li>
+<li>【四步闭环】查—生—用—验，不出后台——对应产品主张的 Find/Generate/Apply/Confirm 四步。</li>
+<li>【写进别人家】修复不另起炉灶，直接写进 Yoast / RankMath——对应“渲染即刻生效、无需重建”的设计取向。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：SEO 的损耗点在执行端，不在诊断端</strong></li>
+<li><strong>原文引用</strong>：「That switch is where most SEO work quietly dies.」</li>
+<li><strong>案例还原</strong>：视频开篇还原站主日常——发布文章→几周后流量下滑→发现标题过长或页面过慢→打开独立 SEO 工具拿报告→切回 WP Admin 逐项修改。这个循环里，工具给出了“标题太短、meta description 缺失、首页 Core Web Vitals 不达标”，但没人替你写修复、找字段、粘贴保存。结果就是改造半途而废。</li>
+<li>
+<p><strong>解读</strong>：做工具或做流程的人，别只优化“发现率”，要优化“完成率”。</p>
+</li>
+<li>
+<p><strong>要点：AI 在这里的角色是“生成修复草案”，不是“替你做决定”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「the plug-in generates an AI fix. You review it, edit it if you want it in your own words, then hit apply」</li>
+<li><strong>案例还原</strong>：针对标题弱、meta description 缺失、H1 有问题的页面，插件产出 AI 修复稿；用户先审阅，可改写成自己的措辞，再选择单页应用或全站批量应用（含首页）。修复经 Yoast / RankMath 落盘，立即渲染。</li>
+<li>
+<p><strong>解读</strong>：人在环内的“审阅+改写”设计，是降低 AI 内容风险的务实折中。</p>
+</li>
+<li>
+<p><strong>要点：批量与“写进现有插件”是体验的关键</strong></p>
+</li>
+<li><strong>原文引用</strong>：「apply to one page and every page at once, including your homepage… No rebuild, no second tool, no copy paste.」</li>
+<li><strong>案例还原</strong>：修复不是生成一份待办清单让人手动搬，而是直接写入站点已装的 Yoast 或 RankMath，因此“renders immediately”。视频强调无需重建、无需第二个工具、无需复制粘贴，覆盖范围包含首页。</li>
+<li>
+<p><strong>解读</strong>：兼容既有生态比另造一套后台更容易被采纳——这是插件类产品的通用胜负手。</p>
+</li>
+<li>
+<p><strong>要点：仍要保留“修不了”的清单</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Anything the plug-in can&rsquo;t fix for you, it still lists so you know exactly where to look next.」</li>
+<li><strong>案例还原</strong>：视频承认插件有边界：能自动生成并应用的是标题、meta description、H1 这类字段级问题；修不了的仍会被列出，作为下一步排查的指引。视频未说明具体哪些问题属于“修不了”。</li>
+<li><strong>解读</strong>：明确能力边界，比宣称“全自动”更能建立信任。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频把用户痛点定位在“工作流断裂”而非“功能缺失”——不是没有审计工具，而是审计结果与站点设置之间语言不通。这提示调研时要把问题拆到“任务完成链”的每一环，问“你拿到报告之后做了什么”，而不是只问“你要什么功能”。</li>
+<li><strong>可借鉴的方法</strong>：用“日常重复动作”还原真实旅程——视频开头的叙述就是典型的行为链复盘（发布→流量下滑→开工具→切后台→修改），这种“动作序列访谈”比满意度打分更能暴露损耗点。</li>
+<li><strong>被揭示的坑</strong>：只测“诊断准确率”会漏掉真正的流失；用户不是不查，是查完走不完。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路</strong>：整条视频是“问题重定义式”文案——不说“我们功能多”，而说“问题从来不是查，是翻译”，先立一个新框架再把自己放进去。结尾用「This is what SEO plugins should have been doing for the whole time.」抢占品类标准。</li>
+<li><strong>值得研究的传播路径</strong>：以“官方 WordPress 插件目录可搜到”作为信任背书 + 明确的搜索式行动号召（搜 Ubersuggest SEO tool），把广告直接转成安装动作，缩短转化链路。解读：这是低摩擦 CTA 的典型做法。</li>
+<li><strong>注意点</strong>：全程零数据、零用户证言、零价格——解读：说服力全靠痛点共鸣和产品演示（口述版），可信度依赖品牌既有认知。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考策略</strong>：“审计→生成→应用→确认”的闭环模板可直接迁移到商品页优化（标题、描述、H 标签等字段级问题的一键批量修复），尤其适合 SKU 多的店铺。</li>
+<li><strong>转化路径发现</strong>：视频强调所有动作“不离开 dashboard”，说明减少工具切换本身就是转化率杠杆——解读：运营后台的跨系统跳转，是隐形的效率税。</li>
+<li><strong>边界提醒</strong>：视频只讲字段级修复，不涉及内容策略、内链结构等更深层问题，运营侧不宜把它当作全案方案。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <ul>
+<li>视频未涉及智能硬件、ID 设计、MD 堆叠或电子设计 demo，<strong>不适用</strong>，不做外推。</li>
+<li>唯一可迁移的方法论信号（解读）：AI 在流程中的落点被限定为“在既有系统内生成可审阅的草案，并直接写回既有工具链”——这与硬件 PM 用 AI 产出可评审初稿、但由人复核的边界思路同构。此为类比推论，非视频内容。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「That switch is where most SEO work quietly dies.」（开头）——一句话把行业普遍低效归因到“切换”这个具体动作上，比“SEO 很难”有力得多。</li>
+<li>「The audit speaks one language, your site setting speaks another, and most people never finish making the trip between them.」（中段）——用“两种语言”的比喻解释工具割裂，是全片的核心比喻，也最适合复述。</li>
+<li>「Find the issue, generate the fix, apply the fix, confirm it worked, all without ever leaving your dashboard.」（结尾）——四步闭环的产品宣言，可作为评估任何 SEO 工具是否完整的检查表。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在用 WordPress 且长期在“审计工具”和“后台设置”之间来回切换的站主、内容运营与小型 SEO 从业者；以及做插件/效率工具的产品与营销人员——前者能直接对照自己的月度工时损耗，后者能学到“重新定义问题”的定位写法。视频极短，信息密度集中在痛点归因和功能清单，适合 2 分钟速览。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
