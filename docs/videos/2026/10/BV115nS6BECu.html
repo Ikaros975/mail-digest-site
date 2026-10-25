@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>我是如何用Claude skill 拆解品牌打法</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>我是如何用Claude skill 拆解品牌打法</h1>
+      <div class="reader-meta">B站 · 迪迪碎碎念_AI · BV115nS6BECu</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用Claude Skill给陌生品牌做一次&rdquo;全身体检&rdquo;：看清它、猜它下一步、抄它打法。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与问题。</strong> UP主迪迪周末花时间做了一个&rdquo;品牌理解Skill&rdquo;1.0版本，做法是基于现有开源的品牌拆解Skill，加上自己业务上的需求整合而成。要解决的问题很具体：拿到一个陌生品牌（尤其是海外赛道上的品牌），如何在从0到1、只要求做到60%~70%理解度的前提下，快速形成一份结构化认知，而不是漫无目的地翻资料。视频用运动器械品牌&rdquo;迈瑞克&rdquo;作为分析对象，完整演示了这套Skill的三块结构。</p>
+<p><strong>第一块：陌生品牌的全面理解。</strong> 这一块被拆成多个小板块。最左侧是基础信息——销售额、基础数据、品牌概况，其中亚马逊侧的数据&rdquo;是从卖家精灵里面抓出来的&rdquo;。接着是用户洞察，分四个板块：用户真正在说什么、用户在想什么、深层动机、机会信号。然后是大量VOC（用户之声），目前放的是公开信息，包括Trustpilot，UP主明确说后续会补入亚马逊及各平台的评论，让数据&rdquo;更加丰富以及更加全面&rdquo;。再往后是用户旅程——分析用户购买的不同阶段里，品牌在每个环节做了哪些动作，目的是看清&rdquo;哪些动作是值得我们去借鉴的&rdquo;。最后是市场规模的大致口径、头部竞争者、该品牌在类目中的定位，以及一些直观的线索数据。这里有一个非常关键的机制：<strong>数据可信度标注</strong>。UP主说&rdquo;数据是我们在分析一个报告时候的一个基石&rdquo;，可信度高的数据可以直接看，可信度低的则再做下一轮具体分析，同时报告会给出不同的数据来源。这是整套方法里最像&rdquo;专业分析师&rdquo;的一笔。</p>
+<p><strong>第二块：赛道选择——从关键词反推品牌要打的人群和场景。</strong> 逻辑起点是亚马逊的listing：listing里会大量包含关键词，这些关键词覆盖场景和人群，从而集中映射到某一部分群体。Skill先做&rdquo;线索的回顾&rdquo;和对应数据，再做&rdquo;赛道的假设&rdquo;。针对迈瑞克这个运动器械品牌，UP主设了四个假设：①居家恢复型训练；②主打银发人群的居家低冲击训练；③办公久坐、边工作边动；④中价位划船机场景。然后用什么验证？用&rdquo;Go to Market飞轮评分&rdquo;，分市场、产品、营销、运营四个维度，每个维度下再分小模块，A/B/C/D对应四个假设的不同依据。这里有一个值得单独拎出来的设计原则：<strong>没拿到的数据标注为&rdquo;未获取&rdquo;，而不是强行编造</strong>。矩阵分层打分后得出维度得分，结论是&rdquo;居家低冲击训练&rdquo;得分相对较高，主要原因就是它的listing针对性地对senior（年长人群）做了精准的打标。之后是排名与推荐（高潜力状态，公式有罗列）、数据缺口（报告不可能完整，缺口处提示需要补数据再做垂直分析），以及数据来源。</p>
+<p><strong>第三块：全网打法借鉴——五个板块的&rdquo;可抄清单&rdquo;。</strong> 这一块以卡片形式罗列，分五大板块。<strong>产品策略</strong>：追社媒趋势、整组铺一个品类、一个系列多代迭代、标题直接写场景和人群（与国内产品线不同）。<strong>渠道与内容</strong>：一句话概括是&rdquo;TK负责点火，亚马逊负责承接&rdquo;，加上达人体系和自建直播；具体动作包括达人分层升级、自建美式直播间、专业背书和展会。<strong>价格与转化</strong>：价格卡在白牌与高端之间的中价位，主力段降价换量；降低付款压力，做多渠道分期付款；用现金激励用户产出内容，晒图和视频两者都有。<strong>运营与口碑</strong>：把售后补救做成口碑、质保拉长、软硬结合但不收订阅费、在国内做出标杆后带供应链出海。<strong>代价与风险</strong>：追趋势意味着品类是消耗品，&rdquo;来的快，去的也快&rdquo;，必须抓住趋势窗口；降价换量压缩利润空间；品控和交付问题靠售后兜底，所以售后压力很大。UP主最后说明，这个Skill目前还在自己打磨，如果大家需要，后期可以完全开源，让大家用手上的数据去分析自己想了解的陌生品牌。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <p>【体检报告】先拍片（基础数据）→再问诊（VOC与用户洞察）→再猜病程（赛道假设）→最后开药方（打法借鉴），一个陌生品牌就像一次全套体检。
+【可信度标签】数据不说谎，但要说清&rdquo;这话有几分可信&rdquo;——低可信度数据只当线索，不当结论。
+【未获取 ≠ 编一个】报告里允许写&rdquo;未获取&rdquo;，这是专业，不是偷懒。
+【TK点火，亚马逊承接】一句话记住渠道分工：前端造势归内容平台，成交归货架电商。
+【60分够用】不要追求一次做到100分，先做到60~70分的全局理解，再对关键缺口做垂直深挖。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li><strong>要点一：用&rdquo;可信度标注&rdquo;给数据分级</strong></li>
+<li><strong>原文引用</strong>：「数据是我们在分析一个报告时候的一个基石」「如果说这个比较低的话，我们可以再做下一轮的一个具体的分析」</li>
+<li><strong>案例还原</strong>：在迈瑞克的分析报告中，UP主在报告最后会标注每个数据的可信度，并给出来源。高可信度数据直接采用，低可信度数据则标记为需要补数据、做下一轮具体分析——尤其是当这块数据被认为重要时。这样避免了&rdquo;看起来完整、其实靠猜&rdquo;的报告陷阱。</li>
+<li>
+<p><strong>解读</strong>：对做任何调研输出的人，这是防止&rdquo;数据幻觉&rdquo;的第一道闸门。</p>
+</li>
+<li>
+<p><strong>要点二：没数据就写&rdquo;未获取&rdquo;，不硬编</strong></p>
+</li>
+<li><strong>原文引用</strong>：「对于我们没有拿到的数据，它是会标注成未获取，而不是强硬的去进行编写」</li>
+<li><strong>案例还原</strong>：在赛道假设的Go to Market飞轮评分矩阵中，四个假设（居家恢复、银发低冲击、办公久坐、中价位划船机）对应市场/产品/营销/运营四维度打分，部分格子缺少数据，Skill直接标注&rdquo;未获取&rdquo;。基于已有数据打分后，才得出&rdquo;居家低冲击训练&rdquo;得分较高，并解释原因是listing针对senior人群做了精准打标。</li>
+<li>
+<p><strong>解读</strong>：报告的可信度来自&rdquo;知道自己不知道什么&rdquo;，这对向老板/客户汇报尤其重要。</p>
+</li>
+<li>
+<p><strong>要点三：从listing关键词反推人群与场景</strong></p>
+</li>
+<li><strong>原文引用</strong>：「listing里面会大量的包含一些关键词，而这些关键词会cover到场景、人群」</li>
+<li><strong>案例还原</strong>：UP主先提出四个赛道假设，再用关键词证据验证。迈瑞克listing中针对&rdquo;senior/年长人群&rdquo;的精准打标，成为&rdquo;居家低冲击训练&rdquo;假设得分最高的核心依据。这是从&rdquo;品牌说了什么&rdquo;倒推&rdquo;品牌想卖给谁&rdquo;的方法。</li>
+<li>
+<p><strong>解读</strong>：竞品分析不必从访谈开始，货架页面的关键词就是最便宜的人群宣言。</p>
+</li>
+<li>
+<p><strong>要点四：打法是可拆解、可复制粘贴的清单</strong></p>
+</li>
+<li><strong>原文引用</strong>：「TK他是负责点火，亚马逊是负责承接」「把售后补救做成了口碑」</li>
+<li><strong>案例还原</strong>：迈瑞克的打法被拆成五块卡片：产品上追社媒趋势、整组铺品类、多代迭代、标题写场景人群；渠道上达人分层升级+自建美式直播间+专业背书与展会；价格上中价位卡位、降价换量、多渠道分期、现金激励用户晒图晒视频；运营上质保拉长、软硬结合不收订阅费、国内做标杆后带供应链出海。UP主说，对想复制的某个动作，再针对该动作做深入了解，但先有这张全局蓝图。</li>
+<li>
+<p><strong>解读</strong>：品牌拆解的价值不在&rdquo;看懂&rdquo;，而在&rdquo;哪一条我能明天就用&rdquo;。</p>
+</li>
+<li>
+<p><strong>要点五：追趋势的代价必须写进报告</strong></p>
+</li>
+<li><strong>原文引用</strong>：「品类它其实就是一个消耗品，来的快，去的也快」「品控和交付问题是靠售后去兜底」</li>
+<li><strong>案例还原</strong>：在&rdquo;代价与风险&rdquo;板块，UP主指出迈瑞克追社媒趋势意味着品类生命周期短，必须抓住趋势窗口；降价换量压缩利润空间；品控与交付问题最终压在售后上，售后压力会很大。这是全报告中唯一&rdquo;唱反调&rdquo;的部分，却让整套分析从吹捧变成决策参考。</li>
+<li><strong>解读</strong>：任何打法借鉴都要配一张&rdquo;代价清单&rdquo;，否则抄的是动作，赔的是利润。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：这份Skill把用户研究拆成&rdquo;用户在说什么（VOC）/用户在想什么/深层动机/机会信号&rdquo;四层，且VOC目前只用公开信息（如Trustpilot），说明公开UGC足以支撑60~70分的初判。用户旅程按购买阶段逐段对照品牌动作，是把&rdquo;研究&rdquo;直接接到&rdquo;可借鉴动作&rdquo;上的桥梁。</li>
+<li><strong>可借鉴方法</strong>：①数据可信度分级标注；②&rdquo;未获取&rdquo;如实标注、不硬编；③用listing关键词做人群/场景假设，再用Go to Market四维矩阵验证假设；④报告末尾列数据缺口，作为下一轮垂直调研的清单。</li>
+<li><strong>被揭示的坑</strong>：UP主明说报告&rdquo;不可能是完整的&rdquo;，强行补全就是失真；低可信度数据若直接当结论用，整份报告的地基就塌了。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路</strong>：迈瑞克的&rdquo;TK点火、亚马逊承接&rdquo;是一个清晰的前后链路分工模型——内容平台负责造势和触达，货架平台负责收单；配合达人分层升级、自建美式直播间、专业背书与展会，形成&rdquo;达人+自播+背书&rdquo;三件套。</li>
+<li><strong>值得研究的传播路径</strong>：①标题直接写场景和人群（与国内产品线打法不同）；②整组铺品类、一个系列多代迭代，用矩阵而非单品承接趋势；③现金激励用户产出晒图与视频，把UGC变成低成本内容供给；④把售后补救反向做成口碑资产。</li>
+<li><strong>解读（推论）</strong>：这套结构的可复制点在于&rdquo;分工意识&rdquo;——先想清楚哪个平台负责点火、哪个负责承接，再分配预算。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：中价位卡在白牌与高端之间、主力段降价换量；降低付款压力、提供多渠道分期付款以提升转化；质保拉长、软硬结合但不收订阅费，用服务承诺换复购与口碑。</li>
+<li><strong>转化路径发现</strong>：用户旅程分析把购买拆成不同阶段，逐段看品牌做了什么动作——这意味着转化优化不是优化单点，而是检查每个阶段是否都有对应动作。</li>
+<li><strong>风险提示</strong>：降价换量压缩利润、品控与交付压力最终堆到售后，这是增长打法必须提前算的账。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>视频给出的信号</strong>：UP主用Claude Skill把&rdquo;品牌理解&rdquo;这一原本依赖人工翻资料、凭经验归纳的工作，做成了可复用、可开源的结构化流程，且明确目标是&rdquo;0到1的60%~70%&rdquo;。这说明AI在当前阶段的真实定位是<strong>信息整合与结构化框架的生成器</strong>，而不是结论的最终裁决者。</li>
+<li><strong>边界在哪里</strong>：三个边界在视频里很清楚——①数据可信度需要人来判断哪块重要、是否要做下一轮分析；②缺失数据只能标&rdquo;未获取&rdquo;，不能由AI补写；③对某个具体动作要不要复制粘贴，仍需人去做深入判断。对应到硬件PM的ID→MD堆叠→电子设计前期demo流程（此为推论性延伸，视频未涉及硬件开发）：AI更可能承担的是资料整合、假设生成、评分矩阵搭建与风险清单罗列，而方案取舍、供应链与交付兜底责任仍必须由PM亲自承担。</li>
+<li><strong>流程/职责演变信号</strong>：把方法论沉淀为&rdquo;Skill&rdquo;并可开源共享，意味着PM的一项新能力是——把自己的分析框架产品化，让AI按框架跑，而不是让AI替自己想。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「TK他是负责点火，亚马逊是负责承接」（中段）——一句话讲清内容平台与货架电商的分工，是所有渠道策略的压缩饼干。</li>
+<li>「对于我们没有拿到的数据，它是会标注成未获取，而不是强硬的去进行编写」（中段）——定义了AI辅助分析的专业底线：承认空白比填补空白更可信。</li>
+<li>「品类它其实就是一个消耗品，来的快，去的也快」（结尾）——追趋势打法的清醒剂，提醒所有抄打法的人先算代价。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合做品牌拆解、竞品分析、跨境出海调研的市场/运营从业者，以及想用Claude Skill把个人方法论产品化的AI工具使用者。6分钟即可获得一套可直接套用的三模块拆解框架和若干防坑原则，性价比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
