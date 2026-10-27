@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>3 小时读完 Anthropic 招股书｜我的 Claude 拆解流程</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>3 小时读完 Anthropic 招股书｜我的 Claude 拆解流程</h1>
+      <div class="reader-meta">B站 · 迪迪碎碎念_AI · BV1BZxM6dEby</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>别让AI总结招股书，带着三个问题拆页码，吓人数字也能讲成人话。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频只有4分18秒，但它给出的不是一条&rdquo;大新闻&rdquo;，而是一套可复用的读财报动作。UP主迪迪（迪迪碎碎念_AI）要解决的具体事件是：Anthropic 本周一美国时间递交招股说明书，上半年报营收163亿美元、同比涨14倍，同期净亏损807亿美元。她带着&rdquo;卖得越多亏得越多吗&rdquo;这个问题，展示了自己如何用 Claude 在3小时内读完几百份文件，并强调这套方法论可以迁移到任何一家陌生公司的招股书。</p>
+<p><strong>第一步：先定问题，不让AI直接总结。</strong> 她的原话是招股书太长，直接总结&rdquo;出来的其实都是一些废话&rdquo;。所以先只关心三个问题：靠什么盈利、钱花在哪里、谁说了算；同时要求 Claude 列章节名和页码，方便后续对具体数值定位。核心逻辑是：带着问题去读，而不是让AI替你读完。</p>
+<p><strong>第二步：只要框架，不要全文。</strong> 让 Claude 列出完整目录，但只保留摘要、财务数据摘要等五个部分，每部分用两句话说明最重要的事。其余部分她直接说&rdquo;都是可以去交给律师的&rdquo;——这是一个很实用的取舍判断：人只读决定判断的五个模块。</p>
+<p><strong>第三步：拆成碎片化数字，且必须带页码。</strong> 她明确说这一步要 locate 到页码，原因是&rdquo;AI是会具有幻觉的，会去编不存在的一些数字&rdquo;，有页码才能溯源核对。用这种方式，她拉出了23年到24年、25年到今年上半年的增长曲线；其中Q2单季营收115.6亿美元，一个季度就超过前面3年的总和。每一个数字都做同类拆解。</p>
+<p><strong>第四步：用&rdquo;翻译成比喻&rdquo;的方式拆亏损——这是全片最完整的案例。</strong> 起点是那个吓人的807亿净亏损。她让 Claude 把亏损按类目拆分，每一项引用原文一句话并标注页码，再用&rdquo;没学过会计的人也能听懂&rdquo;的比喻解释。拆出来：其中724亿是可转债等重估，公司自己写的是&rdquo;公司更值钱、账面计亏&rdquo;。她打的比方是：你找朋友借10万，约定以后用公司1%的股份还；后来公司估值爆火，这1%涨到了500万，会计就会说你多欠了490万，这490万就成了亏损——但你一分钱没付出去，反而说明公司更值钱了。剩下77亿是类似金融项目、扣掉存款利息后的金额。真正做生意的经营亏损只有6.9亿。所以她的结论是：标题里非常吓人的数字，拆开来看&rdquo;其实并没有那么的可怕&rdquo;；而且经营即使亏损6.9亿，Q2经营利润还增加了9.7亿。</p>
+<p><strong>第五步：把文字变成12个数字。</strong> 让 Claude 从表里挑出12个数字、分类，每个配一句不超过15字的解释。她重点讲了900%的净收入留存率：比方去年同一时间你在 Anthropic Claude 上花1美元，今年同期花9美元；这个比例还会随时间越来越高。最后她强调，这套方法论可以抽离出来，用到下一家公司、哪怕是英文长文档上。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【三问定盘】先问&rdquo;靠啥赚钱、钱花哪、谁说了算&rdquo;，再让AI动笔——问题在前，总结在后。对应&rdquo;不要直接让AI总结&rdquo;的第一步。
+【页码是防伪标签】AI会编数字，页码是唯一能回查的防伪码。对应&rdquo;locate到页码再溯源&rdquo;。
+【只读五章，其余交律师】招股书像体检报告，人只看五个关键指标，剩下的交给专业人士。对应&rdquo;保留摘要等五个部分&rdquo;的取舍。
+【10万变500万的假亏损】借10万、还1%股份，公司爆火后账面多欠490万，一分钱没付却记成亏损。对应724亿可转债重估的拆解。
+【1美元变9美元】留存率900%的意思是：老客户今年比去年多花9倍，越用越离不开。对应净收入留存率的比喻。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>不要让AI直接总结长文档</strong></li>
+<li><strong>原文引用</strong>：「招股书太长了，总结出来的其实都是一些废话」「先定问题，不要让AI去总结，而是带着问题去读」</li>
+<li><strong>案例还原</strong>：UP主面对 Anthropic 几百份文件，第一步不点&rdquo;总结&rdquo;，而是先自问三个问题——靠什么盈利、钱花在哪里、谁说了算——并要求列出章节名和页码。结果是读出来的内容都围绕着她的疑问，而不是泛泛的段落概括。</li>
+<li>
+<p><strong>解读</strong>：任何长文档分析前，先写问题清单，AI才是在答题而不是在背课文。</p>
+</li>
+<li>
+<p><strong>AI幻觉必须用页码对冲</strong></p>
+</li>
+<li><strong>原文引用</strong>：「因为AI是会具有幻觉的，会去编不存在的一些数字，但是如果有页码，我们就可以去进行一个核对」</li>
+<li><strong>案例还原</strong>：第三步拆碎片化数字时，她强制要求 locate 到页码；随后才敢用23—25年及今年上半年的数据画增长曲线，并引用Q2单季营收115.6亿、超过前3年总和这个结论。没有页码，这些数字就无法验证。</li>
+<li>
+<p><strong>解读</strong>：凡是要拿去做判断的数字，都要求AI给出出处，这是使用AI的底线纪律。</p>
+</li>
+<li>
+<p><strong>吓人的财务数字要拆开看结构</strong></p>
+</li>
+<li><strong>原文引用</strong>：「标题里面非常吓人的数字，我们拆开来看去更加深入的研究，其实并没有那么的可怕」</li>
+<li><strong>案例还原</strong>：807亿净亏损拆成三块：724亿可转债等重估（公司更值钱、账面计亏）、77亿类似金融项目扣息后金额、真正经营亏损6.9亿。她用&rdquo;借10万还1%股份、估值爆火后多欠490万&rdquo;的比喻讲清了第一块，结论是公司经营层面Q2经营利润还增加了9.7亿。</li>
+<li>
+<p><strong>解读</strong>：看亏损先看构成，会计亏损和经营亏损是两码事，对看财报和看新闻标题的人都适用。</p>
+</li>
+<li>
+<p><strong>把文字型信息压缩成少数关键数字</strong></p>
+</li>
+<li><strong>原文引用</strong>：「把一些文字性的东西变成几个数字，然后帮助我们去理解这家公司」</li>
+<li><strong>案例还原</strong>：最后一步让 Claude 从表里挑12个数字、分类，每个配不超过15字的解释。她挑出900%净收入留存率做示范：去年花1美元的老客户，今年同期花9美元，且比例随时间越来越高。</li>
+<li>
+<p><strong>解读</strong>：一个指标配一句人话，是向非专业听众汇报公司质地的高效格式。</p>
+</li>
+<li>
+<p><strong>方法论可迁移</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这套方法论你是可以去抽离出来，然后形成自己想要问的一些问题，帮助你更好的去了解一家成功的公司」</li>
+<li><strong>案例还原</strong>：她明确说，即使面对英文版、非常长的招股书，也可以用同一套五步流程（定问题→留五章→拆数字带页码→比喻拆解→12个数字），换成自己的问题即可复用到下一家公司。</li>
+<li><strong>解读</strong>：价值不在读完 Anthropic，而在获得一个可重复使用的读陌生公司流程。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频里最可直接借用的调研方法是&rdquo;先定问题清单，再让工具检索&rdquo;，对应研究中&rdquo;先假设、后验证&rdquo;的路径；以及&rdquo;每个数据必须带出处页码&rdquo;——这等价于调研中的&rdquo;每个结论必须可回溯到原始信源&rdquo;。UP主点出的坑很典型：让AI直接总结=得到一堆废话，即没有研究问题的信息采集只会产出无效洞察。900%净收入留存率这个指标的比喻化表达（1美元变9美元），也是把抽象指标翻译成用户行为语言的好范例。</li>
+<li>智能硬件/AI产品相关：本视频不涉及硬件，仅可作为&rdquo;用AI做资料研究&rdquo;的方法参考。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频提供了一个传播层面的洞察：吓人的标题数字（807亿亏损）与拆开后的真实经营状况（经营亏损6.9亿、Q2经营利润增9.7亿）之间存在巨大落差——这提示做品牌与传播的人，&rdquo;数字叙事&rdquo;的框架选择会直接决定受众认知。UP主用&rdquo;借10万还1%股份&rdquo;的比喻把财务概念讲成人话，这种&rdquo;比喻化翻译&rdquo;正是内容营销中降低理解门槛的通用手法。视频本身没有营销案例或增长路径的讨论。</li>
+<li>智能硬件/AI产品相关：无相关内容。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可直接迁移的是&rdquo;净收入留存率&rdquo;这个指标及其解释方式：去年花1美元的老客今年花9美元，比例随时间越来越高——对应电商里的老客复购与客单成长逻辑，UP主给的比喻（1美元变9美元）是向团队解释留存价值的好话术。此外&rdquo;一个季度营收超过前3年总和&rdquo;这种单季对比视角，也可用于运营复盘中的环比/单季爆发判断。视频未涉及转化路径或用户旅程的具体案例。</li>
+<li>智能硬件/AI产品相关：无相关内容。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <ul>
+<li>本视频不涉及ID设计、MD堆叠或电子设计demo，无法就这些阶段给出证据。仅能从&rdquo;AI能力边界&rdquo;角度提取一条与PM工作方式相关的信号：UP主明确说AI会产生幻觉、会编造不存在的数字，因此流程上强制&rdquo;每个数字带页码以便核对&rdquo;，并且把长文档裁成&rdquo;只保留五个关键部分&rdquo;、其余交给律师。这提示PM在使用AI做任何前期资料整理或竞品/供应链文档分析时，AI的定位是&rdquo;带出处的检索与拆解助手&rdquo;，判断与取舍仍须人来做；视频未提供AI参与硬件设计流程的任何工具或职责演变的信号，不宜外推。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「先定问题，不要让AI去总结，而是带着问题去读」（中段）——这是全片方法论的起点，一句话改掉大多数人用AI读长文档的默认姿势。</li>
+<li>「因为AI是会具有幻觉的，会去编不存在的一些数字，但是如果有页码，我们就可以去进行一个核对」（中段）——给出了使用AI时最具体的一条防错纪律。</li>
+<li>「标题里面非常吓人的数字，我们拆开来看去更加深入的研究，其实并没有那么的可怕」（中段）——把807亿拆成724亿重估+77亿金融项+6.9亿经营亏损后，这句话成了全片最有传播力的结论。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合需要用AI快速读懂招股书、财报或任何超长英文文档的投资/研究/运营从业者，以及想学一套&rdquo;带问题、带页码、带比喻&rdquo;的AI使用流程的人。4分钟就能拿到一个可复用到下一家公司的五步模板，性价比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
