@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🔍 AI 可观测性 0️⃣1️⃣ Agent 做了什么？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🔍 AI 可观测性 0️⃣1️⃣ Agent 做了什么？</h1>
+      <div class="reader-meta">B站 · 沧海九粟 · BV1J6n96MEK3</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI黑匣子怎么拆：把“用户要什么、模型收到啥、它干了啥、结果怎样”四笔账对上，排错才有方向。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>1. 什么是AI可观测性：给Agent装一台“行车记录仪”</strong>
+UP主给的定义很直接：利用运行记录了解Agent“收到了什么、做了什么、结果怎样”，并据此排查问题。它的价值在于“从最终答案追查到执行过程中的具体证据”。真实落地的例子是安全公司Snack Blue（字幕原文“snack blue”）：其Agent已处理6万多次客户查询、覆盖500多个客户账户，能查软件包漏洞、创建支持工单。上线后团队关心三件事：回答是否解决了问题、更新后有没有退步、怎样持续检查。做法是记录模型和工具调用、评价线上回答，把表现不好的记录加入评估数据集，用来检验后续修改效果。</p>
+<p><strong>2. 排查错的四类信息：缺一笔账就断案</strong>
+只看“答错的那句话”不足以定位问题，必须把四件事对上：①用户的目标和要求（客户问了什么、希望解决什么），它是判断“回答是否切题、动作是否符合要求”的标准；②模型当时拿到了什么（用户问题、系统指令、检索资料、历史对话、工具返回），用来检查信息有没有传进去、是否完整；③模型做了什么（调了哪个工具、传了哪些参数、工具返回了什么、后面有没有用上）；④最终结果怎样，且要分别确认三个层面的结果：内容是否正确、修改外部系统的实际状态、用户目标是否已满足。UP主的说法是三个需要分别确认的结果，对应“执行过检查/功能已经完成”的差别。</p>
+<p><strong>3. 核心案例：Anthropic编码Agent的“假完成”</strong>
+UP主引用Anthropic 2025年的编码Agent开发实验：Agent做过单元测试、甚至访问过开发服务器，仍可能把无法完整使用的功能标成“完成”。团队后来的补救办法是要求它用浏览器工具、按用户的操作方式去验证。这个案例的排查关键落在“检查范围”上——它究竟验证了哪些功能、覆盖了哪些用户操作。要判断“完成”是否可信，就得把原始要求、执行过的检查、实际结果放在一起看。这也是为什么前面四类信息必须能互相对应。<strong>记忆抓手：做过测试≠做对了事，Agent也会“交作业式完成”。</strong></p>
+<p><strong>4. 关键术语trace：把散落的记录串成一条线</strong>
+信息散落各处时，靠trace（追踪/执行轨迹）把它们关联起来，让人能顺着结果查到前面的模型调用和工具动作。形成轨迹的做法是：在模型调用、检索、工具执行等位置采集输入输出、时间和状态，再用共同的执行标识和步骤上下级关系连接记录，说明某个工具动作属于哪次执行、由哪一步发起。为什么要保留关系？因为Agent执行不是一条直线：一个步骤可能启动多个并行任务，某次调用也可能失败后重试，只有结合步骤关系和时间记录，才能分清哪些工作同时发生、哪一步在等待、结果依赖了哪些动作。网约车平台Lift在2026年5月的复盘里也用了同一套方法：司机反馈客服Agent回答令人困惑时，团队找到对应对话的轨迹，检查节点输入输出，区分是意图分类、工具执行还是最终回复的问题。</p>
+<p><strong>5. 从一条轨迹到全局：指标、日志、评估三件套</strong>
+单条排查之外还要主动发现异常，观察范围从一条轨迹扩大到一段时间内的整体表现，这就用到指标（请求量、错误率、响应时间）。例如发现响应变慢，就顺着相关任务的轨迹查，看耗时落在哪次模型调用、哪个工具或哪段等待上。需要更细的现场信息就用日志，比如工具返回的错误细节；日志和轨迹关联后，能把整体指标异常一路追到某次执行里的具体事件。但UP主强调一个关键区别：响应时间和错误率正常，回答仍可能没解决问题——因为“执行顺利不代表任务完成”。所以还要按业务要求做质量评估：评估负责筛出可能有问题的轨迹，轨迹负责追查偏差出在哪个环节。评分本身也要核验，尤其用另一个模型打分时，需人工抽查确认其判断可靠。</p>
+<p><strong>6. 证据的边界与修复验证：看见≠看透</strong>
+UP主提醒两类认知陷阱：一是轨迹里如果缺了某步骤的记录，偏差就可能“看不见”，遇到查不清要先确认缺了哪些证据，不能把“没找到记录”理解成“动作没发生”；二是即使输入输出都有记录，看到的仍是外部过程，能确认模型收到了某份资料，不等于知道它内部如何使用这份资料，要解释某个选择为何发生，还得提出可能原因并用更多证据或对照验证。找到可疑环节后必须验证修复：无论调整指令、补充资料还是修改工具，都要重新检查效果。而要让“修改前后”的比较有意义，记录里得带上模型和指令版本、资料来源及相关状态的时间，避免把不同条件下的表现当成某次修改有效的证明。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【四笔账】</strong> 用户要什么、模型收到啥、它干了啥、结果怎样，四笔账对上才能断案。对应四类必须互相对应的执行信息。</li>
+<li><strong>【假完成】</strong> 做过单元测试≠功能可用，Agent也会“交作业”。对应Anthropic实验中把不可用功能标成完成的坑。</li>
+<li><strong>【别把没记录当没发生】</strong> 看不见的偏差，可能是证据缺口，不是清白证明。对应“缺步骤记录不能推出动作未发生”。</li>
+<li><strong>【顺利≠完成】</strong> 指标全绿，用户的问题可能还悬着。对应“执行顺利不代表任务完成，需质量评估”。</li>
+<li><strong>【改完要复考】</strong> 调指令、补资料、改工具之后，必须用评估重新验效果。对应修复验证与版本记录的必要性。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点标题</strong>：可观测性的目标是“从答案追到证据”</li>
+<li><strong>原文引用</strong>：「它让我们能够从最终答案，追查到执行过程中的具体证据」</li>
+<li><strong>案例还原</strong>：Snack Blue的Agent上线后处理6万多次查询、覆盖500多个客户账户，团队记录模型与工具调用、评价线上回答，把差评记录加入评估数据集，用后续修改来检验是否真的变好（背景→做法→结果闭环）。</li>
+<li>
+<p><strong>解读</strong>：排错不能靠猜，任何AI产品上线都该先建“证据链”。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：结果要分三层确认，别混为一谈</p>
+</li>
+<li><strong>原文引用</strong>：「工具接受了请求、动作执行成功、用户目标已经满足，这三个需要分别确认」</li>
+<li><strong>案例还原</strong>：Anthropic 2025编码Agent实验中，Agent跑过单元测试、访问过开发服务器，仍把不可完整使用的功能标为完成；团队改用浏览器工具按用户操作方式复验（背景→弯路→补救）。</li>
+<li>
+<p><strong>解读</strong>：做Agent验收时，把“请求被接受”当成“事情办成”是最常见的自欺。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：trace是排错的主干道</p>
+</li>
+<li><strong>原文引用</strong>：「他把一次执行里记录下来的步骤关联起来，让我们能顺着结果查到前面的模型调用和工具动作」</li>
+<li><strong>案例还原</strong>：Lift在2026年5月复盘中，司机反馈客服Agent回答困惑，团队定位对应对话轨迹、检查节点输入输出，把问题分层到意图分类、工具执行、最终回复三类。</li>
+<li>
+<p><strong>解读</strong>：没有执行标识和步骤上下级关系，并行与重试就会把排错搅成一团。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：指标、日志、评估各管一段</p>
+</li>
+<li><strong>原文引用</strong>：「评估帮助筛出可能有问题的任务轨迹，轨迹帮助追查偏差出现在哪个环节」</li>
+<li><strong>案例还原</strong>：响应变慢时先看指标异常，再查相关任务轨迹定位到某次模型调用、某个工具或某段等待；工具报错细节靠日志，日志与轨迹关联后能从整体异常追到具体事件。</li>
+<li>
+<p><strong>解读</strong>：监控看趋势、轨迹看个案、评估看业务结果，三者缺一都会漏。</p>
+</li>
+<li>
+<p><strong>要点标题</strong>：证据有边界，结论要克制</p>
+</li>
+<li><strong>原文引用</strong>：「不能把没找到记录理解成动作没有发生」</li>
+<li><strong>案例还原</strong>：UP主指出，轨迹缺步骤记录时会“看不见”偏差；且即便输入输出齐全，也只能确认模型收到了资料，不能确认它内部如何使用，需提出假设再用更多证据或对照验证。</li>
+<li><strong>解读</strong>：对做AI复盘和事故归因的人，这是防止过度定论的红线。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频把“用户的目标和要求”列为四类信息之首，并强调必须与执行记录一起保留——这本质上就是用户研究里的“原始需求快照”。做AI产品调研时，不能只收集“用户说答错了”，要留存用户原话与期望解决的问题，否则后续无法判断“是否切题”。</li>
+<li><strong>可借鉴的方法</strong>：借鉴Snack Blue的“差评入库”做法——把表现不好的真实使用记录沉淀为评估数据集，相当于把定性反馈转成可持续复测的用户样本库；借鉴Lift的“反馈→轨迹→分层归因（意图/工具/回复）”，这就是一份可复用的AI体验问题分类框架。</li>
+<li><strong>被揭示的坑</strong>：只看最终输出（那句答错的话）做判断会误判根因；以及“没找到记录≠没发生”，调研结论要标注证据缺口。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频中“执行顺利不代表任务完成”直接对应营销场景的转化悖论——曝光、点击、接口成功率全绿，不代表用户目标被满足。品牌侧做AI客服/导购Agent时，KPI要从“响应正常”升级为“问题真的被解决”。</li>
+<li><strong>可研究的传播路径</strong>：Snack Blue“把差评记录变成评估集”的思路可迁移为内容/口碑运营的负反馈闭环：把用户不满意的对话沉淀、分类、复测，而不是删评了事。</li>
+<li><strong>解读（推论）</strong>：视频未涉及营销投放内容，此节洞察主要来自“质量评估优先于运行指标”这一逻辑的迁移。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>新洞察</strong>：电商客服是Agent最典型的落地场景，视频给出的排查路径（确认错误→沿轨迹查输入/动作/结果→验证修复→用评估复测）可直接作为客服Agent的日常运营SOP。</li>
+<li><strong>可参考的策略</strong>：分三层确认结果——“工具接受了请求、动作执行成功、用户目标已经满足”，对应订单改地址、退款、建工单等外部系统操作，运营必须分别核对实际状态，不能只看“提交成功”。</li>
+<li><strong>用户旅程新发现</strong>：trace的并行与重试特性提醒运营，用户感知的一次“慢”，可能来自某次模型调用、某个工具或某段等待，需按环节拆解而非笼统归因。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【推论性分析，视频未直接涉及硬件】</h3>
+          <ul>
+<li><strong>AI能发挥作用的阶段</strong>：视频的“四类信息+trace+评估”框架本质是软件/Agent侧的可观测链路，可类比到硬件PM的“验证闭环”——AI目前更适合承担记录、归因辅助、差评聚类、评估复测这类“证据管理”工作；视频中“要求Agent用浏览器工具按用户操作方式验证”也提示：AI可被指派做贴近真实使用路径的验证动作。</li>
+<li><strong>AI的边界</strong>：视频明确点出两条：AI能确认“模型收到了某份资料”，但不等于知道“内部如何使用”；且缺记录时偏差不可见。映射到ID图→MD堆叠→电子设计前期demo：AI可生成方案与检查清单，但“需求是否被真正满足”“堆叠约束是否成立”仍需PM定义验收标准并亲自核验，不能把“跑过流程”当“做对了”。</li>
+<li><strong>信号</strong>：视频中“记录模型和指令版本、资料来源和时间，区分改了什么”的做法，预示PM岗位将增加“版本化证据管理”职责——每次方案迭代都要能说清改了什么、为何有效。此为基于视频逻辑的推论，非视频原话。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「执行顺利不代表任务完成」——位置：中段。值得记住：一句话击穿“指标全绿=没问题”的错觉，是AI质量评估存在的根本理由。</li>
+<li>「不能把没找到记录理解成动作没有发生」——位置：中后段。值得记住：这是所有复盘与归因的证据纪律，防止把观测盲区当成事实结论。</li>
+<li>「让排错有方向，别让每次改进有依据（字幕原文如此，疑为‘让每次改进有依据’）」——位置：结尾。值得记住：它把可观测性与评估的分工一句话说清——一个指路，一个验收。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在做或即将上线AI Agent/智能客服的产品、运营、测试与算法同学，尤其是被“用户说答错了却查不出原因”困扰的团队；也适合需要建立AI质量评估与复盘机制的管理者，6分钟即可拿到一套可落地的排查框架。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
