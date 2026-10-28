@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>How to Get Meta Muse to Recommend Your Product or Service</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>How to Get Meta Muse to Recommend Your Product or Service</h1>
+      <div class="reader-meta">YouTube · Marketing School · L5rkPQa_nrA</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>当客户开始问 AI&rdquo;帮我选一个&rdquo;，你的生意就进了新赛场。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一个新入口出现了</strong>
+视频开场引用了 Rob Hoffman 的观察：Meta Muse 已经把某客户的产品推荐为&rdquo;市场上最佳选择&rdquo;。演示场景很简单——用户对 Muse 说&rdquo;我想做个 newsletter，用哪个平台？直接帮我选一个&rdquo;，Muse 回答 Beehiiv，理由是&rdquo;不用再纠结了，Beehiiv 抽成 0%，Substack 抽 10%&rdquo;。主播随即把这定义为&rdquo;AEO/SEO 的下一个战场&rdquo;：Cloud Duet 刚出、Meta Muse、Instinct、Grok Bot、OpenAI 等一堆入口正在同时出现，企业必须为&rdquo;被 AI 推荐&rdquo;做优化。这是全篇的出发点：推荐权从搜索框转移到了 AI 代理手里。</p>
+<p><strong>案例一（全片最完整的案例）：Neil 联合创始人的软水机采购</strong>
+Neil 的联合创始人卖掉了拉斯维加斯的房子，暂时租房住，房东不负责窗帘和软水机——而在 Vegas 的气候下软水机是刚需。他先用 Google 搜到一家公司，报价 7,600 美元。他过去常用 Claude，但觉得 Grok 更顺手，于是改用 Grok Bot 帮他找更多公司、并按他的空闲时间约上门。结果三家公司上门，最便宜的报价是 4,000 多美元（Neil 回忆约 4,800），不到五千，他决定签这家。关键的反转在于：那家赢单的公司&rdquo;像大多数公司一样&rdquo;从没为 GEO/被 AI 抓取做过优化，而真正被 Grok 拉进来、产生收入的公司，自己也完全不知道这单来自 Grok——他们没有追踪，也没人会去问客户&rdquo;你怎么找到我们的&rdquo;。Neil 的推论是：这些企业看不到这条渠道的收入，自然也不会加大投入，于是持续漏掉本可以拿到的生意。</p>
+<p><strong>&ldquo;不优化的成本&rdquo;这个视角</strong>
+主播把这套逻辑平移到 iPhone Duo：人们只算&rdquo;Grok 要花钱&rdquo;&ldquo;Duo 要两千美元&rdquo;，却不算&rdquo;不优化会损失多少钱&rdquo;。Duo 已经卖断货、发货排到 1 月 25 日左右，说明它是爆款且是高价设备——买它的人正是有钱的优质客户。Eric 自己订了又打算退、等下代，因为很多 App 不兼容；但主播强调：设备越火、用户越有钱，不适配的商家损失越大。</p>
+<p><strong>AI 代理会不会来&rdquo;卖流量&rdquo;？两位主播的交锋</strong>
+主播 A 预测：Grok Bot 这类代理迟早会通知商家&rdquo;我们给你带来了一个客户，要不要更多？&rdquo;他的证据是自己每天都在这么用——让 Grok 起草给 OpenAI、Claude 合作团队的联系邮件并直接发送；还做了一个竞品广告监控：&rdquo;谁在 LinkedIn 上和 Profound 的帖子或广告互动了，如果是我们的 ICP 就告诉我&rdquo;，本周就收到&rdquo;这四个人互动了 X 次，建议用这个角度触达&rdquo;。既然这些任务代理都能做，&rdquo;通知商家并卖更多线索&rdquo;在技术上毫无难度。主播 B 部分同意但划了边界：代理不会去&rdquo;操纵自然推荐结果&rdquo;，因为那会破坏用户对其&rdquo;推荐即最优&rdquo;的信任；但会做广告位——就像早年 Google 搜索页上的&rdquo;想在这里投放广告吗&rdquo;，点进去就是 AdWords 注册流程。最终两人收敛为：代理不会卖&rdquo;影响自然结果&rdquo;，但会卖&rdquo;当用户提问时的广告位&rdquo;。中间还插了一条实操建议：Grok Bot 的 connector 区只有四个营销类插件，其中甚至有 YouTube 网红的自家产品——早期进入者能拿到不成比例的红利， marketplace 和插件一上线就得立刻进驻，&rdquo;你一等待，别人就超车了&rdquo;。</p>
+<p><strong>算力豪赌：为什么&rdquo;等数据再说&rdquo;是错的</strong>
+话题转向 Meta 财报：业绩超预期，但因为扎克伯格宣布加大 AI 与基础设施投入，股价当周下跌；CoreWeave、NeoCloud 等也随之下跌，市场质疑&rdquo;基础设施过度支出&rdquo;。Neil 引用他听的一期播客（扎克伯格、Scale AI 的 Alexander Wang、Stripe 的 Patrick Collison）：这类局面无法预测，是&rdquo;赢家通吃/通吃大部分&rdquo;，不能等数字明朗再投，必须现在就砸 capex。他讲了细节：高管会上 CFO 反复把 Alexander Wang 拉到一边问&rdquo;这要是不成，对 Meta 会很糟吧？&rdquo;——主播点评&rdquo;这本来就是 CFO 的职责&rdquo;，而创始人扎克伯格拍板&rdquo;全押，干&rdquo;。另一侧证据是 Ben Horowitz 在 All-In 上说，他问 Andy Jassy 2028 年能否追上算力需求，Jassy 直接否认，称需求远超供给。</p>
+<p><strong>算力会不会过剩？历史给出的一张表</strong>
+Neil 的姐夫 Heathen 发来一张&rdquo;资本支出热潮占 GDP 百分比&rdquo;的表：运河 0.66%、铁路 2.24%（主播补一句&rdquo;铁路就是当年的 AI&rdquo;）、电气化 0.5%、高速公路 1.13%、电信与光纤 1.1%，而 AI 建设到 2032 年合计仅 3.63%——&ldquo;不算疯狂，也没跑偏&rdquo;。两位主播对&rdquo;未来还需多少算力&rdquo;都承认不知道，但一致同意人类欲望没有止境（&rdquo;我以前一台 iPhone 用三四年，现在一年一换&rdquo;），并以 Anthropic 为例：OpenAI 一直猛推算力，Anthropic 没跟上而被算力卡住，直到做了（主播口中的）SpaceX 那笔交易，否则后果可能是灾难性的。Neil 还引 Andrej Karpathy 的数字：全球只有约 0.2%（两千万人）真正在用 AI 并获得生产力，其中只有 5,000 人在前沿——言下之意，需求才刚开始。</p>
+<p><strong>终局想象：万物皆渠道</strong>
+全片最有画面感的一段：AI 已经在马桶、冰箱上出现，冰箱屏幕可以下单买菜、分析食材推荐菜谱；当人形机器人替你去超市采购时，你要营销的对象变成了那个机器人——&ldquo;即使你的产品贵 10 美分，也要让它买你的&rdquo;。两人甚至开玩笑&rdquo;分析你的粪便&rdquo;是马桶的活。结论是：线上线下一律数字化之后，一切都要被营销，而现在没人知道到底需要多少数据中心。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【AI 帮我选】用户不再搜&rdquo;哪个好&rdquo;，而是说&rdquo;你帮我定&rdquo;——说服对象从人变成了代理。对应论点：推荐入口迁移，AEO 是新 SEO。
+【七千六变四千八】同一个需求，Google 报价 7,600，Grok 找到的三家里最便宜的 4,800——差价的另一半，是&rdquo;被 AI 看见&rdquo;的价值。
+【看不见的收银台】AI 带来的客户没有小票，商家不知道钱从哪来，于是永远不会加投。对应论点：不追踪=持续漏单。
+【铁路就是当年的 AI】运河、铁路、电气化、光纤、AI——占 GDP 3.63%，不是泡沫曲线。对应论点：capex 狂潮有历史坐标系。
+【冰箱会下单，机器人会挑货】未来的货架长在代理里，贵一毛钱也要让机器人选你。对应论点：万物皆渠道。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>被 AI 推荐是新的引流入口，逻辑仍是 SEO/AEO 的延伸</strong></li>
+<li><strong>原文引用</strong>：「你得多做 AEO，多做 SEO，这一点没变，只是这是 SEO/AEO 的下一个界面。」</li>
+<li><strong>案例还原</strong>：Muse 演示中，用户要求&rdquo;直接帮我选一个&rdquo;，Muse 直接给出 Beehiiv 并附理由（0% 抽成 vs Substack 10%）——这就是&rdquo;被列为第一&rdquo;的样子；主播称同类入口还有 Cloud Duet、Instinct、Grok Bot、OpenAI。</li>
+<li>
+<p><strong>解读</strong>：入口变了，优化逻辑没变，但速度要求更高——先占位的人吃红利。</p>
+</li>
+<li>
+<p><strong>企业最大的风险不是投放成本，而是&rdquo;渠道盲区&rdquo;带来的收入流失</strong></p>
+</li>
+<li><strong>原文引用</strong>：「大多数企业不明白，不为此做优化会带来多少收入损失。」</li>
+<li><strong>案例还原</strong>：卖房租房→房东不管软水机→Google 报价 7,600→改用 Grok Bot 约三家上门→最便宜 4,800 成交→赢单公司从未做 GEO 优化、也不知道这单来自 Grok；主播反问：不知来源，就不会优化，也就不会赢更多单。</li>
+<li>
+<p><strong>解读</strong>：先建立&rdquo;AI 来源&rdquo;追踪，再谈优化，否则永远在拍脑袋。</p>
+</li>
+<li>
+<p><strong>早期平台红利：marketplace 和插件一上线就要立刻进驻</strong></p>
+</li>
+<li><strong>原文引用</strong>：「一旦 marketplace 出来、插件出来，你得马上进驻，不能等，一等就被人抢先。」</li>
+<li><strong>案例还原</strong>：Grok Bot 的 connector 区只有四个营销插件，其中甚至有一个 YouTube 网红的自家产品；主播判断这些公司&rdquo;正和大量合作方绑在一起&rdquo;，有关系的创作者和知名公司都能谈成合作。</li>
+<li>
+<p><strong>解读</strong>：新渠道的窗口期极短，占位成本远低于追跑成本。</p>
+</li>
+<li>
+<p><strong>代理不会操纵自然推荐，但一定会卖广告位</strong></p>
+</li>
+<li><strong>原文引用</strong>：「他们不会说&rsquo;我们会影响自然结果&rsquo;，他们会说&rsquo;你可以在用户提问时在这里投广告&rsquo;。」</li>
+<li><strong>案例还原</strong>：主播预测代理会通知商家&rdquo;我们给你送来了客户，要不要更多&rdquo;；主播 B 承认预言会成真，但坚持&rdquo;推荐必须纯净&rdquo;是用户体验底线，因此路径会像早期 Google：赞助位+&rdquo;想在这里放广告吗&rdquo;→进入广告后台注册。</li>
+<li>
+<p><strong>解读</strong>：对营销人意味着两套动作——自然侧做 AEO，付费侧等广告位开闸就进场。</p>
+</li>
+<li>
+<p><strong>算力投入是赢家通吃的豪赌，历史数据显示 3.63% 并不离谱</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这是赢家通吃或赢家通吃大部分的局面，你没法说&rsquo;我先等数字出来&rsquo;。」</li>
+<li><strong>案例还原</strong>：Meta 财报超预期但股价下跌，因扎克伯格加码 AI 基础设施；CFO 反复拉 Alexander Wang 问&rdquo;这要是不成怎么办&rdquo;，创始人拍板全押；Jassy 否认 2028 年能追上需求；Anthropic 因算力没跟上被卡住，直到做了（主播所称的）SpaceX 交易；表格显示 AI 建设到 2032 年占 GDP 3.63%，铁路当年 2.24%、光纤 1.1%。</li>
+<li>
+<p><strong>解读</strong>：给做预算和内容选题的人一个框架——判断 AI 是泡沫还是基建，先看历史坐标。</p>
+</li>
+<li>
+<p><strong>只有 0.2% 的人真正在用 AI，需求远未见顶</strong></p>
+</li>
+<li><strong>原文引用</strong>：「全世界只有 0.2%，两千万人真正在用 AI 并获得生产力，其中只有 5,000 人在前沿。」</li>
+<li><strong>案例还原</strong>：Neil 引 Karpathy 的数字后，用&rdquo;iPhone 越换越勤&rdquo;说明人类欲望无止境，加上冰箱下单、机器人采购的想象，推出&rdquo;我们还需要多得多的算力&rdquo;。</li>
+<li><strong>解读</strong>：给所有&rdquo;AI 已经过热&rdquo;的判断泼一盆冷水，也给长期投入找理由。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>最直接的启示：用户调研的入口本身在迁移。</strong> 案例一中，用户对 Grok 说&rdquo;帮我找几家、按我的空闲时间约上门&rdquo;——这是把&rdquo;搜索+比价+约访&rdquo;打包交给代理。用户研究员应当开始在 AI 代理的会话里观察决策路径，而不是只做问卷和深访。</li>
+<li><strong>一个可落地的方法：设计&rdquo;AI 推荐审计&rdquo;。</strong> 像主播那样自问&rdquo;我怎么才能被列进去？&rdquo;——用同一组购买意图向 Muse、Grok、Claude、ChatGPT 提问，记录谁被推荐、以什么理由被推荐（价格、抽成、口碑），这就是新版货架监测。</li>
+<li><strong>被揭示的坑：归因盲区。</strong> 卖软水机赢单的公司&rdquo;没有追踪、也没人去问&rdquo;，根本不知道客户来自 Grok。用户研究里若无&rdquo;到店来源&rdquo;设计，所有渠道洞察都是残缺的。</li>
+<li><strong>旁证一个新兴研究工具</strong>：主播让 Grok 扫描其 581 个 ICP 匹配关注者、识别 M&amp;A 与招聘目标，甚至扫描某个 12 万粉丝的账号（报价从 25 美元降到 15 美元）。用户画像与名单构建正在被代理自动化——但注意，这只是主播的自述用法，效果需自行验证。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>核心转变：从让人信，到让代理选。</strong> Muse 的推荐语是&rdquo;不用再纠结了，Beehiiv 抽成 0%&rdquo;，即代理用可比较的参数做裁决。品牌要把自己的差异化做成代理读得懂、比得出的结构化理由（价格、费率、覆盖范围）。</li>
+<li><strong>两种打法并行</strong>：自然侧做 AEO/GEO 抢推荐；付费侧盯着 marketplace 和插件——&ldquo;插件一上线就进驻，不能等&rdquo;，Grok Bot 四个营销插件中甚至有一个是网红产品，说明早期占位门槛低但拼关系与速度。</li>
+<li><strong>一个新内容品类可能出现</strong>：主播讨论代理是否会卖&rdquo;AEO 服务&rdquo;给商家时，一方说 Google 从不会替你做 SEO，另一方认为成本已低到代理可以提供——这是值得提前布局的服务化营销产品。</li>
+<li><strong>抽象总结</strong>：品牌的传播半径 = 覆盖的代理数量 × 在每个代理里的可推荐度。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>渠道盘要新增&rdquo;代理渠道&rdquo;一列</strong>，并回答三个问题：我们是否被推荐？推荐理由是什么？这单从哪来？案例中卖软水机的公司赢了单却不知道来源，等于把最优质的渠道当不存在。</li>
+<li><strong>高客单价渠道信号</strong>：Duo 卖到断货、发货排到 1 月 25 日左右，主播判断其用户&rdquo;有钱、是理想客户&rdquo;；不适配设备体验的商家会损失这批人。电商侧的对应动作是新终端体验适配，而不是只盯着转化率。</li>
+<li><strong>未来转化路径的雏形</strong>：冰箱屏幕下单、机器人代购——&ldquo;即使你的产品贵 10 美分，也要让机器人选你&rdquo;。这意味着商品信息、库存与价格需要以机器可读、可比较的形式存在，而非只为人眼设计详情页。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <ul>
+<li><strong>视频直接给出的信号</strong>：AI 已经进入马桶、冰箱等终端（冰箱带屏、可下单买菜、可分析食材推荐菜谱），这是&rdquo;硬件即渠道&rdquo;的实证方向。</li>
+<li><strong>一个值得 PM 记住的教训</strong>：Eric 订了 Duo 又打算退、等下代，原因是&rdquo;很多 App 不兼容&rdquo;。AI 时代硬件的成败不只在 ID 和堆叠，更在生态兼容与首发内容/服务供给——这是 PM 必须在立项时就定义清楚的部分。</li>
+<li><strong>关于&rdquo;AI 能否包办 ID 图→MD 堆叠→电子设计前期 demo&rdquo;：视频中没有提供任何相关证据，此处仅为解读/推论。</strong> 从本片可见的只有两类能力：代理被用于营销侧任务（起草合作邮件并发送、扫描关注者做 ICP 筛选、竞品互动监控），以及用户对硬件入口的想象。据此推论：AI 擅长的是信息检索、名单筛选、文案起草这类可验证、可回滚的任务；而卖点取舍、渠道押注（如&rdquo;全押算力&rdquo;式的决策）、生态伙伴谈判和退款/兼容性这类真实世界约束的权衡，仍必须由人拍板。边界不在&rdquo;能不能生成&rdquo;，而在&rdquo;谁承担不可逆的后果&rdquo;。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「不为此做优化，大多数企业不明白他们会损失多少收入。」（中段）—— 把讨论从&rdquo;要不要花钱&rdquo;翻转成&rdquo;不花钱的成本&rdquo;，这是全片最锋利的一句。</li>
+<li>「铁路就是当年的 AI。」（中段）—— 一句话把 AI 资本开支放回两百年基建史，是判断泡沫与否的思维工具。</li>
+<li>「一旦 marketplace 出来、插件出来，你得马上进驻，不能等，一等别人就超车。」（中段）—— 新渠道红利期的行动指令。</li>
+<li>「即使你的产品贵 10 美分，也要让机器人选你而不是别人。」（结尾）—— 对&rdquo;万物皆渠道&rdquo;终局最形象的描述。</li>
+<li>「全世界只有 0.2% 的人真正在用 AI。」（结尾）—— 提醒所有&rdquo;AI 已饱和&rdquo;的判断可能都过早。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合正在为网站流量和获客成本发愁的营销负责人、SEO/AEO 从业者、电商运营和 SaaS 创业者——它用一个&rdquo;7,600 变 4,800&rdquo;的真实案例告诉你新渠道已经开张；也适合想理解 AI 资本开支逻辑与&rdquo;万物皆渠道&rdquo;终局的产品与战略人员，用来校准未来两三年的投入判断。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
