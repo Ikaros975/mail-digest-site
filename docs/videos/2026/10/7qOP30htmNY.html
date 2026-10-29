@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI Slop Is Everywhere. Here's What Still Gets Seen.</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI Slop Is Everywhere. Here's What Still Gets Seen.</h1>
+      <div class="reader-meta">YouTube · Neil Patel · 7qOP30htmNY</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI让内容变便宜，只有「你亲身干过的事」才还值钱。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：AI内容洪水已经淹没了一半的互联网</strong>
+视频开场就抛出两组硬数据。Graphy分析了55,400篇文章，发现49.9%的新文章主要由AI撰写——注意是「主要由AI写」，不是「用AI润色」。Neil Patel的团队在100家公司内部做了同样的统计：AI生成内容占这些公司发布量的52.1%，但只带来4.9%的自然流量。用他的话说，AI干了一半的活，只拿回二十分之一的结果。这组「52%对5%」的剪刀差，是整条视频的地基。</p>
+<p>平台这边早已动手。2024年3月，Google新增了「规模化内容滥用」（scaled content abuse）的垃圾内容政策——它不需要证明内容是AI写的，只要看到站点发页面的速度快到人类做不出有用的东西，就可以判定。LinkedIn更具体：2026年5月宣布把泛化的AI帖子从推荐流里剔除，编辑副总裁给出的判定标准是「看起来像AI生成、且没有清晰观点」的内容会被压。同年7月LinkedIn加了「举报AI垃圾」按钮；Snap停止在Spotlight推荐全AI生成视频；YouTube更早，2025年7月更新变现规则，批量生产的重复视频不能赚钱。Neil还点出一个关键机制：LinkedIn公开过自己的信息流排序信号之一是「停留时长」（dwell time）——所以过滤器的本质不是「识别AI」，而是「有没有人停下来」。AI内容被抓，是因为人们刷过去了；人类写的烂内容没人停，待遇一模一样。</p>
+<p><strong>论点一：有观点才有曝光，AI天生没有观点</strong>
+视频给了一个极具操作性的对比案例。会被压的帖子长这样：「提升团队生产力的五种方法」。会被推的帖子长这样：「我试了六个月四天工作制，以下是崩掉的地方」。Neil拆解了差别：有观点意味着你说出你怎么想、你反对什么、你哪里做得不一样——而AI草稿三样都躲，因为模型被训练成「 agreeable（讨好、顺从）」的。他顺带给了观众一个自查诊断：如果你今年夏天LinkedIn曝光掉了、而你并没改过发帖方式，大概率就是这个原因。</p>
+<p>他还在自己客户账户上反复验证过：同一家公司发一条泛泛的AI总结和一条创始人的真实观点，创始人那条的触达经常是前者的好几倍。Neil的机构NP Digital现在做社交业务的一大块工作，就是帮客户找出「只有这个客户才能做出来的内容」。</p>
+<p><strong>论点二：人们能「感觉」出AI，标签只是加速器</strong>
+这里有个很狠的实验案例。研究者给696个人看同一条Instagram帖子，唯一的差别是有些被标注为AI生成。结果：带AI标签的帖子互动更低，而且在情绪类帖子上跌幅最大。帖子本身一个字没改，只改了标签。视频还提到Google已经在自家AI工具产出的内容里嵌入隐形水印Synth ID——识别AI内容的基础设施正在被建起来。</p>
+<p>心理学解释叫「努力启发式」（effort heuristic）：我们倾向于更看重我们相信投入了努力的东西。手写便条比打印的更有分量，哪怕字一样。所以当人们知道某个东西是几秒钟生成的，它在你心里的权重就掉了。</p>
+<p>社交数据也印证了：同一批公司里，人类创作帖子只占发布量的14.5%，但平均15.7个赞，全AI帖子只有7.3个赞；人类帖子的收藏量约为AI帖子的三倍。一个值得注意的反常点：分享（shares）这一项AI帖子略高，但两边数值都很小。更扎心的是中间那列——「AI写+人工润色」的帖子平均6.8个赞，比纯AI还低。Neil的解读是：找人打磨AI草稿，对点赞基本没用。最大的互动永远给「人真正做出来的东西」。</p>
+<p><strong>论点三：能赢的内容，装着AI从互联网上抄不到的东西</strong>
+Neil把这个抽象道理落到了一个可执行的检验题上：读你的稿子，问自己——一个有同样AI的竞争对手，能不能发出这篇？能，就是slop，写得再好也是。不能，因为里面有数字、你的客户数据、或者你犯过的错，那才值得发。</p>
+<p>他给了三个改写示范：不要写「我行业的五个趋势」，写「我们200个客户上个季度实际做了什么」；不要写「大家都推荐的这个方法」，写「我们试了，它让我们丢了40%的线索」；不要写「高效成交邮件模板」，写「这是我们今年最大单成交的那封邮件原文」。每个都带数字、带人、带可核验的结果。以「降低购物车放弃率」为例：AI版本列七条人人都知道的建议；该由你写的版本讲你自己改了什么结账流程、哪里没成、数字动了多少。同一个标题，只有一篇值得读。</p>
+<p>支撑这个论点的是Neil团队自己跑的一场大实验：在68个网站发744篇文章，追踪一整年。人类写的文章从第一个月就领先，差距持续拉大——到第五个月，单篇流量是人类文章的5.4倍，这个差距保持到第12个月。他还引了Graphite的数据：Google搜索结果里86%的文章是人类写的。也就是说，AI占了发布量的一半，却只占排名的一小撮。Google自己的「有用内容」指南问的就是：这页有没有原创研究、原创报道、第一手经验。视频把这个称作E-A-T（经验、专业、权威、信任）在实践中的样子。</p>
+<p><strong>论点四：少发，反而更多</strong>
+这是Neil自己承认「营销人最不想听」的建议。他举的例子是OpenAI的Sora：上线不到5天做到100万美元量级，无限量的AI视频免费按需生成；大约6个月后OpenAI把它关了，据报道用户跌破50万、每天运营成本约100万美元。Neil明确说他不知道全部商业原因，但给营销人的教训很简单：Sora能造出无限视频，却造不出「让人想继续看下去」的东西。</p>
+<p>然后是开头那张图的回马枪——他故意跳过的一行：人类生成内容只占这些公司发布量的14.5%，却拿到87%的流量。如果你最好的内容是人类做的、而它恰好是你发得最少的那部分，你的结构就是反的。而且每条泛化帖子都有看不见的成本：它训练你的受众刷过你，也训练平台刷过你，最终连你的好帖子都更难被看见。</p>
+<p>他不反对用AI：他自己每天都用，用来做调研、列大纲、转录访谈、写完之后的语法清理。「唯一只有你能说的那部分，留给你自己。」最后给了一个一周节奏：周一记下一件真实发生的事（一个结果、一个错误、一次客户对话）；周三自己写出来，里面要有数字；周五发那一篇，并改掉你衡量的指标——曝光奖励的是产量，那正是陷阱，改看销售、回复和页面停留时间。一周一篇，通常胜过五篇之和。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【52对5剪刀差】</strong> AI干一半的活，只拿回二十分之一的流量——产量与回报的断裂就是全部问题的起点。</li>
+<li><strong>【观点三件套】</strong> 你怎么想、你反对什么、你哪里不一样——AI三样都躲，因为它被训练成「顺从」。</li>
+<li><strong>【努力启发式便条】</strong> 手写便条胜过打印稿，字一样；几秒生成的东西，人心理上自动打折。</li>
+<li><strong>【竞争对手测试】</strong> 同一个AI的对手能不能发出这篇？能=slop，不能=可发——一句话筛掉所有废稿。</li>
+<li><strong>【Sora悖论】</strong> 能造无限视频，造不出「想继续看」——产能不是需求。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：AI内容占比与回报严重倒挂</strong></li>
+<li><strong>原文引用</strong>：「AI-generated content is at 52.1% of what they publish, and it gets 4.9% of their organic traffic.」</li>
+<li><strong>案例还原</strong>：Neil团队在100家公司内部统计发布构成与流量来源（背景），发现AI内容占发布量52.1%、只带来4.9%自然流量（过程），结论是AI承担了一半发布却只兑现约二十分之一结果（结果）；外部Graphy对55,400篇文章的分析给出49.9%的相近比例，形成交叉印证。</li>
+<li>
+<p><strong>解读</strong>：任何以「产量」为核心KPI的内容团队，先算这笔账。</p>
+</li>
+<li>
+<p><strong>要点二：平台过滤器真正看的是「有没有人停下来」</strong></p>
+</li>
+<li><strong>原文引用</strong>：「What matters is whether anyone stops. AI content gets caught because people scroll past it.」</li>
+<li><strong>案例还原</strong>：LinkedIn 2026年5月宣布把「看起来像AI、没有清晰观点」的帖子移出推荐（背景），7月再加AI slop举报按钮；Snap停推全AI视频；YouTube 2025年7月限制批量重复视频变现（过程）。机制钥匙是LinkedIn公开的排序信号之一「停留时长」——泛化帖子被刷过，人类写的烂帖子同样被刷过（结果）。</li>
+<li>
+<p><strong>解读</strong>：别研究「怎么绕过AI检测」，研究「怎么让人停三秒」。</p>
+</li>
+<li>
+<p><strong>要点三：AI标签本身就会压低互动，情绪帖最受伤</strong></p>
+</li>
+<li><strong>原文引用</strong>：「The post with AI labels got less engagement and the drop was the biggest on emotional posts.」</li>
+<li><strong>案例还原</strong>：研究者让696人看同一条Instagram帖子（背景），唯一变量是部分标注为AI生成（过程），带标签版本互动更低，情绪类帖子跌幅最大，而文字内容一字未改（结果）。配套数据：人类帖占发布量14.5%但均赞15.7，全AI帖7.3，AI+人工润色6.8。</li>
+<li>
+<p><strong>解读</strong>：「润色AI稿」几乎不产生互动溢价，情绪内容尤其别用AI代笔。</p>
+</li>
+<li>
+<p><strong>要点四：744篇文章一年实验——人类内容5.4倍流量</strong></p>
+</li>
+<li><strong>原文引用</strong>：「By month five, they were getting 5.4 times more traffic per post, and that gap held all the way through month 12.」</li>
+<li><strong>案例还原</strong>：Neil团队在68个网站发布AI与人类文章共744篇（背景），从第一个月起人类文章领先并持续扩大差距（过程），第五个月单篇流量达AI文章的5.4倍，差距维持到第12个月（结果）。旁证：Google搜索结果中86%的文章为人类撰写。</li>
+<li>
+<p><strong>解读</strong>：SEO投入的复利在人类原创一侧，时间越长差距越大。</p>
+</li>
+<li>
+<p><strong>要点五：Sora证明产能不等于需求</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Sora could make infinite videos. It couldn&rsquo;t make people want to keep watching them.」</li>
+<li><strong>案例还原</strong>：OpenAI推出AI视频应用Sora（背景），不到5天做到100万美元量级，无限AI视频免费按需（过程）；约6个月后关停，据报道用户跌破50万、每天运营成本约100万美元，Neil声明不知全部商业原因（结果）。</li>
+<li>
+<p><strong>解读</strong>：把「我们能批量产出」当卖点的产品与内容策略，都在重演这个剧本。</p>
+</li>
+<li>
+<p><strong>要点六：每周一篇真实内容的一周节奏</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Monday, write down one thing that actually happened in your business&hellip; Friday, publish that one thing and change what you measure.」</li>
+<li><strong>案例还原</strong>：Neil给出具体流程（背景）：周一记录一件真实发生的事（结果/错误/客户对话），周三自己动笔并塞进一个数字，周五只发这一篇（过程）；同时把KPI从曝光改为销售、回复、页面停留时间，因为曝光奖励的正是产量陷阱（结果）。</li>
+<li><strong>解读</strong>：这是全片唯一可直接抄走的执行清单，适合小团队立刻照做。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频提供了两个可直接借用的研究设计思路。第一是「标签实验」：696人看同一条帖子、只改AI标签的对照组设计，是研究「感知可信度」的干净范式——做品牌认知或内容信任度调研时，可以用同样方式隔离单一变量。第二是「停留时长」作为注意力质量的代理指标，比点赞更能反映真实兴趣，值得纳入内容效果的用户研究体系。</li>
+<li>最值得警惕的坑：不要用「AI生成vs人类生成」作为二分法来设计研究。视频数据显示「AI+人工润色」的互动（6.8赞）甚至低于纯AI（7.3赞），说明「是否用了AI」不是有效自变量，真正起作用的是「有没有第一手经验、数字、观点」。调研设计应该测量后者。</li>
+<li>【解读/推论】「努力启发式」提示用户研究访谈中可以加一类问题：你认为这条内容背后的人花了多少功夫？这比直接问「你觉得这是AI吗」更能预测行为。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>核心营销思路的转向：从「产量即声量」转为「稀缺性即声量」。视频明确指出现在稀缺的是「只有你能知道、能证明、能让人感受到的东西」。品牌内容的护城河从「发得多」变成「发得出别人发不出的」。</li>
+<li>两个可直接复用的传播路径案例：一是创始人真实观点帖 vs 公司泛化AI总结帖，前者触达常是后者数倍——这意味着品牌人格化账号的价值在平台算法层面被结构性放大；二是「有数字、有人名、有可核验结果」的内容改写公式（200个客户上季度实际做了什么／试了推荐方法丢了40%线索／今年最大单的成交邮件原文），这是把品牌资产转成内容资产的具体模板。</li>
+<li>【解读/推论】营销团队应把KPI从曝光/发布量迁到销售、回复、页面停留——这正是视频结尾给出的指标迁移建议。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>视频中唯一直接涉及电商的案例是「降低购物车放弃率」的对照：AI版本列七条人人皆知的建议，人类版本讲自己改了什么结账流程、什么没成、数字动了多少。对电商运营的启发是：站内内容（帮助页、结账页说明、售后FAQ）如果用AI泛化生成，等于放弃转化说服力；而带真实改版数据的经验型内容，既能拿搜索排名也能降低决策摩擦。</li>
+<li>转化路径上的新发现：用户能感知「努力程度」，并据此给内容打折——这意味着电商详情页、测评内容、买家故事的「人味」直接影响信任与停留，而停留时长本身是平台排序信号。泛化内容会训练用户刷过你，最终拖累你自己最好的商品页和内容页。</li>
+<li>【解读/推论】运营侧可以做一次自查：把站内内容逐条过一遍「同一AI的竞品能不能写出这篇」，能写的，要么补真实数据，要么删。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>说明：本视频不涉及ID设计、MD堆叠、电子设计demo等硬件开发流程，因此不对「AI能否打通ID→MD→电子demo」做任何视频外的断言。仅基于片中事实做迁移性讨论。</li>
+<li>视频能提供的唯一硬信号是边界示范：Sora案例——AI能把「生成」做到无限、免费、按需，却无法制造「让人想继续看下去」的需求。类比到硬件：AI可以极大加速「生成侧」（生成方案、生成文案、生成原型变体），但视频所揭示的规律是，价值的稀缺端在「让人真的想要」和「第一手经验」。对PM而言，这意味着AI放大的是产能，不是判断力。</li>
+<li>视频中可迁移的PM自查工具是「竞争对手测试」：任何由AI产出的方案、文档、原型，问一句「一个有同样AI的对手团队能不能产出同样的东西」——能，则它不构成差异化，必须补进只有你们才有的东西：真实的用户测试数据、失败记录、供应链或成本约束下的取舍。</li>
+<li>视频明确的人类唯一保留区（Neil原话）：AI用于调研、列大纲、转录访谈、写完后的语法清理，而「只有你能说的那部分」留给人。映射到硬件PM，就是流程性、整理性工作可交给AI，涉及真实取舍与第一手判断的部分不可外包。</li>
+<li>【解读/推论，非视频内容】视频反复强调的「经验、专业、权威、信任」（E-A-T）可作为PM评估AI产出可信度的框架：AI草稿若无第一手测试或数据支撑，其「看起来完整」正是最危险的地方。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「If AI helps you create more content that nobody reads, you haven&rsquo;t saved time. You&rsquo;ve wasted it faster.」（开头）——全片题眼：AI不改变结果，只改变浪费的速度，一句话说清效率幻觉。</li>
+<li>「Read your draft and ask yourself whether a competitor with the same AI could have published it.」（中段）——把抽象的内容质量标准压缩成一个可执行的一秒钟判断，是全片最可复用的工具。</li>
+<li>「AI made content cheap to produce, but people still want to know a real person&rsquo;s behind it.」（中段）——解释了为什么「AI+人工润色」的数据反而最差：润色不等于有真人。</li>
+<li>「Human-generated content is 14.5% of what these companies publish. It gets 87% of their traffic.」（结尾）——用回马枪式数据完成论证闭环，也是全片最反直觉的一组数字。</li>
+<li>「Sora could make infinite videos. It couldn&rsquo;t make people want to keep watching them.」（中段）——一句话讲透产能与需求的分离，可迁移到任何AI产品判断。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>最适合三类人：正在用AI批量做内容、却发现流量和互动下滑的内容/SEO/社媒运营；需要向团队解释「为什么AI写得快但没效果」的市场营销负责人；以及任何在考虑「要不要把内容生产全交给AI」的创业者与小团队主理人。看完能拿到一组可引用的数据、一个一秒钟的废稿筛子、和一份每周一篇的执行节奏。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
