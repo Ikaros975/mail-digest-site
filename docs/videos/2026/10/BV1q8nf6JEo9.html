@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI水印到底藏哪了？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI水印到底藏哪了？</h1>
+      <div class="reader-meta">B站 · 隔壁的程序员老王 · BV1q8nf6JEo9</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI文字水印不在明面上，而是藏在“选词骰子”里——它改的不是字，是概率。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：欧盟法案逼出来的“隐形标记”</strong>
+视频开头交代了动机：欧盟AI法案要求AI生成内容必须打标记，随后有公司（UP主提到“两周后扩着就宣布”）声称生成的文字都会带水印。图片水印大家都见过——半透明logo，高级点就在“七角鸽儿”（字幕音译，指角落）藏不明显的像素。但文字没有像素可藏，水印藏在哪？这是全片的问题起点。</p>
+<p><strong>第一代方案：零宽字符——最直白也最脆弱</strong>
+UP主先讲了最“土”的办法：在文字里塞零宽字符。这类字符显示宽度为零，本来不是给人看的，是给程序排版用的，比如零宽空格在泰文、高棉文里告诉程序这里可以换行，零宽不连字符在波斯语里阻止字母连写。所以最原始的文字水印就是塞几个看不见的字符进去。
+案例：UP主提到“R-B5年”（字幕音译，应为2023年）就有人发现GPT的回答中时不时出现一种相对较特殊的空格，跟普通空格比肉眼几乎分辨不出来，这应该就是OpenAI说的水印，虽然它一直没承认；后来“靠老的”（字幕音译，应为Claude）“也用了这种方法”，在中国用户生成的内容中打过标签，同样被抓了现行。
+结论：这种方法最大的问题就是太容易被发现，清洗也极简单——随便找个文字软件做一次查找替换，水印就没了。</p>
+<p><strong>关键原理铺路：大模型是“抽签”而非“选最大”</strong>
+要理解后面的水印，必须先懂大模型的输出机制。UP主用“今天天气真___”举例：模型给每个候选字（token）算概率——好50%、不错30%、棒15%、剩下加起来5%。模型通常不是直接选概率最大的，而是按概率“抽一次签”，抽到好是50%，不错30%，棒15%，其他字概率低但也有机会。所以同一个问题问两遍，大多不会得到完全一样的答案。
+UP主在这里插了一句自嘲式的话：“作为一名高贵的用户，作为AI公司的一时父母，我对待孩子一向都是很宽容的”——今天天气真好、真不错、真棒，比较意识上他并不在乎模型输出哪一个。而AI公司恰恰利用了这种“用户不在乎”的空间做文章。这是理解全部水印技术的钥匙。</p>
+<p><strong>第二代方案：红绿分组与KGW算法——水印的“密码本”</strong>
+最直接的想法：提前把token分成红绿两组，生成时只用绿组。比如“不错”是绿组，“好”和“棒”是红组，AI就只会回复“今天天气真不错”。如果一段文字用到的全是绿组token，基本就是AI写的。
+但这方案有两个致命问题：一是分组容易被破译——收集几千几万个同一AI的回复，看哪些词从来不出现，红组就能被推断出来，再人工塞几个红组词，水印就失效；二是进了红组的词AI永远不能生成，限制发挥，句子越写越怪。
+2023年马里兰大学的几位研究者提出更灵活的KGW算法（UP主原话为“KGW算发”）：红绿组不是定死的，AI公司手里有一串只有自己知道的密码，每写一个token之前，拿前一个token和密码通过公式算出一个数，再根据这个数把所有token重新分一次组。因为分组一直随前一个token动态变化，统计破译难度呈指数级增加。同时为解决红组词影响发挥的问题，方案改成“打分制”：绿组token加分、红组不加分。比如“不错”概率可能从30%提到60%，“好”掉到30%。这还顺带解决了另一个问题——有些位置几乎只有一种选择，比如“床前明月”后面几乎只能是“光”，就算“光”不幸被分到红组，它概率上的压倒性优势仍然强过绿组token，尽量避免了水印对回复质量的影响。
+验证时：用同一段密码，对每个token都用前一个token重新算分组，看当前token落红还是落绿。因为加水印只是增加绿组概率、没有完全排除红组，所以不能光看有没有红组词，而要看红组token在整篇文章中出现的比例。真人文章红绿各占一半；加过水印的文章绿组偏多。案例：一段200个token的文字如果有155个是绿的，假设人写文章红绿各占一半，细算概率大概只有八百多万分之一，相当于连中两次双色球头奖的概率，基本可以确定是AI写的。
+局限：像所有统计规律一样，样本少时不好使——只有4个token时，人写16次就会有一次全绿。而且概率终究被改动过，“好”本来50%现在变成30%，选“真好”还是“真不错”确实无所谓，但在某些方面被砍掉的token可能恰好是最合适的——这点在文学表达上尤其明显。UP主抛出文人推敲的经典问题：“是生推越像闷好，还是生敲越像闷好”（字幕音译，指“僧推月下门”与“僧敲月下门”的典故），文人往往就在一两个字上反复推敲。</p>
+<p><strong>第三代方案：Aaronson不改概率法——换掉那颗骰子</strong>
+2020年计算机科学家Scott Aaronson发布了一个不改概率的水印方法，他当时的工作就是替OpenAI研究水印。原理：模型选词时，程序先把0到1按概率切成几段（0–0.5是好，0.5–0.8是不错，0.8–0.95是棒……），再生成一个0到1之间的随机数，随机数落在哪段就选哪个词。Aaronson的方法就是把随机数换掉，换成一个根据密码和前一个token计算出来的“假随机数”。精妙之处在于：从宏观讲这个假随机数确实均匀分布在0到1上，所以每个token被选中的概率并不改变。验证时把每一步的假随机数重新算出来，看文章里的token是不是正好就是假随机数选中的那个——AI写的应该每一步都对得上，人写的只会碰巧对上一部分。
+局限：假随机数只由密码和前一个token决定，前一个token一样结果就一样、选出的token也一样——把同一个问题重复问多次，每次得到的回复都相同。</p>
+<p><strong>第四代方案：谷歌SynthID-Text——不改概率又保随机性的“淘汰赛”</strong>
+2024年谷歌在“那一场”（字幕未说清，指某发布会）上发表了SynthID-Text论文（字幕作“性3D Text”），思路完全不同：选token时按概率独立重复选8次（比如选出5个好、2个不错、1个棒），然后让这8个候选token两两淘汰。方法给每个候选token发一枚“硬币”，不是正面就是反面，正反面由密码、前一个token、当前token本身加上当前淘汰轮数计算出来，轮数从1开始。注意：同一轮中相同的候选token会得到相同的正反面。分好硬币后两两分组：硬币不一样就让正面晋级；硬币一样就随便挑一个晋级。第一轮后剩4个候选，轮数加一，算出新的正反面，重复直到只剩最后一个token——这就是模型真正的输出。
+这个方法没有改token概率，同时保持了AI生成内容的随机性；硬币正反面机会一般一半，所以平均下来每个token被选中的概率跟不加水印时差不多。验证方法：观察晋级规则——硬币不同时正面晋级，都是正面时还是正面晋级，只有都是反面时反面才有机会，所以最终胜出的token正面概率必然高于反面。而每个token对应的正反面验证时同样可以算出来，统计整篇文章所有token正反面的比例：接近一半一半是人写的，正面占压倒性优势就是AI写的。这个算法是开源的，不仅谷歌自己在用，Claude后来也引入了它，是迄今为止最先进的AI水印技术之一。</p>
+<p><strong>能删掉吗？价值之问</strong>
+UP主给结论：改开几个字做不到，少量修改不足以影响统计结果；但人工大量改写理论上可以去掉水印——“不过这样一来文章还算不算AI生成的，也就很难说了”。还有一种取巧方法：用一个不带水印的AI多次全篇重写，但最终文章效果不好保证。
+片尾UP主把话题拔高：分辨一段内容是不是AI生成，有什么重要吗？一段文字如果准确、深刻，不会因为出自机器就失去价值；如果空洞虚假，也不会因为出自人手就变得珍贵。他感慨屏幕上的东西越来越多：AI化图火了，人人有一张“攻起俊”（字幕音译，应为“宫崎骏”）化风的肖像；AI唱歌火了，孙燕姿唱遍了所有流行歌曲；AI动画也火了，线条、像素、文字“一边右一边填满屏幕”。第一次看是震撼，到第一百次还是一模一样——同样的笔触、同样的噪音、同样的线条。“攻起俊用了一辈子，还画出那样的话，现在疫苗中能生成一万张，每一张不像他，肯定没有一张是他”（字幕音译，意为AI能生成一万张宫崎骏风格，却没有一张真正是宫崎骏）。他的收尾金句是：让一种东西变得珍贵的，不是它来自哪里，而是它能不能在我们心里停留。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【骰子不动改点数】AI水印不改你看到的结果，只悄悄把骰子的一面加重——用户以为在抽签，其实签桶被动过手脚。对应：大模型按概率抽样输出，水印就藏在这个“抽”的环节里。
+【红绿灯变密码锁】红绿分组像红绿灯，谁都能看出规律；KGW把红绿灯换成随前一个token变化的密码锁，破译难度指数级上升。
+【双色球连中两次】200个token里155个绿，概率约八百万分之一——这就是水印验证的“中奖式铁证”，样本少则失效。
+【换骰子不换赔率】Aaronson法把随机数换成假随机数，概率分布纹丝不动，只是每次“巧合”都被密码预先写好。
+【8进1硬币淘汰赛】谷歌SynthID-Text让8个候选token两两比硬币正反面、赢者晋级，正面概率天然占优，验证只看正反面比例。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>最脆弱的零宽字符水印</strong></li>
+<li><strong>原文引用</strong>：「随便找个文字软件，做一次查找替换水印就没了」</li>
+<li><strong>案例还原</strong>：UP主指出2023年有人发现GPT回答中时不时出现一种肉眼几乎分辨不出的特殊空格，应是OpenAI水印（其未承认）；Claude在中国用户生成内容中打过标签，同样被抓现行。背景是这些零宽字符本为泰文、波斯文排版而设，塞进文本后功能上是“隐形”的，过程上一经查找替换即被清除，结果是水印失效。</li>
+<li>
+<p><strong>解读</strong>：任何“可被看见/被清洗”的水印都不是水印，对做内容脱敏的人是一堂识别课。</p>
+</li>
+<li>
+<p><strong>大模型的“抽样”特性是水印的生存土壤</strong></p>
+</li>
+<li><strong>原文引用</strong>：「模型两遍同一个问题，大多不会得到完全一样的答案」</li>
+<li><strong>案例还原</strong>：以“今天天气真___”为例，好50%、不错30%、棒15%、其他5%，模型按概率抽签而非取最大，所以输出在用户眼里“比较意识对”、无所谓是哪一个——UP主自称“很宽容”。正是这种用户不敏感、输出有随机空间的地带，让AI公司得以在选词时做文章。</li>
+<li>
+<p><strong>解读</strong>：水印技术的前提是“用户不较真”，产品设计中的容错空间往往是合规手段的落点。</p>
+</li>
+<li>
+<p><strong>KGW：动态分组+打分制，兼顾隐蔽与质量</strong></p>
+</li>
+<li><strong>原文引用</strong>：「由于分组一直在根据钱一个偷肯不断电话，通过统计方法破亿起来的难度，就只数级增加了」</li>
+<li><strong>案例还原</strong>：早期定死红绿组，收集几万条回复看哪些词从不出现即可反推分组，再人工塞红组词即失效，且红组词永久禁用让句子越写越怪。马里兰大学研究者改为用“前一个token+密码”动态重分组，并改为绿组加分而非红组禁用；像“床前明月”后几乎只能是“光”，即使“光”落红组，其压倒性概率仍胜出——结果既难破译又不损质量。</li>
+<li>
+<p><strong>解读</strong>：好机制的标志是“约束藏在流程里”，而非砍掉选项。</p>
+</li>
+<li>
+<p><strong>Aaronson法：不改概率的“假随机数”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「从红官来讲，这个假随机数确实是均匀分布在领导1上的，所以整体来看，每一个偷肯被选中的概率并不会改变」</li>
+<li><strong>案例还原</strong>：模型原本把0–1按概率切段（好0–0.5、不错0.5–0.8、棒0.8–0.95），生成随机数落段选词；Aaronson把真随机数换成由密码+前一token算出的假随机数。验证时重算每步假随机数，AI文本应每步都对得上，人写的只碰巧对上部分。局限是同一问题重复问会得到相同回复。</li>
+<li>
+<p><strong>解读</strong>：水印的最高境界是“不改变用户感知的分布”，这也是评测/审计里识别AI文本的一个理论切口。</p>
+</li>
+<li>
+<p><strong>SynthID-Text：8进1硬币淘汰，开源且被Claude采用</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这个算法是开软的，不仅均命耐自己在使用，可烙的后来也引入了它，这是期间为止最先进的AI水音技术之一」</li>
+<li><strong>案例还原</strong>：按概率独立选8个候选（如5好、2不错、1棒），每轮给每个候选发正反面硬币（由密码、前token、当前token、轮数算出），两两对比：硬币不同正面晋级，硬币相同随意挑一个；每轮后轮数加一重算硬币，直到剩最后一个即输出。验证时统计全文token正反面比例，接近一半一半为真人，正面压倒性优势为AI。</li>
+<li>
+<p><strong>解读</strong>：用“淘汰赛”替代“改概率”，是工程上兼顾随机性与可检测性的范式，值得做AI内容溯源的产品团队研究。</p>
+</li>
+<li>
+<p><strong>水印删不掉？删了也就不算AI生成了</strong></p>
+</li>
+<li><strong>原文引用</strong>：「如果吃开几个字是做不到的……但如果人工进行大量改些，理论上是可以把AI水音去掉的。不过这样一来文章还算不算AI生成的，也就很难说了」</li>
+<li><strong>案例还原</strong>：UP主给出两条路径——少量改字对统计结果无显著影响；大量人工改写理论上可去水印，但文章性质已变；另一种取巧是用不带水印的AI多次全篇重写，但最终文章效果不好保证。</li>
+<li><strong>解读</strong>：水印之争本质是“定义之争”，对内容平台和合规团队来说，检测标准要先于检测技术。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：UP主那句“今天天气真好/真不错/真棒，比较意识对，我不是很在乎”——精准刻画了用户对AI输出的“宽容区”。做用户研究时，用户声称在意的（是否AI生成）与实际在意的（内容是否准确深刻）常常错位，这是需求洞察的经典陷阱。</li>
+<li><strong>可借鉴方法</strong>：KGW的“统计显著性”思路（200个token中155个绿≈八百万分之一）提醒调研人员：单条样本不可下结论，样本少时“人写16次就有一次全绿”的假阳性必须纳入置信区间设计。</li>
+<li><strong>被揭示的坑</strong>：零宽字符水印“一查找替换就没了”说明——任何依赖用户不可见假设的机制，在真实用户行为面前都脆弱；同理，问卷里用户“看不见”的偏好，往往在行为数据里现形。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：UP主片尾的“宫崎骏之问”——AI能生成一万张宫崎骏风格，却没有一张真正是宫崎骏——是品牌差异化的绝佳隐喻：稀缺性不来自产能，来自“在我们心里停留”。品牌做AI内容营销时，“像”不等于“是”，风格复制无法替代人格资产。</li>
+<li><strong>传播路径参考</strong>：欧盟法案→公司两周内宣布水印→技术圈抓现行（GPT特殊空格、Claude标签），这条“监管驱动—厂商表态—民间验证”的链条，是研究合规传播与信任建立的现成样本。</li>
+<li><strong>值得研究的手段</strong>：水印作为“隐形签名”，提示品牌可思考“不可见但可验证”的信任背书方式，而非只在显性logo上做文章。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：视频虽未直接讲电商，但其“统计验证”逻辑可迁移——判断一批用户评论/内容是否AI批量生成，看的是整体分布（红绿比例、正反面比例），而非单条。这对刷评识别、UGC质量分层有直接启发。</li>
+<li><strong>转化路径发现</strong>：UP主指出用户对“真好/真不错/真棒”无感，意味着商品文案的A/B测试中，AI改写的细微措辞差异可能不产生转化差异，运营应把测试预算放在结构性变量（卖点、价格锚点）上，而非token级措辞。</li>
+<li><strong>注意</strong>：以上为基于视频逻辑的推论，视频本身未涉及电商案例，引用时须注明。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>AI能发挥作用的阶段</strong>：从视频看，AI擅长的正是“在既定概率空间内做选择”这类工作——对应硬件PM流程中，AI可在ID风格方案的批量生成与初筛、规格参数的组合探索（类似“8个候选两两淘汰”的收敛过程）中提效，本质是“生成候选+规则淘汰”。</li>
+<li><strong>边界在哪里</strong>：视频反复强调“概率被砍掉的token可能恰好是最合适的”“文人在一两个字上反复推敲”——推论到硬件，AI可以给出一万张ID图，但“哪一张是产品的人格”、关键堆叠取舍与体验手感，仍需PM亲自拍板；SynthID-Text不改概率只做淘汰的设计哲学，恰说明AI应做“收敛器”而非“决定者”。</li>
+<li><strong>信号</strong>：UP主提到Aaronson“当时的工作就是替OpenAI研究水印”、谷歌开源算法被Claude采用——说明大厂已在为AI内容建立“可追溯的基础设施”。对智能硬件PM的启示是：AI时代的新定义里，除了功能定义，还要定义“AI参与部分的边界与可验证性”，即哪些环节的AI产出需要留痕、可审计。（此段为基于视频内容的推论，非视频直接论述。）</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「让一种东西变得珍贵的，并不是他来自哪里，而是他能不能，在我们心里很流（停留）」（结尾）——全片的价值落点，把技术话题升维到内容价值判断，值得每个做AI内容的人记住。</li>
+<li>「攻起俊用了一辈子，还化（画）出那样的话，现在疫苗（AI）中能生成一万张，每一张不像他，肯（肯）没有一张，是他」（结尾）——用宫崎骏的例子把“风格复制≠作者性”讲得极其形象，是品牌与创作领域最好的类比句。</li>
+<li>「一段文字如果准确、深刻，不会因为出自机器就失去价值；一段文字如果空董（洞）虚假，也不会因为出自人手就变得珍贵」（结尾）——回应“要不要检测AI”的终极一问，立场清晰有力。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合对AI原理好奇的技术爱好者、内容平台合规与风控从业者、以及做AI内容溯源的算法/产品同学。11分钟里把四代文字水印方案的原理、攻防与代价讲透，尤其是“为什么水印必须不动用户感知的概率”这一核心逻辑，值得完整看完并记住“骰子”这个比喻。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
