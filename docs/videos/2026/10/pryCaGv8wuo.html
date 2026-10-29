@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Deepseek's New AI Has A Secret</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Deepseek's New AI Has A Secret</h1>
+      <div class="reader-meta">YouTube · Two Minute Papers · pryCaGv8wuo</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>版本号只加后缀、架构没动，DeepSeek靠“自我批评”变强了。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一次“看起来不像升级”的升级</strong>
+上一版叫 4.1 Flash，新版叫 4.1 Flash 1017，距上一版仅约 5 周，连版本号都没进位。作者起初判断“不是大跳跃”，随后自认完全判断错了（原话感叹“Holy mother of papers”）。新版本的实际表现是：能构建更好的可运行软件，在“用终端操作电脑”上明显更强，其他方面也很好。API 价格是每百万输出 token 略高于 1 美元。（这是逐字稿给出的信息，视频未交代 1017 的含义，属于未解释项。）</p>
+<p><strong>案例一：价格对比背后的“每任务成本”陷阱（完整还原）</strong>
+视频先给出对比：比 Claude Opus 5.5 便宜 15 倍，“智能便宜到可以按量计费”。但作者立刻拆台：行业习惯按“每百万 token 多少钱”比较，可不同 AI 完成同一个任务消耗的 token 数量不同，DeepSeek 在这方面并非最好。作者用自己的独立测试说明：完成同一件事，DeepSeek 很容易比 Claude Opus 多花 2 到 3 倍的 token。结论是：应该按“每任务成本”而不是“每百万 token 价格”来思考。修正后，DeepSeek 的每任务成本依然相当好，只是没有广告宣传的那么好。这是全片最实用的一个“避坑”案例——标价便宜 ≠ 实际便宜。</p>
+<p><strong>案例二：开源权重与“蒸馏追赶”的循环（机制讲解）</strong>
+好消息的另一半是：权重可以免费下载、永久拥有；但作者查了笔记后说，需要“正好 1 美元”的硬件才能跑（明显是玩笑式夸张，指硬件成本极高），所以自己在家跑不了。他强调重点不在这里，而在于一个新前沿系统出现后，会启动一场竞赛：有人做出接近其水平但体积和成本只有零头的版本。DeepSeek 对前沿模型做这件事，而其他系统则把 DeepSeek 蒸馏成更小更便宜的系统。于是他给出时间线：先要“一巴西illion美元”（原文为夸张说法“one bazillion dollars”），也许不到一年，你就能在一台“壮实的笔记本”上跑它。（解读：这是“能力下放”的规律——前沿先贵后廉价，但具体时间只是作者的推测性说法。）</p>
+<p><strong>核心论点：架构没变，秘密在“从自我反馈中学习”</strong>
+作者指出关键疑点：新版本架构完全没变，那能力大跳从哪来？他查看发布公告中的措辞，并与其它真实研究交叉核对，明确声明“不保证准确”，但他认为关键词是“learning from self feedback”（从自我反馈中学习）。他把它定义为“与所有人都在谈的‘需要更多训练数据’相反”：AI 能批评自己的工作并从中学习。他还提醒，这非常难做到，因为 AI 本质上是在给自己打分、给自己奖励，而“它做得好不好”并不总是容易判断。作者强调：如果这集只记一件事，就记这个——过去总说给 AI 更多训练数据，而此前研究已显示可以造出“AI 像人一样从自身经验中学习”的情境，现在这或许第一次在一个我们能拥有、能使用的真实产品里上线。（解读：这是视频标题“秘密”的所指，但作者本人标明是推断。）</p>
+<p><strong>案例三：赛车游戏的自我迭代闭环（作者设想的演示场景）</strong>
+作者让听众想象：AI 写出一款赛车游戏，然后自己开始玩，发现碰撞检测不对、物体互相穿透，“这可不太好，修一下”；重新编译新游戏，继续玩、继续改进；接着发现“没有加速”，修；“视觉细节很差”，也修；如此循环下去。这个案例把“自我反馈学习”从抽象术语变成了可感知的闭环：写→玩→发现缺陷→修→重编译→再玩。它同时也暴露了该方法的软肋——前提是 AI 能可靠地“看出哪里不对”。（解读：碰撞检测、加速、画质都是可被程序化验证的缺陷，越是这种“结果可自检”的任务，自我反馈越容易生效。）</p>
+<p><strong>结论：竞争格局与时间尺度</strong>
+作者总结：前沿模型进步极快，开放权重替代品紧咬其后，而这一切只用了 5 周；这个领域有激烈竞争，对所有人都是好消息——“更多智能，更便宜”。片尾为赞助商 Lambda 的广告（Nvidia GPU、复现论文、训练/微调、推理、文生图/视频）。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【版本号骗局】名字没进位，能力进了位——别用版本号判断升级幅度，5 周也足以大跳。</li>
+<li>【每任务成本法则】标价按 token，掏钱按任务——便宜 15 倍的宣传，会被 2~3 倍的 token 消耗吃掉一大截。</li>
+<li>【赛车自修闭环】写完自己玩，玩坏自己修——自我反馈学习 = 生成→运行→挑错→重编译的循环。</li>
+<li>【自己当裁判的难题】运动员兼裁判，最难的是判分——AI 自评自奖，难点不在奖励机制，在“看出自己没做好”。</li>
+<li>【能力下放流水线】前沿先烧钱，一年后上笔记本——大模型被蒸馏、被追赶，价格一路向下。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：不要用版本号判断能力跳跃</strong></li>
+<li><strong>原文引用</strong>：「他们甚至不想增加版本号。所以我想这不是大跳跃，对吧？……我大错特错了。」</li>
+<li><strong>案例还原</strong>：上一版 4.1 Flash，新版只加了后缀 1017，间隔约 5 周。作者起初据此判断是小更新，结果实测发现新版本能构建更好的可运行软件、终端操作电脑能力显著增强、其他方面也很好，于是当场推翻自己的预判。</li>
+<li>
+<p><strong>解读</strong>：评估模型看实测与任务表现，别看命名和发布节奏。</p>
+</li>
+<li>
+<p><strong>要点二：按“每任务成本”算账，而不是每百万 token</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我们应该始终按每任务成本来思考，而不是每百万 token。」</li>
+<li><strong>案例还原</strong>：宣传口径是比 Claude Opus 5.5 便宜 15 倍；但作者独立测试发现 DeepSeek 完成同一任务常要多花 2~3 倍 token。把 token 消耗折算进去后，DeepSeek 每任务成本仍相当好，只是没有宣传的那么夸张。</li>
+<li>
+<p><strong>解读</strong>：做模型选型/成本预算的人，必须用自己真实任务跑基准。</p>
+</li>
+<li>
+<p><strong>要点三：架构没变，提升可能来自“自我反馈学习”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「AI 能够批评自己的工作并从中学习。」「关键词是‘从自我反馈中学习’。」</li>
+<li><strong>案例还原</strong>：作者发现新版本架构完全没变，于是转向发布公告的措辞，并与其它真实研究交叉核对（并声明不保证准确），锁定“learning from self feedback”为可能解释——与业界普遍追求的“更多训练数据”方向相反。</li>
+<li>
+<p><strong>解读</strong>：算力/数据之外还有第三条路，值得跟踪其可复现性。</p>
+</li>
+<li>
+<p><strong>要点四：自我反馈最难的环节是“自我判分”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「AI 本质上是在评判和奖励自己，而并不总是容易判断它什么时候做得好、什么时候不好。」</li>
+<li><strong>案例还原</strong>：以赛车游戏为例，碰撞检测失效、缺少加速、视觉细节差，这些都是“能被看出来”的缺陷，所以能进入修—编译—再玩的循环；一旦任务好坏难以判断，这个循环就失去依据。</li>
+<li>
+<p><strong>解读</strong>：想用自我反馈做迭代的团队，先解决“可自动验证的评分标准”。</p>
+</li>
+<li>
+<p><strong>要点五：开源权重 + 蒸馏，把前沿能力快速拉低价格</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你可以免费下载并拥有权重，永久拥有。」「也许不到一年，你就发现自己能在一台壮实的笔记本上跑它。」</li>
+<li><strong>案例还原</strong>：作者说权重免费，但运行硬件贵到他自己在家跑不了（他玩笑式地说需要“正好 1 美元”的硬件）；真正意义在于 DeepSeek 追赶前沿，而其他系统再把 DeepSeek 蒸馏成更小更便宜的系统，形成“前沿烧钱→一年内上笔记本”的下放链条。</li>
+<li><strong>解读</strong>：对成本敏感的团队，开源权重的追赶快于自研。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频本身就是一个“调研方法反面教材+正面示范”：反面是拿厂商宣传的单价做结论（每百万 token 便宜 15 倍）；正面是作者做独立测试，换成用户真实场景的计量单位（每任务 token 消耗 2~3 倍）。</li>
+<li>可借鉴：任何“对比型卖点”都要换算到用户的实际使用口径再下结论；对“不保证准确”的推断（如自我反馈学习），要标注置信度、交叉核对二手信息，而不是当事实传播。</li>
+<li>被揭示的坑：命名/版本号、发布节奏会系统性误导预期管理；“官方措辞”与“真实机制”之间存在解释空间。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频呈现了一个典型营销结构：极端价格锚点（便宜 15 倍）、“智能便宜到可计量”的口号、开源权重的情感钩子（永久拥有）。而作者的拆台说明：锚点若经不起“每任务成本”换算，会反噬信任。</li>
+<li>值得研究的是标题技巧——“Has A Secret”，把技术更新包装成悬念叙事；以及第三方评测者的角色：他先用“这不可能吧”制造张力，再给修正后的公允结论，反而增强可信度。</li>
+<li>传播路径上，赞助商内容被放在片尾并给出可复现路径（跑模型/复现论文），是“工具型产品+研究者受众”的软性植入范式。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>最直接可迁移的是定价与价值呈现：不要只优化“单价标签”，要优化“单次任务到手成本”。对应电商即：低价标品若履约/使用成本更高（耗材、时间、返工），用户的真实性价比感受会打折——商品详情页应主动算“一次用完花多少”。</li>
+<li>用户旅程上，视频示范了“预期—实测—修正”的信任建立路径：先承认宣传有水分，再给修正后的正面结论，转化的是长期信任而非一次性点击。</li>
+<li>对选品/渠道：开源权重+蒸馏下放意味着同类能力会快速降价，备货与定价策略要预留“一年内被更便宜替代品冲击”的窗口。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>逐字稿只提供有限但有用的信号，其余为解读：
+- 已被点明的能力：新版本“更会使用终端来操作电脑”，并能构建更好的可运行软件——这对应的是原型/工具链层面的执行力（写脚本、跑编译、跑测试、迭代修 bug）。
+- 作者设想的赛道案例说明了一个边界：AI 能自己发现“碰撞检测失效、没有加速、视觉细节差”并修，前提是缺陷<strong>可被运行结果验证</strong>。据此推论：越接近“可编译、可运行、可自动测试”的环节（电子设计前期 demo、脚本化验证、参数化结构检查），AI 越可能真正接手；越依赖物理手感、装配公差、ID 审美取舍与跨团队妥协的部分，仍必须 PM 亲自拍板——这是解读，不是视频结论。
+- 硬件成本信号很刺眼：作者说权重免费但自己在家跑不了（需“正好 1 美元”硬件的玩笑），说明“本地跑大模型”对个人/小团队仍不现实，PM 做端侧 AI 方案时应假设算力受限、依赖云侧或蒸馏小模型。
+- 必须亲自做的事（推论）：定义“什么叫做得好”的评分标准——视频明确指出“自评自奖”最难的是判断好坏；在硬件项目里，这等于 PM 要把验收标准写成可自动检验的测试，否则 AI 的自我迭代闭环根本转不起来。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「我们应该始终按每任务成本来思考，而不是每百万 token。」（中段）——一句可直接搬进任何技术选型评审会的话，纠正最普遍的计量错觉。</li>
+<li>「AI 能够批评自己的工作并从中学习。」（中段）——全片“秘密”的定义句，也是作者请求观众“只记一件事”的核心。</li>
+<li>「AI 本质上是在评判和奖励自己，而并不总是容易判断它什么时候做得好、什么时候不好。」（中段）——把热度极高的概念降温到工程现实：难点在评分，不在奖励。</li>
+<li>「也许不到一年，你就发现自己能在一台壮实的笔记本上跑它。」（中段）——浓缩了“能力下放”的时间尺度直觉（属作者推测性表述）。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合需要做 AI 模型选型与成本核算的工程师/产品/采购，以及想搞清“模型为什么突然变强”的技术爱好者。花时间看的理由是：它同时给了一个可复用的成本计算口径（每任务成本）和一个明确标注为推断的能力来源假说（自我反馈学习），并诚实说明了这个假说的难点与不确定性。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
