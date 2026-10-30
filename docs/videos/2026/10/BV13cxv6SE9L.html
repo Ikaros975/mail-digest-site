@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DeepSeek 一张卡为什么能收入 38 美元</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>DeepSeek 一张卡为什么能收入 38 美元</h1>
+      <div class="reader-meta">B站 · 第四种黑猩猩CHIMP · BV13cxv6SE9L</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>拆解DeepSeek开源推理框架：一张B200卡如何一小时印出38美元。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一张卡的收入账本</strong>
+UP主开篇给出一个对比锚点：市场上租一张英伟达B200卡一小时成本约5.7美元，而DeepSeek用这张卡一小时能收入38美元，收益率6~7倍；且38美元还是按低谷价格算的，低谷价通常只有高峰价一半左右，因此高峰期可能做到十倍收益率。更关键的是，几乎所有开源大模型公司的推理引擎都是闭源的——那是它们的利润来源——而DeepSeek却把&rdquo;印钞机&rdquo;开源了，即推理框架Deep inference，并在知乎发长文公布上千张卡如何分工、缓存存哪里存多久、卡坏了怎么办，连线上真实收入数据都公布了。问题是这篇文章通篇是prefill、decode、EP、KV缓存等术语，普通人看不懂38美元是真是假。UP主因此从原文挑出关键段落，补基础知识，再用公布的数字自己算一遍。</p>
+<p><strong>基础概念：prefill与decode，用一个&rdquo;总结文章&rdquo;讲透</strong>
+UP主用&rdquo;发一篇文章让大模型总结&rdquo;举例：prefill是把整段内容一次性并行读完（如100个字一下读进来），过程中留下中间结果即KV缓存，下次同样内容再来可跳过重算；decode是一个词一个词往外蹦，每个token依赖前一个token的结果，只能逐字算。UP主还用&rdquo;胡闹厨房/分手厨房&rdquo;做比喻：几个人挤在厨房抢时间出菜，谁切菜谁下锅谁端盘子，安排不好就手忙脚乱——推理框架干的就是这件事，核心两个字：调度。</p>
+<p><strong>数据表解读：96%命中率与&rdquo;跑1000米vs跑10米&rdquo;</strong>
+逐行读表：prefill每卡每秒处理token，不计缓存是6万，算上缓存是150万，差约25倍——因为平均缓存命中率96%，真正要算的只有4%，6万÷4%=150万，完全对得上。首字延迟平均400ms，平均输入长度7.7万token（因agent使用多、上下文长），UP主自测其他服务商首字延迟通常一到两秒，DeepSeek官方API却很丝滑，原因就是大部分内容不用重算。decode每卡每秒输出1.4万token，单用户吐字速度每秒230个（写代码约300个），1.4万÷230≈60，即一张卡平均同时服务60人。KV缓存保存72小时，而不少服务商只保留几分钟到一小时。</p>
+<p>表格小字最关键：实际部署P比D接近1比1，不考虑波峰波谷，平均每卡每小时收入38美元，按低谷价计算。UP主解释了看似矛盾之处：prefill一张卡吞吐150万token，decode只有1.4万，差100多倍，为何卡数却接近1比1？因为任务量也差100多倍——agent每轮平均输入7.7万token，而平均一次回答约700个token，正好抵消。UP主的白话总结：&rdquo;虽然你的速度比我快了100倍，但你要跑1000米，我虽然慢却只要跑10米，最后用的时间差不多。&rdquo;且这个比例不是定死的，文章写了自动扩容缩容机制，两边的卡按流量动态增减。表头还注明机器已预留冗余——38美元不是满载理想值，是实际部署收益，这就更夸张了。</p>
+<p><strong>卡怎么分工：prefill小而decode大，代价是&rdquo;一张卡拖垮64张&rdquo;</strong>
+原文设计目标：prefill尽可能用小规模（2~8张卡），decode尽可能用大规模（64~128张卡）。UP主先解释EP（把模型权重拆到多少张卡上，越大每卡分到的权重越少、分工越细）和DP（把计算任务拆到多张卡）。decode的瓶颈不在计算而在&rdquo;搬参数&rdquo;——每步只算一个token，时间大半花在把参数从显存搬进计算核心；卡多了每卡专家少、搬的参数少，且64张卡上所有要找同一专家的token会被送到同一张卡拼成大批请求一起算，搬一次参数服务一大批请求（即原文说的增大batch size）。代价是卡间来回传数据，卡越多传输越多。prefill情况相反：成千上万token要算，计算核心本就是满的，瓶颈在计算不在搬参数，多拆卡只会白白付出传输代价、还难步调一致，所以显存够用下应尽量少用卡。</p>
+<p>拆分细也有问题：64张卡里坏一张，整组64张全停，每步都要等最慢的卡。UP主引用VIM的测算：不做专家负载均衡，最忙的卡约为平均的三倍，其他卡大部分时间在等它。所以DeepSeek花大量篇幅讲负载均衡——热门专家多放副本分担压力，卡坏了用剩下的健康卡重新组队，而不是等修好。即便如此，上线后大概只能做到理想情况的八成左右。UP主的理解：并行越多吞吐越高，但运维麻烦也越多。</p>
+<p><strong>缓存怎么存：从&rdquo;机器二&rdquo;搬进100PB共享存储，SWA只留3分钟</strong>
+最常见做法是把缓存存在之前计算它的那台机器上，下次同一对话送回那台机器命中缓存。但现实是那台机器可能正忙——要么排队，要么找空闲机器，而找空闲机器则原来那台的缓存白存了。DeepSeek的选择是把缓存从计算节点拿走，放进统一存储集群，这样任意一台空闲计算机器都能命中缓存；文章还给了另一个理由：计算节点故障率比存储集群高好几个数量级，缓存不该和计算集群放一起，否则机器坏了缓存跟着丢。集群约100PB固态硬盘（1PB≈1024TB），能存下还靠模型本身：V4.1flash每个token长期保存的缓存只有890字节，靠跨层共享和低精度压缩；按平均7.7万token算，一个请求约占68MB。</p>
+<p>另一条特别设计：block KV cache由decode实例落盘存储，使prefill和decode输出均可复用。UP主解释：在VIM等框架把P和D拆开后，回答是在decode机器上写的，下一轮读题却在prefill机器上读，缓存不在同一台机器默认用不上；DeepSeek让decode机器直接把回答存进共享存储，prefill机器随时能读，进一步提高整体命中率。</p>
+<p>但并非所有缓存都值得存72小时。V4.1flash模型结构里有滑动窗口注意力（SWA），只看最近128个token，缓存寿命很短，只有紧接着的下一轮对话用得上。上一代V4把SWA缓存也存进硬盘集群，占掉近一半容量，换来的命中率却很低；新一代V4.1把SWA缓存只放在机器内存、只保留3分钟，就算没命中也不怕，因为只需重算最后128个token，代价不高。UP主总结缓存只需考虑两点：这份缓存会被反复用多久，丢了重算要花多少代价。普通KV缓存如一段文章前缀可能几天内被反复命中、丢了要重算几万token，放进大存储集群合适；SWA只活几分钟、丢了重算128个token，放内存即可。</p>
+<p><strong>榨干GPU的细节与&rdquo;反算验证&rdquo;</strong>
+UP主还提到：异步调度，让CPU安排下一步时GPU不用干等，直接算下一批数据；投机解码，先让小模型一口气猜后面五个token，再让大模型一次验证，DeepSeek多做一步——先估计每个猜测猜对的概率、只验证最可能对的几个，线上吞吐又多了6%。这些思路本身不新鲜，开源的VIM、SGLang早就有类似功能，DeepSeek的作用是优化并部署到线上用好。至于Deep inference能否用于其他模型：从代码看基本用不了，它只认V4.1flash，大部分代码照着这个模型结构专门优化，换模型基本要重写推理框架，但调度思路其他框架可以借鉴。</p>
+<p>然后UP主用公布数字做反算：单集群每天处理约155万亿token，prefill一张卡一天约1300亿token，decode一天约12亿，P和D各占一半，一张P卡加一张D卡一天合计约1310亿token，155万亿÷1310亿×2≈2370张卡，约2400张。再从收入反推：外媒报道DeepSeek年化收入约10亿美元，10亿÷38×24×365≈3000张卡。两个方向都在同一数量级，因此38美元&rdquo;应该是很准确的一个数字&rdquo;。UP主强调这个数字本身极有分量——第一次公开顶级推理服务一张卡的真实印钞效率，租卡5.7美元/小时、自建数据中心成本只会更低，收益率只会更高。</p>
+<p><strong>同行追赶与算力过剩之问</strong>
+Deep inference开源15小时后VIM发了对比，几天后又写长播客，结论是与DeepSeek公布的曲线差距都在6%以内。原因是&rdquo;双向奔赴&rdquo;：Deep inference最早就是在VIM基础上改的，VIM也一直集成DeepSeek开源算子，V4.1flash发布三周后VIM在该模型上吞吐涨了五倍多。但UP主提醒：VIM比的是吞吐量，96%命中率和72小时缓存系统DeepSeek这次没有完全开源，VIM也没对比缓存部分。</p>
+<p>最后讨论AI算力是否过剩：2027年一年预计新增50GW数据中心，1GW约装45万张B200，50GW即2250万张，假设一半推理一半训练，推理卡全按38美元/小时算，一年约3.7万亿美元——而OpenAI和Anthropic最新透露的年化收入约500亿到1000亿美元，全行业一年收入大概三四千亿美元级别。UP主指出两头误差：低谷价使38美元低估（高峰翻倍，且50GW只是新增）、不是每家都有DeepSeek的工程水平且训练卡可能不止一半使数字高估。结论：按DeepSeek的效率，光是2027年新增算力就能提供约十倍于今天行业整体收入的服务，要么agent需求再放大十倍，要么这波投资有过度和过剩的风险。对普通用户是好事——UP主自己常用贵模型做规划、底下调用DeepSeek作sub agent执行，速度快、便宜、效果好；读这篇文章时技术细节全靠DeepSeek查和对照，自己负责提问和判断。</p>
+<p>结尾UP主给出时间对比：20个月前DeepSeek按全价算一张卡实际收入约10.5美元，现在缓存价格从每百万token 0.14美元降到0.003美元（只剩几十分之一），一张卡一小时收入反而到38美元、翻了三倍——&ldquo;看起来像魔法，背后是超级强的工程能力&rdquo;。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【分手厨房】</strong> 几千张卡抢着出菜，谁切谁炒全靠调度——推理框架的本质就是&rdquo;调度&rdquo;二字，不是模型多强而是活安排得好。</li>
+<li><strong>【跑1000米vs跑10米】</strong> prefill快100倍但要跑1000米，decode慢却只跑10米，所以卡数1比1——吞吐差百倍被任务量差百倍正好抵消。</li>
+<li><strong>【缓存搬家】</strong> 缓存不跟计算节点同居，搬进100PB&rdquo;公共仓库&rdquo;——谁都能读、机器坏了也不丢，命中率才上得去。</li>
+<li><strong>【SWA只活3分钟】</strong> 滑动窗口注意力像&rdquo;易过期的鲜奶&rdquo;，存硬盘占一半容量却没人买，放进内存3分钟丢掉重算128个token不心疼。</li>
+<li><strong>【印钞机开源】</strong> 别人把利润来源锁进保险柜，DeepSeek把印钞机图纸贴到墙上——低价斩杀你还告诉你我照样赚钱。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：推理框架决定成本，同一模型价差数倍</strong></li>
+<li><strong>原文引用</strong>：「同一个开源模型，如果你自己找几张卡来跑，成本可能是DeepSeek官方的好几倍，这个差距就在推理框架当中。」</li>
+<li><strong>案例还原</strong>：UP主以胡闹厨房比喻推理框架的调度本质，随后用数据表证明：prefill每卡每秒6万token，算上96%缓存命中后达150万token，差25倍，6万÷4%正好等于150万——差距来自缓存与调度，不是模型参数。</li>
+<li>
+<p><strong>解读</strong>：自建大模型的团队应先评估调度层差距，而非只堆卡。</p>
+</li>
+<li>
+<p><strong>要点：P和D分开部署，比例由流量动态决定</strong></p>
+</li>
+<li><strong>原文引用</strong>：「实际部署的P比上D接近一比一，不考虑波峰波谷整体收入是平均每卡每小时38美金。」</li>
+<li><strong>案例还原</strong>：prefill每卡吞吐150万token、decode仅1.4万，看似该给prefill少配卡，但agent每轮平均输入7.7万token、平均回答仅约700token，任务量差百倍抵消吞吐差百倍；且文章写明自动扩容缩容，1比1只是当下流量自然结果。</li>
+<li>
+<p><strong>解读</strong>：架构比例不是拍脑袋定的，要按自身业务的输入输出比推算。</p>
+</li>
+<li>
+<p><strong>要点：负载均衡决定并行规模的上限</strong></p>
+</li>
+<li><strong>原文引用</strong>：「上线之后大概只能做到理想情况的八成左右。」</li>
+<li><strong>案例还原</strong>：VIM测算，不做专家负载均衡时最忙的卡约为平均的三倍，其他卡大部分时间在等它；DeepSeek的应对是热门专家多放副本、坏卡用健康卡重新组队而非等修好。即便如此也只达理想八成。</li>
+<li>
+<p><strong>解读</strong>：做大规模推理集群，运维与容错是隐藏成本大头。</p>
+</li>
+<li>
+<p><strong>要点：缓存分级——按&rdquo;复用寿命×重算代价&rdquo;决策</strong></p>
+</li>
+<li><strong>原文引用</strong>：「DeepSeek缓存需要考虑两个点，一个是这份缓存会被反复用多久，第二个是丢了之后重算要花多少代价。」</li>
+<li><strong>案例还原</strong>：上一代V4把只看最近128个token的SWA缓存也存进硬盘集群，占掉近一半容量、命中率却很低；V4.1改为SWA只放内存保留3分钟，普通KV缓存（一段前缀几天内反复命中、丢了要重算几万token）才进100PB共享存储集群。</li>
+<li>
+<p><strong>解读</strong>：缓存不是越多越好，分层存储是降本关键思路。</p>
+</li>
+<li>
+<p><strong>要点：38美元经得起双向验算</strong></p>
+</li>
+<li><strong>原文引用</strong>：「不管是从吞吐量算还是倒着从收入去算，都在同一个数量级。」</li>
+<li><strong>案例还原</strong>：正向：单集群日处理155万亿token，一张P卡加一张D卡一天约1310亿token，反推约2370张卡；反向：年化收入约10亿美元÷38×24×365≈3000张卡。两条路径同数量级，UP主判断38美元&rdquo;应该是很准确的一个数字&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：公开数据可交叉验证，这是判断厂商数据可信度的方法示范。</p>
+</li>
+<li>
+<p><strong>要点：效率革命把算力过剩问题摆上台面</strong></p>
+</li>
+<li><strong>原文引用</strong>：「要么agent再把我们需求放大十倍，要么这波投资就有过度和过剩的风险。」</li>
+<li><strong>案例还原</strong>：2027年新增50GW≈2250万张B200，一半推理按38美元/小时算一年约3.7万亿美元，而全行业AI一年收入大概三四千亿美元级别，相差约十倍；UP主同时指出低谷价低估、工程水平差异高估两方向误差。</li>
+<li><strong>解读</strong>：算力投资判断不能只看需求故事，要看单位算力的变现效率。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频揭示了&rdquo;行为数据即调研素材&rdquo;的方法论：agent使用导致平均输入7.7万token、平均回答约700token、缓存命中96%——这些是真实用户行为分布，不是问卷能问出来的。做需求洞察时可借鉴&rdquo;从系统运行数据反推用户场景&rdquo;：输入远大于输出意味着用户在多轮上下文、长文档、agent任务上重度使用，这直接指向产品该优化什么（首字延迟、缓存时长）。</li>
+<li>用户研究的坑：UP主自测&rdquo;其他服务商首字延迟一到两秒，DeepSeek官方很丝滑&rdquo;——用户感知的&rdquo;快&rdquo;未必来自算力，而来自缓存命中；做体验调研时若不拆解技术归因，容易把体验优势误判为品牌或界面优势。</li>
+<li>竞品分析可借鉴视频的&rdquo;反算验证法&rdquo;：用公开吞吐量和收入两个口径交叉验证厂商宣传数字，避免被单一口径忽悠。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频本身就是一个营销案例复盘：DeepSeek把&rdquo;印钞机开源&rdquo;+知乎长文+公布真实收入数据做成一次传播事件，UP主直言&rdquo;文章有一点炫耀的成分&rdquo;&ldquo;帅就完事了&rdquo;——用硬核数据和开源姿态建立技术品牌信任，比广告更有穿透力。</li>
+<li>传播路径值得研究：开源15小时后VIM发对比、几天后写长播客，形成&rdquo;同行下场验证&rdquo;的二次传播；差距6%以内、吞吐涨五倍多这些第三方数据，比自吹更有说服力。品牌方可借鉴&rdquo;让对手替你背书&rdquo;的节奏设计。</li>
+<li>定价即传播：缓存价格从0.14降到0.003美元（只剩几十分之一）却仍能一张卡一小时收38美元——&ldquo;降价还赚钱&rdquo;本身就是最强的营销叙事。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>&ldquo;缓存命中率&rdquo;是电商最该抄的概念：96%的请求命中缓存，等效于把履约成本压到4%。对应到电商，就是把高频重复的用户旅程（复购、常用地址、历史偏好）做成&rdquo;缓存&rdquo;，让下一次转化几乎零成本。UP主说72小时内继续聊就能命中缓存、体验更好价格更便宜——这正是会员/复购体系的技术隐喻。</li>
+<li>转化路径发现：DeepSeek官方API比第三方体验更好，原因是缓存命中带来的低延迟和低价——运营上说明&rdquo;官方直营渠道的体验优势&rdquo;可以来自底层能力而非补贴，渠道管理应思考如何用技术能力而非价格战留住用户。</li>
+<li>成本结构视角：一张卡同时服务60人（1.4万÷230）仍体验良好，提示运营在评估服务承载力时，应看&rdquo;人均资源占用&rdquo;而非绝对资源量；UP主&rdquo;贵模型做规划、DeepSeek作sub agent执行&rdquo;的分层用法，也可类比电商中高客单与低客单流量的分层承接。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>视频内容主要发生在云端推理调度层，未直接涉及ID设计、MD堆叠或电子设计demo，因此不能据此断言AI在这些硬件环节的能力。可确认的是：DeepSeek这类模型在&rdquo;查资料、对照代码、理解长文档&rdquo;上已被UP主实际用于研读技术长文（他负责提问和判断，DeepSeek负责查证），这提示PM在前期技术调研、方案比对阶段可让AI承担信息检索与初筛。</li>
+<li>边界信号：UP主明确指出负载均衡&rdquo;上线后只能做到理想情况的八成左右&rdquo;、Deep inference&rdquo;只认V4.1flash，换模型基本要重写&rdquo;、96%命中率和72小时缓存&rdquo;没有完全开源&rdquo;——说明即便顶级团队，工程落地仍有大量系统性问题（容错、运维、模型适配）必须人来做判断和取舍，AI无法替代对真实约束的权衡。</li>
+<li>对硬件PM的推论（解读）：这套&rdquo;prefill小而decode大、按流量自动扩缩容、缓存按寿命分级&rdquo;的调度思想，可类比到硬件产品的资源分配——哪些模块该重投入、哪些该轻量化、哪些数据该常驻哪些该丢弃，PM的职责正是定义这些权衡规则；视频没有提供AI直接生成ID图或MD堆叠的证据，不宜过度外推。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「虽然你的速度比我快了100倍，但你要跑1000米，虽然我的速度比较慢，我却只要跑10米，所以大家最后用的时间也差不多。」（中段）——一句话讲清P/D卡数1比1的反直觉结论，是理解整个调度设计的钥匙。</li>
+<li>「缓存从计算机上拿走，放进统一的一个存储集群里面，这样所有的这些机器都能够读了。」（中段）——缓存架构的核心决策，也示范了&rdquo;解耦&rdquo;这一通用工程思维。</li>
+<li>「要么agent再把我们需求放大十倍，要么这波投资就有过度和过剩的风险。」（结尾）——用38美元反推出的行业级判断，是全视频最锋利的结论。</li>
+<li>「一方面他把推理框架开源出来，让大家都能用上便宜的这个token；另一方面他也带过同行，就算缓存只卖0.003美元，一张卡一小时照样可以收38美元。」（结尾）——点明开源与盈利并不矛盾，是整期视频的价值落点。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合想理解大模型推理成本与AI算力经济学的技术从业者、AI产品经理和投资/行业分析者——不需要技术背景也能看懂prefill/decode和缓存的分级逻辑，且能获得一套用公开数据反算厂商真实效率的方法；对单纯想看&rdquo;AI会不会泡沫&rdquo;结论的人，视频给出了可复核的推算过程而非口号。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
