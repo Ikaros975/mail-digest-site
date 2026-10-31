@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>arXiv 论文的 7 种打开方式 📄</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>arXiv 论文的 7 种打开方式 📄</h1>
+      <div class="reader-meta">迪迪碎碎念_AI · 2026-11-01</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>把 arXiv 论文变成 7 种“开箱即用”的浏览入口，让读论文不再硬啃 PDF。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（3分16秒短视频，按原信息量精简展开）</h2>
+        <p><strong>背景</strong>：UP主迪迪认为“读论文是一件非常枯燥的事情”，于是跟AI一起共创了在 arXiv 上更好读取论文的方式。因为 arXiv 相关网址的 URL 很难记住，她把这些入口做成了<strong>插件</strong>形式（浏览器插件/快捷方式），一键切换。</p>
+<p><strong>七种打开方式（按视频顺序逐一还原）：</strong></p>
+<ol>
+<li>
+<p><strong>Alpha arXiv（阿尔法 archive）</strong>：把 arXiv 换成 alpha arXiv 形式的入口。打开后左侧是原论文，右侧可对论文进行一对一提问，也能在输入框继续输入问题——相当于“左边论文、右边实时问答”的对照阅读。</p>
+</li>
+<li>
+<p><strong>ID 前加字母 + <code>.top</code>（幻觉翻译）</strong>：UP主称其为“做幻觉的翻译”，“比较适合于中文的翻译”。打开后右边是英文论文，左边是对应的中文翻译，中英一一对应，便于快速了解。</p>
+</li>
+<li>
+<p><strong>KIMI 论文解读</strong>：URL 是在前面加上“papers 点库”再到 archive slash id（按原话记录）。页面先给出 abstract，点 KIMI 后会有中文内容回答内置好的结构化 prompt，例如“这篇论文试图解决什么样的问题”“有哪些相关的研究论文、如何解决”，以 Q&amp;A 方式罗列出来。</p>
+</li>
+<li>
+<p><strong>Hugging Face Papers（原话“hui face papers”）</strong>：保留 id，前面加上 hugging face 和 paper。打开后是 Hugging Face 熟悉页面，右侧有 site 的 paper、数据等常见模块，主要关联<strong>模型、数据集、GitHub 仓库以及社区热度</strong>。</p>
+</li>
+<li>
+<p><strong>喂给 AI 的 TXT 纯文本</strong>：用“RKF 杠 TXT”（arXiv 加 -txt 后缀的入口），得到纯文本，可直接复制发给 Claude 或 ChatGPT 等 agent，对 token 的高效使用更合适。</p>
+</li>
+<li>
+<p><strong>网页版（HTML）</strong>：把 arXiv 的 PDF 直接转成 HTML，内容一样但换一种展现方式，且是<strong>手机友好版</strong>，手机上也能很好阅读。</p>
+</li>
+<li>
+<p><strong>LaTeX 源码</strong>：复制一个 URL 就生成文件包，下载解压后可直接放到 Overleaf 上打开 LaTeX。</p>
+</li>
+</ol>
+<p><strong>关键结论（UP主自述的用法建议）</strong>：她一般只选其中几个；如果<strong>不是想深入研究那篇论文</strong>，可以从“cool paper”和“一边读一边问 AI”这种方式入手。</p>
+<p><strong>解读（非原话）</strong>：这七种方式本质是围绕读论文的三个需求层次——<strong>快速判断值不值得读（问答/翻译/社区热度）、高效吸收（纯文本喂AI）、复现与二次使用（HTML/LaTeX 源码）</strong>。视频没有展开任何具体论文案例，所有价值都集中在“入口 URL 化”这一操作层面。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li>【七把钥匙开一扇门】arXiv 是同一扇门，七种 URL 是七把钥匙：问答、翻译、解读、热度、纯文本、网页、源码——按需取钥匙，不必每次都砸门（啃 PDF）。</li>
+<li>【左英右中，一一对应】翻译入口就像“双语对照字幕”，英文在右、中文在左，先看懂再深读。</li>
+<li>【先看热闹再看门道】Hugging Face 入口看模型、数据集、GitHub 和社区热度，等于读论文前先看“讨论区热不热”。</li>
+<li>【不是深研就用两招】UP主原话：不深研就选“cool paper + 边读边问 AI”，轻量组合拳。</li>
+<li>【源码即快递包】LaTeX 入口复制 URL 就生成文件包，解压丢进 Overleaf，论文从“读物”变“可施工的图纸”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li><strong>要点标题：插件化解决“URL 难记”</strong></li>
+<li><strong>原文引用</strong>：「因为很难记住这个网页它的URL，所以就把它做成了插件的形式」</li>
+<li><strong>案例还原</strong>：视频开篇即说明动机——七种 arXiv 打开方式的网址各不相同、难以记忆，于是统一做成插件形式，演示时逐个切换展示（背景→做法→结果：从“记网址”变成“点插件”）。</li>
+<li>
+<p><strong>解读</strong>：工具粘性往往死于“多一步操作”，对做效率工具的人有直接启发。</p>
+</li>
+<li>
+<p><strong>要点标题：问答式阅读降低理解门槛</strong></p>
+</li>
+<li><strong>原文引用</strong>：「它是针对于左边这个论文，然后右边直接一对一比例的给你回答相应的一些问题」</li>
+<li><strong>案例还原</strong>：第一种方式（Alpha arXiv）演示中，左侧原论文、右侧针对该论文一对一作答，并可在输入框继续追问；第三种 KIMI 方式则是内置结构化 prompt，直接以 Q&amp;A 列出“试图解决什么问题”“相关研究如何解决”。</li>
+<li>
+<p><strong>解读</strong>：把“读”变成“问”，适合快速筛选论文价值，节省初筛时间。</p>
+</li>
+<li>
+<p><strong>要点标题：纯文本喂 AI 更省 token</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你可以把它直接发给你的agent，这样的话会更加的对于token的高效使用」</li>
+<li><strong>案例还原</strong>：第五种方式通过“RKF 杠 TXT”得到论文纯文本，UP主演示可直接复制给 Claude 或 ChatGPT（原话“cloud或者HGBT”），相比整份 PDF 更利于 token 高效使用。</li>
+<li>
+<p><strong>解读</strong>：给 AI 喂料的格式选择本身就是一个效率变量，值得做 AI 工作流的人注意。</p>
+</li>
+<li>
+<p><strong>要点标题：区分“深研”与“浅读”的路径</strong></p>
+</li>
+<li><strong>原文引用</strong>：「如果说不是想深入去研究那个论文的话，你可以从cool paper以及一边读一边问AI这样的一个方式」</li>
+<li><strong>案例还原</strong>：视频结尾，UP主给出自己的选择策略——一般只挑几种方式用；不打算深研时，用“cool paper”（社区热度入口）加“边读边问 AI”组合，而非通读全文或下载源码。</li>
+<li><strong>解读</strong>：读论文的成本应按目的分层，避免用深研工具做浅读的事。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频展示了“把信息获取拆成不同颗粒度入口”的思路——同一对象（论文）有问答、翻译、结构化 Q&amp;A、社区热度、纯文本、网页、源码七种切法，对应“速览—理解—验证—复现”不同研究深度。</li>
+<li><strong>可借鉴方法</strong>：竞品/资料调研时，用“结构化 Q&amp;A 模板”（如“试图解决什么问题、相关研究如何解决”）做统一提问清单，可复用到竞品访谈提纲或行业资料初筛。</li>
+<li><strong>揭示的坑</strong>：UP主开篇即承认“读论文很枯燥”——信息源本身不友好是常态，研究员的第一动作应是<strong>改造信息入口</strong>，而不是硬扛原始格式（如一律读 PDF）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：视频本身就是“工具清单式内容”的范例——痛点（记不住 URL）→ 解决方案（插件）→ 七条可立即上手的路径 → 结尾给“懒人组合推荐”。结构清晰、每条都有演示，天然利于传播和收藏。</li>
+<li><strong>传播路径参考</strong>：把复杂资源（arXiv）包装成“七种打开方式”这种数字清单标题，降低了受众的行动门槛；结尾的“我的常用组合”是强化个人 IP 与实用感的收尾技巧。</li>
+<li><strong>解读（推论）</strong>：对做知识类内容的团队，“共创”“插件化”这类词能强化“和用户一起做工具”的亲近感，值得在选题包装中借鉴。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：七种入口本质是同一商品的“七条转化路径”，各自服务不同意图的用户——问答/翻译服务“犹豫型用户”（先看懂再决定），社区热度服务“从众型用户”（看热度再入场），源码服务“深度使用者”（直接复现）。这与电商中“不同人群给不同落地页”的逻辑同构。</li>
+<li><strong>用户旅程发现</strong>：UP主明确区分“浅读”与“深研”两条路径并给出默认推荐，提示运营侧也应为不同意图层级的用户预设“默认最短路径”，而不是让所有人走同一条长链路。</li>
+<li><strong>解读（推论）</strong>：插件形式解决“记不住 URL”，对应电商中“减少每一步的跳转成本”这一经典转化原则。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>说明</strong>：本视频未涉及智能硬件、ID 设计、MD 堆叠或电子设计 demo 内容，无法从逐字稿中提取相关事实，此处不作延伸，避免杜撰。</li>
+<li>唯一可迁移的<strong>抽象信号（推论）</strong>：UP主用 AI 共创出“工具入口层”而非重做底层内容——类比到硬件 PM，AI 更现实的角色可能也是<strong>封装与调用层</strong>（把已有能力快速组装成可用入口），而非替代核心设计判断；但这属于类比推论，视频本身未提供任何硬件相关依据。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「我一直觉得读论文是一件非常枯燥的事情，所以我就跟AI一起共创了有哪些可以在ARCAVE上面更好的其他方式去读取ARCAVE的论文」（开头）——点明整个视频的出发点：痛点驱动 + AI 共创，是理解七种方式设计逻辑的钥匙。</li>
+<li>「如果说不是想深入去研究那个论文的话，你可以从cool paper以及一边读一边问AI这样的一个方式」（结尾）——全片唯一给出的“选择策略”，把七种工具收敛成一个可执行的默认动作，最值得记住。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>刚开始接触 arXiv、被 PDF 阅读劝退的 AI 学习者与研究者；以及想用 AI 工具提升文献阅读效率、需要一套“按目的选入口”清单的人。视频仅 3 分钟，适合作为工具速查而非方法论深读。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
