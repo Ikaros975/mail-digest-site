@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>LinkedIn Is Burying AI Slop Now</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>LinkedIn Is Burying AI Slop Now</h1>
+      <div class="reader-meta">Neil Patel · 2026-11-01</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>LinkedIn开始清退“AI泔水”：没人停下来的内容，管你是不是人写的，都不给流量。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这不是一条信息量大的视频，而是一条“政策信号+平台逻辑”的快讯，核心事实只有几组，但每一组都在指向同一条规则变化。</p>
+<p><strong>第一，平台动手了，而且集中在今年。</strong> 视频开头直接给出时间锚点：平台正在把AI泔水从信息流里过滤出去，而“大部分发生在今年”。紧接着给出第一个具体动作：5月，LinkedIn宣布开始把“通用型AI帖子”从推荐中撤出。这意味着过去那种批量生产、看似正确但毫无个人痕迹的内容，已经从“低效”变成“被主动压制”。</p>
+<p><strong>第二，判定标准不是“像不像AI”，而是“有没有观点”。</strong> 视频引用了LinkedIn编辑副总裁的说法：被打压的是“看起来像AI生成、且没有清晰观点”的内容。这句话是整条视频的枢纽——平台抓的不是技术特征，而是内容特征。因此会出现一个反直觉的结果：一篇结构完整、语气标准的“提升团队生产力的五种方法”会被压下去；而一篇“我试了六个月四天工作制，结果这里出了问题”会被推出来。两者可能都由AI辅助写成，但后者有第一人称、有具体时长、有失败和代价，具备“只有作者本人才写得出来”的痕迹。</p>
+<p><strong>第三，平台给了用户一把刀，也亮了自己的底牌。</strong> 7月，LinkedIn进一步上线了一个按钮，让用户可以直接把帖子举报为“AI slop”。同时，LinkedIn公开了信息流排序的部分信号，其中一个是“停留时长”（dwell time）。视频给出的因果解释很直接：AI内容之所以被抓，是因为人们会直接划过去。但这里有一个同样重要的对称结论——一篇人写的帖子，如果没人停下来看，待遇完全一样。也就是说，平台并不奖励“人类身份”，只奖励“值得停留”。</p>
+<p><strong>第四，一个对照案例把逻辑闭环了。</strong> 视频提到同一家公司做了个对比：一边发通用的AI摘要，一边发创始人的真实观点，结果创始人的帖子“经常获得数倍的触达”。这个案例的价值在于，它排除了“内容主题”和“账号权重”的干扰——同一家公司、同一个账号体系下，差异来自“有没有一个具体的人在说一句具体的话”。</p>
+<p><strong>结尾的落点是一句生意话。</strong> 视频最后说，弄清楚“什么内容只有这个客户才能创作出来”，正是他的 agency（NP Digital）目前在社交上做的一件大事。这是整条视频唯一的商业化出口，也是对前面所有规则的一句话总结：差异化不再来自产量，而来自不可替代性。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【划走即死刑】AI内容被抓不是因为它是AI，是因为没人停下来看——停留时长是法官，人类写的也一样判。对应“dwell time是排序信号、人写内容同样受罚”这一论点。</li>
+<li>【观点是通行证】“五种提升效率的方法”被埋，“我试了六个月四天工作制”被推——差别不在文笔，在有没有人站在里面。对应编辑副总裁“没有清晰观点”的判定标准。</li>
+<li>【同门对照实验】同一家公司，AI摘要 vs 创始人真话，后者数倍触达——不是账号的胜利，是“只有他能写”的胜利。</li>
+<li>【举报按钮=众包审核】7月上线的AI slop举报键，等于把内容判定的权力分了一部分给用户。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>平台清退AI内容的时间与动作</strong></li>
+<li><strong>原文引用</strong>：「In May, LinkedIn announced it would start pulling generic AI posts out of recommendations.」</li>
+<li><strong>案例还原</strong>：视频给出的背景是“平台正在过滤AI泔水，且大部分发生在今年”，第一个具体节点是5月LinkedIn把通用型AI帖子从推荐中撤出。视频没有展开后续执行细节，只交代了动作本身和它发生的时间窗口。</li>
+<li>
+<p><strong>解读</strong>：对做内容的人来说，这类平台政策变化通常不是渐进的，而是某个时间点之后突然生效，出手越晚成本越高。</p>
+</li>
+<li>
+<p><strong>判定标准是“无清晰观点”，不是“AI痕迹”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Content that looks AI generated and has no clear point of view.」</li>
+<li><strong>案例还原</strong>：视频用一对对照帖说明这条标准：「五种改善团队生产力的方法」会被压住；「我试了四天工作制六个月，以下是崩掉的地方」会被展示。两条都可能是AI写的，但后一条有第一人称、有时长、有失败结果，属于“只有作者能写”的类型。</li>
+<li>
+<p><strong>解读</strong>：内容策略的重心应从“怎么写得不像AI”转向“怎么写得只有我能写”。</p>
+</li>
+<li>
+<p><strong>用户举报机制上线，内容审核部分众包化</strong></p>
+</li>
+<li><strong>原文引用</strong>：「In July, LinkedIn went further and added a button so people can report a post as AI slap.」（注：字幕原文为“AI slap”，语境中指AI slop）</li>
+<li><strong>案例还原</strong>：视频只交代了7月这个按钮的存在，没有给出使用量或处罚结果的数据。</li>
+<li>
+<p><strong>解读</strong>：这意味着判定不只靠算法，还靠读者感受，内容的“观感风险”变成了实际风险。</p>
+</li>
+<li>
+<p><strong>停留时长是公开的排序信号，且对所有人一视同仁</strong></p>
+</li>
+<li><strong>原文引用</strong>：「one of those signals is dwell time. AI content gets caught because people scroll past it. And a human written post nobody stops for gets the same treatment.」</li>
+<li><strong>案例还原</strong>：视频的推理链条是：AI内容→读者直接划过→停留时长短→被系统判定低质。但紧接着补了对称的一句：人写的内容如果也没人停，结果一样。这里没有具体数据，是机制层面的说明。</li>
+<li>
+<p><strong>解读</strong>：开头三秒决定生死，人写的内容也必须过“让人停下来”这一关。</p>
+</li>
+<li>
+<p><strong>同公司对照：创始人真话获得数倍触达</strong></p>
+</li>
+<li><strong>原文引用</strong>：「The same company posted generic AI summary and a real opinion from their founder and the founder&rsquo;s post often gets several times the reach.」</li>
+<li><strong>案例还原</strong>：视频未披露公司名称、行业、具体数字，只给出结构：同一家公司、两种内容（通用AI摘要 vs 创始人真实观点）、结果（创始人帖经常数倍触达）。这是一个控制变量后的对照。</li>
+<li>
+<p><strong>解读</strong>：账号规模和主题相同的情况下，差异来自“具体的人的具体判断”，这是最难被批量复制的东西。</p>
+</li>
+<li>
+<p><strong>差异化定位成为一项可售卖的服务</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Figuring out what content only a client can create is a big part of what my agency, NP Digital, does on social right now.」</li>
+<li><strong>案例还原</strong>：视频结尾把前面所有规则收敛成一句业务描述：帮客户找出“只有这个客户才能创作的内容”，是NP Digital当前在社交业务上的重点，并给出官网引导。</li>
+<li><strong>解读</strong>：这是整条视频唯一的转化点，也说明“不可替代性”已经从内容建议变成了服务产品。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频揭示了一个可直接借鉴的“行为信号”方法：停留时长/划走率是比自报偏好更诚实的兴趣指标。做内容或素材测试时，与其问用户“你觉得有用吗”，不如看他在哪一条上停了几秒。</li>
+<li>一个被点明的坑：<strong>“看起来专业”不等于“值得停留”</strong>。结构完整、语气标准的通用内容会被直接划过，这与用户研究里“用户说的”和“用户做的”之间的落差是同一类问题（解读/推论）。</li>
+<li>对照实验的方法值得借用：同一主体、两种内容形态、比触达——这是低成本验证“什么只有我们能做”的测试框架。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频给出的营销思路很明确：<strong>从“产量竞争”转向“不可替代性竞争”</strong>。“只有这个客户才能创作出来的内容”可以直接作为品牌内容审计的提问模板——逐条问：这条换任何同行发，效果一样吗？一样就砍掉。</li>
+<li>案例层面的启发是创始人IP的价值被量化了：同一家公司，创始人真实观点的触达是通用AI摘要的数倍。这意味着创始人出镜/署名的内容不是“锦上添花”，而是分发优势。</li>
+<li>平台规则层面：内容被举报为AI slop的风险已经存在，品牌方需要为“观感”做风控，而不只是为事实做风控（解读/推论）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>视频没有直接讲电商，但“停留时长决定分发”这一条可以平移：详情页、主图、短视频素材的第一秒决定用户是否继续——平台用划走率筛内容，用户用同样的方式筛商品（解读/推论）。</li>
+<li>“同公司对照”的结构可以直接用于素材A/B：同样的产品，通用卖点罗列 vs 具体的人讲具体的使用经历，看哪一个带来更长的停留。视频给出的方向是后者，但视频未提供电商场景的数据，需自行验证（解读/推论）。</li>
+<li>举报与社区审核机制的存在提示：UGC或评价区的内容质量管理，正在成为平台侧的硬指标（解读/推论）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频内容不涉及智能硬件与AI产品开发流程，无法据此讨论AI在ID设计、MD堆叠、电子设计demo中的作用与边界，也不涉及相关工具或岗位职责信号。此部分不作推断。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「Content that looks AI generated and has no clear point of view.」——<strong>中段</strong>。这是整条视频的判定标准，一句话把“反AI”重新定义成了“反无观点”，值得作为内容自检的第一条。</li>
+<li>「AI content gets caught because people scroll past it. And a human written post nobody stops for gets the same treatment.」——<strong>中段</strong>。这两句把平台逻辑说透了：审核的不是出身，是注意力，人写的内容没有豁免权。</li>
+<li>「Figuring out what content only a client can create is a big part of what my agency, NP Digital, does on social right now.」——<strong>结尾</strong>。把前面所有规则变成一个可执行的提问：什么内容只有你能写？</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合正在做LinkedIn或社交内容分发的品牌方、创始人IP运营者、内容营销与社媒从业者。视频很短，但把“平台如何判定AI内容”的标准和两个可复用的对照案例讲清了，花两分钟就能拿到一个内容自检的提问框架。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
