@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Meta VR Glasses: What Vision Pro 2 COULD Have Been!</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Meta VR Glasses: What Vision Pro 2 COULD Have Been!</h1>
+      <div class="reader-meta">MKBHD · 2026-11-06</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>Meta把算力从脸上搬到腰上，100克的「VR眼镜」就是Vision Pro 2本该有的样子。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：两条路线，Meta两头下注</strong>
+视频开篇，MKBHD回顾了他几个月前提出的行业框架：可穿戴面部设备市场存在两条路线——要么从全功能VR头显往下做（做小做轻），要么从眼镜往上做（加功能加算力）。Meta是唯一同时押注两头的公司：Ray-Ban类眼镜有纯音频版、带摄像头版，功能不断叠加；Quest系列头显则在努力变小变轻。而这款「Meta VR Glasses」正好卡在中间。同时他提到一个前提性事实：报道显示苹果已不再开发Vision Pro，这让本视频成为一个反事实推演——&ldquo;如果苹果还在做，这大概就是Vision Pro 2的样子&rdquo;。</p>
+<p><strong>核心案例一：把&rdquo;热风&rdquo;从脸上搬到腰上——分体式算力Puck</strong>
+Vision Pro（以及Quest 3等所有全XR头显）最大的缺陷是尺寸和重量，人们不愿长时间佩戴。MKBHD给出的第一条原则极其朴素：<strong>&ldquo;脸上不必承担全部重量&rdquo;</strong>（rule number one of saving weight：not all the weight has to be in the part that&rsquo;s on your face）。Meta的做法是把几乎所有计算塞进一个智能手机化的Puck：Snapdragon XR2 Gen 3芯片、12GB RAM、128GB存储、micro SD卡槽全在里面，Puck顶部还有排风口和风扇主动往外吹热风。线缆两端都可拆卸，便于维修更换。MKBHD自己试用后的真实细节：线长暗示可以揣兜里，但他不愿把吹热风的Puck放进裤子口袋，宁可动用皮带夹把它夹在裤外——&ldquo;多一点麻烦，但热风吹在Puck上比吹在脸上好&rdquo;。这个细节是整期视频最生动的产品洞察：<strong>散热位置的选择，本质是用户体验的选择</strong>。</p>
+<p><strong>核心案例二：像戴墨镜一样戴头显——半开放形态的取舍链</strong>
+眼镜本体采用混合形态而非全封闭头显，这带来一连串连锁结果。减材料→减重量；同时视野不再是全沉浸，而是&rdquo;像透过墨镜看世界&rdquo;，上下边缘会漏进环境光。官方参数70°水平×66°垂直视野，明显低于典型全沉浸头显的约110°，MKBHD确认&rdquo;差异绝对能感觉到&rdquo;，但评价它&rdquo;仍好于市面上多数XR眼镜（通常55–60°）&rdquo;。Meta的补丁方案是磁吸式柔性橡胶遮光罩，看电影等需要暗房体验时吸上即可。显示方面为MicroOLED，单眼2412×2288、最高120Hz，肉眼观感清晰（他特别说明这是预量产机，屏幕录制不能反映真实观感）。其他减重手段：镁合金框架、取消电动IPD调节改为手动推拉镜片（软件有引导流程）。最终眼镜本体约100克——&ldquo;轻到可以戴很久、甚至忘了它&rdquo;。</p>
+<p><strong>核心案例三：键盘映射到桌面——最惊喜的新交互</strong>
+MKBHD认为最酷的新功能是键盘+触控板方案。以往头显选中文本框只能戳空气键盘；这款产品在面前有平坦表面（如桌面）时，点角落按钮即可把虚拟键盘和触控板映射到该表面，实现真实触感打字、在虚拟触控板上滑动手指。&rdquo;敲到实体表面的反馈比空气按钮爽得多&rdquo;——<strong>用物理表面换取输入手感</strong>，是低成本高回报的交互巧思。</p>
+<p><strong>关键结论：形态问题解决了，&rdquo;要不要头显&rdquo;没解决</strong>
+MKBHD明确收束：这是&rdquo;当前技术水平下做全XR头显的聪明方案&rdquo;，但它并不解决&rdquo;我到底想不想要一个头显&rdquo;的根本问题——功能集合与Quest、Vision Pro、Galaxy XR并无二致（眼动+手势追踪免手柄、Instagram/WhatsApp/Meta AI/浏览器、游戏）。他自己最有价值的使用场景是扩展桌面：插上电脑即得随身三块大屏的虚拟工作空间。价格信息：明年上市，约1300美元。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <p>【热风经济学】脸上只放眼睛，屁股负责发烧——算力与散热外置到Puck，是减重的第一性原理。
+【墨镜维度】戴的不是头显，是&rdquo;能看穿另一维度的墨镜&rdquo;——半开放形态用漏光换轻量与舒适。
+【桌面即键盘】空气打字不如敲桌子——把虚拟输入映射到真实平面，用物理反馈救交互。
+【一百克的诱惑】100克=愿意久戴=头显从&rdquo;设备&rdquo;变&rdquo;配件&rdquo;——重量是佩戴时长的隐藏开关。
+【中间态困局】形态解决了，需求没解决——再轻的头显也回答不了&rdquo;我为什么需要它&rdquo;。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li><strong>要点：算力外置是当前XR减重的最优解</strong></li>
+<li><strong>原文引用</strong>：「rule number one of saving weight in a headset on your face, not all the weight has to be in the part that&rsquo;s on your face」</li>
+<li><strong>案例还原</strong>：Vision Pro的Puck只是电池，Meta的Puck装下了XR2 Gen 3芯片、12GB内存、128GB存储和SD卡槽，还带风扇主动排热；线缆两端可拆便于维修。MKBHD试用后选择用皮带夹而非揣兜，因为能感到热风。背景是Vision Pro与Quest 3普遍笨重、用户不愿久戴；过程是把计算与散热全部移出面部；结果是眼镜本体约100克。</li>
+<li>
+<p><strong>解读</strong>：对硬件PM而言，重量预算的分配优先级高于单点堆料。</p>
+</li>
+<li>
+<p><strong>要点：形态妥协要用&rdquo;配件补丁&rdquo;兜底</strong></p>
+</li>
+<li><strong>原文引用</strong>：「it&rsquo;s like wearing a pair of sunglasses but the whole sunglasses go into another dimension basically」</li>
+<li><strong>案例还原</strong>：半开放形态视野70°×66°，低于全沉浸头显约110°，用户能感知差异；Meta提供磁吸柔性橡胶遮光罩，看电影时吸上获得暗房体验。减重还靠镁合金框架和手动IPD推拉（软件引导校准）。结果是轻量与沉浸可按场景切换，代价是默认状态下的沉浸感打折。</li>
+<li>
+<p><strong>解读</strong>：产品不必全能，用可拆卸配件覆盖长尾场景是低成本策略。</p>
+</li>
+<li>
+<p><strong>要点：交互创新可以来自&rdquo;借用现实&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「you hit this little button in the corner and it maps a keyboard and trackpad to that surface so that you can touch type on the desk」</li>
+<li><strong>案例还原</strong>：旧方案是悬浮空气键盘、戳空气按键；新方案检测到前方平坦表面后一键映射虚拟键盘+触控板，手指在桌面真实敲击、在虚拟触控板上滑动，获得物理反馈。MKBHD称这是&rdquo;最酷的新功能&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：与其发明新交互，不如把现实表面变成输入设备，体验性价比极高。</p>
+</li>
+<li>
+<p><strong>要点：硬件形态创新不等于需求创新</strong></p>
+</li>
+<li><strong>原文引用</strong>：「it doesn&rsquo;t solve the do I even want a headset in the first place problem」</li>
+<li><strong>案例还原</strong>：功能与Quest、Vision Pro、Galaxy XR相同——眼动+手势追踪、Meta系App、浏览器、游戏；MKBHD个人认为最有用的是扩展桌面（随身三块大屏）。价格约1300美元、明年上市。结论是形态聪明但品类问题依旧。</li>
+<li>
+<p><strong>解读</strong>：提醒产品人区分&rdquo;更好用的同类&rdquo;与&rdquo;新品类&rdquo;，前者不解决 adoption。</p>
+</li>
+<li>
+<p><strong>要点：苹果退场反衬Meta的双线策略</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Meta is just out here cooking on both」</li>
+<li><strong>案例还原</strong>：报道称苹果已停止Vision Pro开发、转向从眼镜起步；Meta同时推进眼镜（音频版、摄像头版持续加功能）与Quest头显（变小变轻），本产品即两条线的交汇产物。MKBHD的推演是：若苹果听取一代反馈，本可做出这款产品。</li>
+<li><strong>解读</strong>：路线对冲比单点豪赌更能积累迭代数据。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：视频提供了一个极佳的&rdquo;路线图调研&rdquo;范式——把市场玩家按&rdquo;从头显往下做 vs 从眼镜往上做&rdquo;两条路线分类，一眼看清战略位置；Meta的&rdquo;中间态&rdquo;正是两条路线交汇的可观测样本。</li>
+<li>可借鉴方法：关注评测者自述的<strong>身体感受细节</strong>（&rdquo;不愿把热风Puck揣兜&rdquo;、&rdquo;能感知70°与110°的差异&rdquo;）——这类第一人称体验描述比参数表更能揭示真实痛点；以及参数与体感的对照法（官方70°/66° vs 典型110°，结论&rdquo;差异绝对能感觉到&rdquo;）。</li>
+<li>被揭示的坑：不要被厂商参数与屏幕录制误导——预量产机的录屏&rdquo;完全不能反映实际观感&rdquo;；同时警惕&rdquo;形态创新=需求成立&rdquo;的误判，用户&rdquo;要不要头显&rdquo;的根本疑问未被回答。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新营销思路：本视频本身就是一堂&rdquo;对比锚定&rdquo;传播课——把新品锚定在&rdquo;Vision Pro 2本该有的样子&rdquo;这一心智框架上，无需贬低对手即完成定位；&rdquo;100克&rdquo;、&rdquo;热风不吹脸&rdquo;是可传播的记忆符号。</li>
+<li>值得研究的传播路径：借权威科技评测者的第一人称体验（含抱怨与取舍）建立可信度；用&rdquo;预量产机录屏不靠谱、请信我肉眼&rdquo;处理产品瑕疵的预期管理话术。</li>
+<li>解读（推论）：&rdquo;中间态&rdquo;叙事（既非眼镜也非头显）本身是品牌差异化资产，但需配套清晰的场景话术（如扩展桌面），否则易被归入&rdquo;又一个头显&rdquo;。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考策略：视频点出的<strong>配件生态</strong>是天然加购点——磁吸遮光罩、皮带夹、可更换线缆（两端可拆），适合做组合套装与耗材复购；&rdquo;约1300美元、明年上市&rdquo;提示预售定金与尝鲜人群分层运营。</li>
+<li>转化路径发现：最强转化钩子是具体场景而非规格——&ldquo;插上电脑即得随身三块大屏&rdquo;、&rdquo;桌面当键盘敲&rdquo;，详情页应优先呈现此类可演示场景；同时坦诚&rdquo;热风在腰不在脸&rdquo;这类取舍说明能降低退货预期差。</li>
+<li>解读：对高客单XR品类，预期管理（视野70° vs 110°、需配件补沉浸）本身就是降低差评率的运营动作。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>发挥作用最实的阶段：<strong>系统架构与堆叠取舍</strong>——本案例的核心决策（算力/散热外置Puck、镁合金框架、手动IPD替代电机、半开放形态+遮光罩补丁）都是典型的成本-重量-体验三角权衡，属于PM主导的系统级设计决策；交互demo层面，&rdquo;桌面键盘映射&rdquo;这类功能概念验证也属PM可推动的早期demo范畴。ID图阶段需要人判断&rdquo;这算不算眼镜&rdquo;的品类语义（MKBHD直言不愿称其为glasses），AI难以替代。</li>
+<li>边界：<strong>需求成立性判断</strong>（&rdquo;do I even want a headset&rdquo;）仍需人做；重量、佩戴时长、热感等体感验证必须真人试戴；参数与观感的落差（录屏不代表真实显示）需要人来校准。</li>
+<li>岗位演变信号（推论）：PM的核心产出正从&rdquo;堆功能清单&rdquo;转向&rdquo;做取舍组合&rdquo;——重量预算表、散热位置图、配件补丁策略可能成为XR PM的新交付物；同时需具备把现实物理表面纳入交互设计的想象力（桌面即输入设备）。</li>
+<li>注：逐字稿未涉及AI设计工具或AI辅助ID/MD流程，以上关于AI可用范围的判断为基于案例的推论，非视频原述。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <p>「rule number one of saving weight in a headset on your face, not all the weight has to be in the part that&rsquo;s on your face」——中段。这是全片的设计公理，一句话概括了分体式方案的全部逻辑，适合作为任何可穿戴设备的减重检查清单。
+「it&rsquo;s like wearing a pair of sunglasses but the whole sunglasses go into another dimension basically」——中段。对&rdquo;中间态&rdquo;产品最形象的定义，说明形态创新如何被用户语言转译。
+「it doesn&rsquo;t solve the do I even want a headset in the first place problem」——结尾。最冷静的一刀：形态问题与需求问题是两回事，值得所有硬件PM贴在墙上。</p>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>关注XR/可穿戴硬件的产品经理、工业设计与交互设计师、科技评测从业者，以及正在做&rdquo;形态取舍与重量预算&rdquo;决策的硬件团队。看它能获得一个罕见的完整案例：从路线图判断、分体架构、形态妥协到配件补丁的全链条决策，外加一记&rdquo;形态不等于需求&rdquo;的清醒提醒。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
