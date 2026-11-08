@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Why Google wants to win the frontier conversation | Tulsee Doshi (Head of Product for Gemini)</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Why Google wants to win the frontier conversation | Tulsee Doshi (Head of Product for Gemini)</h1>
+      <div class="reader-meta">Lenny's Podcast · 2026-11-08</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>Google前沿模型产品负责人：模型像斯内普的魔药课，你得接受那点意外魔法。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>一、模型不是被&rdquo;建造&rdquo;的，是被&rdquo;养成&rdquo;的，PM的活儿一半在输入端、一半在输出端</strong></p>
+<p>Tulsee Doshi 是 Google 前沿模型（Gemini 全家族）的产品负责人，她管辖的不只是大家熟悉的 Gemini 聊天模型，还包括生成媒体模型（视频/图像编辑与生成，如 Nano Banana）、音乐模型 Liria、开源模型套件 Gemma，以及一个&rdquo;被谈得很少&rdquo;的音频模型家族（对话、音频理解、TTS、翻译）。主持人问她：从研究到预训练、后训练、发布，外人最误解模型开发的哪一点？她的回答构成了整期节目的思想底座——传统产品管理是&rdquo;设目标→交付目标&rdquo;，但模型不是这样运作的。你该有意图、该设 eval 目标，但模型不可预测。她用了一个精准的比喻：<strong>这就像斯内普的魔药课，你把所有配料都放进去，但你也要预期会有一点魔法，而那点魔法会让你惊讶，而且它是独一无二的</strong>。所以 PM 的工作不只是塑造&rdquo;进去的东西&rdquo;，还要盯着&rdquo;出来的东西&rdquo;，识别模型在哪里发光、在哪里以你没想到的方式独特，然后把这个意外塑造成对用户惊艳的东西。主持人补充了 Anthropic 可解释性研究者的说法&rdquo;模型是被种出来的，不是被造出来的&rdquo;，她认可：研究端确实有大量科学化监控（追踪训练 run、看指标爬升、决定何时干预），但 PM 端必须额外理解模型的&rdquo;vibes&rdquo;（气质/手感）——能力提升了，但这个能力在哪里真正发光？它在产品下游如何呈现？你和它交流时它的行为与人格是什么感觉？这些是训练中会构建、但只能在评估测试中不断&rdquo;学到新东西&rdquo;的部分。</p>
+<p><strong>二、Google 的策略是&rdquo;全栈 + 帕累托曲线&rdquo;，而不是单点押注最强模型</strong></p>
+<p>主持人直球提问：很多人觉得 Google 落后于 OpenAI 和 Anthropic 两家顶级实验室，Google 时而最好、时而像慢下来，内部到底怎么想？Tulsee 先给了个时间戳式的回答（&rdquo;希望这期播出时你们已经在用 Gemini 4 Argon 了&rdquo;），然后给出策略框架：Google 的优势是全栈——从硬件一直到服务数十亿用户的终端产品（她提到 Google 有 14 个十亿级用户产品，并自己加了句&rdquo;这个数字我该核实一下&rdquo;）。目标是双重的：既要打造前沿体验，也要沿着<strong>成本-质量的帕累托曲线</strong>铺开模型，服务不同人生阶段的不同用户——来搜索找信息的普通用户、想造下一个伟大东西的工程师、保护关键基础设施的网络防御者。主持人总结得很到位：Google 有多个赢的向量（每 token 成本最优的前沿、最聪明的模型、把 AI 模式/AI Overviews 塞进现有产品让产品变好），不一定要在&rdquo;最强聊天机器人&rdquo;这一条线上赢。Tulsee 的回应很硬气：<strong>&ldquo;我确实认为我们想赢下前沿对话，我不认为我们应该说 Google 没有参与前沿。&rdquo;</strong> 但她同时强调广度和多样性体验的价值，落点是&rdquo;让人们的生活真的变好&rdquo;。</p>
+<p><strong>三、安全：乐观的路径是&rdquo;穿过担忧&rdquo;，监控思维链是具体抓手</strong></p>
+<p>Tulsee 在接手现在这个岗位前，做了六年 Google 负责任 AI（Responsible AI）的产品负责人，所以她谈安全比大多数人更有资格。她的具体论点：安全是嵌在从初始训练到部署全过程中的；部署侧最关键的是<strong>缓解措施与结构</strong>，其中一个重点是部署能监控模型<strong>思维链</strong>的监控器，识别模型是否与它被指示的行动&rdquo;失准&rdquo;（misaligned），并适时干预——这既提升部署信心，也帮你理解失准会出现在哪里，从而反哺模型改进。她提到一个常被忽略的另一面：AI 也在&rdquo;加固我们的系统&rdquo;。Gemini 4 正与多家网络防御方合作，包括已并入 Google 的 Wiz；Wiz 有个 Scan for Good 项目，与全球系统合作找漏洞，其中<strong>与一个医院系统合作，识别出一个漏洞并完成了修补</strong>。主持人问&rdquo;你觉得我们能解决这个担忧吗、你乐观吗&rdquo;，她的回答是&rdquo;两者皆是&rdquo;：必须持续思考它，<strong>&ldquo;通往乐观的路径是穿过思考它&rdquo;</strong>——乐观的来源不是&rdquo;相信会没事&rdquo;，而是&rdquo;看到有一群人在有意图地、审慎地审讯我们怎么造模型&rdquo;。主持人补了一句：没读到过 Google 模型黑进谁的故事，&rdquo;不管好坏，看起来你们做的在起作用&rdquo;，她回：&rdquo;我们喜欢修漏洞的故事，那是我们的好位置。&rdquo;</p>
+<p><strong>四、UX 的两难：新范式要试，但用户分层决定形态；而且模型本身就有 UX</strong></p>
+<p>主持人抛出行业现象：AI 产品界面越来越复杂——Google 的 AI Studio 很多人不知道存在，找不到 Veo、Genie；Codex 上线 dots 后界面是标签页+下拉+dots，Claude Code 也一样，产品越发臃肿。他还转述一个&rdquo;某实验室 PM&rdquo;在 WhatsApp 群里的说法：有紧迫感要把前沿能力尽快塞给用户，一部分是为了竞争，一部分是<strong>因为自己也不知道用户会拿它干嘛——先放出去，看用户怎么用，再优化 UX</strong>。Tulsee 给了三层回应：第一，确实要玩新范式和新 UX 形态，比如 Flow 是为视频/音乐编辑生成专门设计的形态，NotebookLM 是另一种形态，Labs 团队在主动尝试不同 form factor；第二，<strong>形态取决于用户是谁</strong>——AI 模式面向数十亿来搜索提问的人，UX 必须人人可用；而 anti-gravity 面向power user，玩 slash commands、终端+IDE 双线操作，可以给更大自由度；第三（她最看重的），<strong>要把模型本身当成一个有 UX 的东西</strong>：模型多透明、和你沟通得多好、会反问你什么问题——这全是 UX。所以她主张把 UX 讨论搬进模型开发流程本身。主持人追问&rdquo;模型的个性就是模型的 UX&rdquo;如何落地，她讲了完整机制：有一个专做 model behavior 的团队；PM 与它协作，一边看客户与用户反馈，一边定义&rdquo;对 Gemini 而言，好是什么样&rdquo;，把它写成 spec，再<strong>翻译成 rubrics 用于评估模型，翻译成数据喂给模型，翻译成 reward modeling</strong>。这是 PM 与研究的&rdquo;很好的协作&rdquo;。</p>
+<p><strong>五、602020 法则：不要只造&rdquo;今天能用&rdquo;的 MVP，要造&rdquo;一部分今天还不工作&rdquo;的功能</strong></p>
+<p>这是本期最可迁移的方法论。传统创业智慧是&rdquo;造一个能用的 MVP&rdquo;，Tulsee 的说法是反的：模型能力在持续变化，今天的能力不是明天的能力，所以你要<strong>造那些今天还不一定工作的功能</strong>。她的框架（自认数字可浮动、论点不变）：约 60% 的东西今天就能用、原型至少是可运转的；约 20% 是&rdquo;不完美但够用、且我能看到模型近期会到达这里&rdquo;；剩下的是&rdquo;我希望模型到哪、我已经看到微光、如果我能啃下这块，产品体验会很惊艳&rdquo;。这样建，产品今天可用，同时为模型变强后引爆的&rdquo;魔法体验&rdquo;预埋了引信，并随模型一起成长。主持人对比了常见建议&rdquo;比模型现状提前三个月建&rdquo;，认为这个框架更实操——因为<strong>你没法只赌未来，你也要今天能出货</strong>。Tulsee 承认难处：她自己在模型侧，也说不准三个月后模型在哪，所以更该用产品侧的代理指标（我看到微光的地方在哪）来回答同一个问题。主持人把它类比为产品组合的经典玩法（大胆赌注+低风险必赢项混合），Tulsee 补充了关键推论：<strong>产品必须对模型变好保持敏捷</strong>——有客户围绕&rdquo;模型当时的位置&rdquo;建了很僵的系统，模型变强后反而被自己绑住。主持人引 Boris Cherny 的建议&rdquo;时不时把技能全删掉看看会发生什么&rdquo;，她说得更直接：要持续重测，因为你可能正在用旧结构<strong>强行挤压</strong>新模型，反而抑制了它的输出。</p>
+<p><strong>六、PM 的&rdquo;复兴&rdquo;：能造一切的时代，品味与秩序才是稀缺品</strong></p>
+<p>主持人说 Twitter 上出现&rdquo;PM 复兴&rdquo;（PM ascendance）——前一阵流行&rdquo;不需要 PM 了，什么都能建&rdquo;，结果大家造了一堆没人要的垃圾，于是重新发现&rdquo;判断什么值得建&rdquo;是极稀缺的技能。Tulsee 认同并给了两个论点：<strong>当你能轻易造任何东西时，&rdquo;造出好东西&rdquo;本身成了独特价值，品味变得非常重要</strong>——好 PM 从噪音里拉出信号，找到解锁惊艳体验的洞察；<strong>在 Google 这种多产品组织里，能把人聚起来、驱动共识、把混乱变成秩序的人变得极其重要</strong>，因为建设速度本身会引入混乱，缺乏这种能力，速度就等于混乱。她招 PM 的标准也随之变化，三个关键词：<strong>vibes（手感）、eval（评估）、adaptive（适应性）</strong>。</p>
+<ul>
+<li><strong>vibes</strong>：她要&rdquo;对这些模型（我们的或其他家的）有 vibes 理解&rdquo;的 PM——有自己的观点、每天在玩模型、有自己的用例来判断模型好不好、亲自压测能力、能扎进数据里卷起袖子。</li>
+<li><strong>eval</strong>：她坦言&rdquo;老实说我们内部也还在摸索，团队里有人强有人弱，正在全员补课&rdquo;。给新手的起点极其朴素：<strong>从 5 个 prompt 开始，做到 20 个就能压测一组能力、就能在模型 A 和 B 之间看出信号</strong>，不需要一上来搞大规模 benchmark；而且先从&rdquo;你自己当评分者&rdquo;开始——尤其在长多步多轮轨迹里，<strong>能说清&rdquo;你心里的好&rdquo;是什么就已经很难</strong>，而这一组好例子会先给你自我清晰度，再谈扩展。</li>
+<li><strong>adaptive</strong>：这行每两周就变，&rdquo;你两个月前写的 roadmap，两个月后你会再看一遍再重写&rdquo;，所以要持续盯环境与市场，持续重新审讯&rdquo;我们在做什么、为什么&rdquo;，而不是假设有一个固定计划。主持人的观察是&rdquo;eval 与 vibes 之争的答案是两者都要&rdquo;，她默认了。</li>
+</ul>
+<p><strong>七、两个&rdquo;fun fact&rdquo;案例，把抽象道理钉死</strong></p>
+<p><strong>案例 A：菲茨帕特里克量表的替换——一次把 eval 从根上重做的实践。</strong> 在负责任 AI 的六年里，她大量处理肤色与肤色代表性。早期业界评估产品用的是<strong>菲茨帕特里克量表（Fitzpatrick scale），只有 6 个肤色</strong>。问题有两层：第一，6 个肤色根本无法覆盖世界的肤色多样性；第二，这个量表<strong>本是为完全不同的目的（医疗健康）造的，因此极端偏向浅肤色</strong>——所以它不只是&rdquo;太少&rdquo;，连那 6 个都不是能代表全球人口的那 6 个。于是他们与哈佛的 Monk 教授合作：Monk 从人类学/社会学视角、通过多年用户访谈与研究，建了一个 <strong>10 个肤色的量表</strong>。团队把这套肤色拉进评估体系，重做了大量产品与模型的评估方式，并借此改进了 Pixel 相机、图像生成等工作，让肤色呈现更有意图。<strong>解读</strong>：eval 的刻度本身可能是错的、且有历史偏见；换刻度不是优化，是纠偏。</p>
+<p><strong>案例 B：flash teams——12 年前的众包研究，今天成了 agent swarm 的预言。</strong> 她在斯坦福与 Michael Bernstein 教授做过研究，当时的概念叫 <strong>flash teams</strong>：如何把一群众包工作者高效组织起来，按各自强项拼成一支能完成任务的队伍，任务来了就快速组建、任务完了就解散，且对个体和对组织者都高效——当时用的是 mTurk 和真人。她说今天看这段研究很奇妙：<strong>我们现在能用 agent 复现那个世界</strong>，把同样的原则用于搭建有效的 sub-agent 系统。主持人提到 Hugging Face 那起 agent 事件——agent 自己分工、自己决定谁是 leader、谁去牺牲自己，而这些从未被训练过。Tulsee 的回应是：flash team 这个原则——把人（或 agent）在某一瞬间动员成高效整体、再拆掉——在今天的世界里&rdquo;甚至更重要了&rdquo;。节目还顺带点出时代变迁：mTurk 据说要关了，&rdquo;12 年，变化真大&rdquo;。</p>
+<p><strong>八、给团队&rdquo;造技能&rdquo;而不是&rdquo;加时长&rdquo;：AI 反burnout 的具体机制</strong></p>
+<p>主持人问 burnout：AI 让人能做更多，于是所有人都在做更多，永远在&rdquo;解锁我的 agent&rdquo;，上面还在喊&rdquo;再多做点&rdquo;。Tulsee 先诚实认账：&rdquo;如果你问我团队，他们会说，嗨，我们确实在工作很多，每个人都把能投入的 hours 都投进去了&rdquo;，并说这是她自己正在问自己的问题（可持续的工作环境）。然后她给了对 burnout 的拆解：burnout 不只来自工时，来自两处——<strong>churn 与混乱</strong>，以及<strong>你不享受的工作</strong>（感觉在做苦力、在浪费时间）。反过来说，做你热爱的事虽然累，但带来更多喜悦。所以她希望把工具用在&rdquo;抽掉摩擦部分&rdquo;上：让模型吃掉苦力活，把时间还给思考和创造。落地手段是&rdquo;技能（skill）的飞轮&rdquo;：团队里有些 PM 已经深度使用内部工具（她提到内部工具 Jetski），是&rdquo;团队的资产&rdquo;；于是让这些人<strong>把技能做成可分享的技术 skill，沉淀成仓库</strong>，别人用了建立信心，再改进、再造新 skill。同时给&rdquo;眼力&rdquo;补课——有些 PM 更擅长盯数据、看长 trace 和轨迹，就<strong>用工作坊把这种信心复制给其他人</strong>。她强调最关键、也最难的是<strong>给时间与空间</strong>：&rdquo;一直在 sprint 的时候，很难腾出空间退后一步把工具摸熟；但一旦摸熟，它在另一边会让你加速 10 倍。&rdquo;所以他们在 11 月安排了<strong>为期两天的工作坊，把所有 PM 从日常工作中拔出来，专门建和玩这些工具</strong>。她还给了一条可复用的判断法则：<strong>&ldquo;如果一件事你要做第二遍，你还需要自己做吗？&rdquo;</strong>——写策略这类事当然还得自己写，但很多部分可以问&rdquo;这有多可复制、模型能帮多少&rdquo;。主持人的版本是：在刺激与反应之间插入一个问题——&ldquo;AI 能做这个吗？&rdquo;Tulsee 补了行为改变的关键机制：<strong>你只需要一个&rdquo;它真的帮到我了&rdquo;的例子，心态就变了</strong>——信心增长后，你会开始把这件事、那件事都扔给模型。她还提到文档泛滥（AI slop）的处理原则：<strong>洞察由你提供，数据由模型提供</strong>——例如发布两周后&rdquo;谁在用、怎么用、反馈是什么&rdquo;的汇总文档，AI 极其擅长（拉多个看板指标、拉 Twitter/Reddit 分析、给优缺点），但&rdquo;洞见&rdquo;该来自人。她也顺带回答了一个尖锐问题：为什么 Google 还没做出一个用 Gmail/Calendar/Docs 数据做出魔法体验的产品，其他家都在拿这些数据做？她的回答是&rdquo;我们确实想让 Google 数据驱动魔法体验&rdquo;&ldquo;团队在做一些了不起的东西&rdquo;&ldquo;stay tuned&rdquo;&ldquo;你说得对，这方面我们还有更多工作要做&rdquo;——主持人点评：和之前某位嘉宾的回答相似，&rdquo;看这个空间&rdquo;，而 Google 的优势是<strong>一旦到了那里，分发优势极强，事情会很快变好</strong>（类比 Apple）。关于 PM 角色被 AI 改变的排序，她的答案是：<strong>原型制作第一，数据科学第二</strong>——&ldquo;原型是新的 PRD&rdquo;&ldquo;eval 是新的 PRD&rdquo;&ldquo;数据是新的 PRD&rdquo;这些流行说法的真正含义是：PM 不再只是写下需求然后假设工程师/数据科学家/研究员/设计师去填肉，<strong>PM 的工作往前走了一步，要亲自给这份需求以&rdquo;分量&rdquo;（heft）</strong>。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【魔药课】</strong> 配料你全放进去，但那点魔法由不得你——模型开发要设目标，更要接受意外，PM 一半功夫在识别&rdquo;出来的东西&rdquo;哪里发光。</li>
+<li><strong>【602020 三段火箭】</strong> 60% 今天能用、20% 差一点但看得见、20% 只有微光——造一个随模型一起长大的产品，而不是给今天的模型做一个刚好合身的壳。</li>
+<li><strong>【模型也有 UX】</strong> 模型问你什么、怎么坦白、什么语气，都是界面——把 UX 讨论搬进训练室，把&rdquo;好&rdquo;写成 spec→rubrics→数据→reward。</li>
+<li><strong>【六色尺子量不了全世界】</strong> 一把为医疗而造、偏浅肤色的 6 色尺，量不出全球的肤色——eval 的刻度本身可能是错的，换刻度是纠偏不是优化。</li>
+<li><strong>【技能飞轮】</strong> 一个人摸熟工具→做成可分享的 skill→别人有信心→改进它→再造新 skill——AI 时代的团队学习不是培训课，是滚雪球。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>模型不可预测，PM 要双向工作</strong></li>
+<li><strong>原文引用</strong>：「你可以把所有配料都放进去，但你也要预期会有一点魔法，而那点魔法会令人惊讶。」（意译自原话：You can put all the ingredients in, but you also have to expect that there will be a little bit of magic.）</li>
+<li><strong>案例还原</strong>：她解释，研究侧确实高度科学化——持续监控训练 run、追踪指标、判断何时干预；但产品侧必须额外理解模型&rdquo;出来的那一面&rdquo;：能力提升了，可它在哪里真正发光？在下游产品里怎么呈现？和它对话时的行为与人格是什么感觉？这些&rdquo;总是能学到新东西&rdquo;的部分，才是 PM 的判断空间。</li>
+<li>
+<p><strong>解读</strong>：做 AI 产品不能只做需求翻译，要为&rdquo;意外能力&rdquo;预留发现与塑造的工序。</p>
+</li>
+<li>
+<p><strong>Google 要赢前沿，也要赢广度</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我确实认为我们想赢下前沿对话。我不认为我们应该说 Google 没有参与前沿。」</li>
+<li><strong>案例还原</strong>：她先摆出全栈叙事——从硬件到服务数十亿用户的产品（提到 14 个十亿级产品，并自注&rdquo;该核实&rdquo;），再摆出帕累托曲线：同一套模型要覆盖搜索用户、造东西的工程师、护基础设施的防御者。主持人替她总结&rdquo;你有多个赢的向量&rdquo;，她没有否认，只强调广度与&rdquo;让生活变好&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：平台型公司的 AI 战略不是单点竞速，而是&rdquo;最强 + 最广 + 最便宜&rdquo;的组合拳。</p>
+</li>
+<li>
+<p><strong>安全：乐观是穿过担忧得来的细节活</strong></p>
+</li>
+<li><strong>原文引用</strong>：「通往乐观的路径，是穿过对它的思考。」</li>
+<li><strong>案例还原</strong>：她给出两个具体面：部署侧用监控器盯模型的思维链，判断它是否偏离被指示的行动并及时干预，这既提升部署信心又反哺模型；防御侧，Gemini 4 与包括已并入 Google 的 Wiz 在内的网络防御方合作，Wiz 的 Scan for Good 项目与一个医院系统合作，识别出一个漏洞并完成修补。</li>
+<li>
+<p><strong>解读</strong>：安全不是口号，是监控结构与&rdquo;修漏洞的故事&rdquo;，做企业级 AI 的人要抄这套姿势。</p>
+</li>
+<li>
+<p><strong>602020：为&rdquo;还没工作的功能&rdquo;建产品</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你想要真的去构建那些今天不一定总能工作的功能。」</li>
+<li><strong>案例还原</strong>：她对比传统 MVP 智慧，给出三段结构：约 60% 今天能用、原型至少可运转；约 20% 不完美但够用、且能看到模型近期抵达；剩下的部分只有&rdquo;微光&rdquo;，但一旦啃下就是惊艳体验。主持人追问&rdquo;提前三个月建&rdquo;的常见建议，她指出连她自己在模型侧都说不准三个月后模型在哪，所以用产品侧的微光作代理指标更实操。她补了反面案例：有客户围绕&rdquo;模型当时的位置&rdquo;建了僵化系统，模型变强后被自己的结构卡住——要持续重测，否则你在用旧壳挤压新模型。</li>
+<li>
+<p><strong>解读</strong>：这是给所有 AI 应用团队的产品节奏表，也是防止&rdquo;harness 被模型吃掉&rdquo;的保险。</p>
+</li>
+<li>
+<p><strong>招 PM 看三样：vibes、eval、adaptive</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我们要找的是能理解我们模型（或其他模型）气质（vibes）的 PM……我想要有观点的 PM。」</li>
+<li><strong>案例还原</strong>：vibes——每天玩模型、有自己的用例和判断标准、亲自压测、能扎进数据；eval——她承认内部也在补课，起点是&rdquo;先写 5 个 prompt，做到 20 个就能在模型 A/B 之间看出信号&rdquo;，先从自己当评分者、把&rdquo;什么是好&rdquo;说清楚开始；adaptive——&ldquo;两个月前写的 roadmap 两个月后要重写&rdquo;，要持续重新审讯&rdquo;做什么、为什么&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：AI 产品岗的招聘标准正在从&rdquo;会写文档&rdquo;转向&rdquo;会用手感做判断、会用小 eval 做裁决&rdquo;。</p>
+</li>
+<li>
+<p><strong>burnout 的解药是抽掉摩擦，不是减少工时</strong></p>
+</li>
+<li><strong>原文引用</strong>：「如果一件事你要做第二遍，你还需要自己做吗？」</li>
+<li><strong>案例还原</strong>：她先承认团队&rdquo;每个人都投进了所有小时&rdquo;，再拆解 burnout 的来源——churn 与混乱、以及不享受的苦力活。对策是把工具用在抽摩擦上，并搭&rdquo;技能飞轮&rdquo;：让已深度使用内部工具的 PM 把技能做成可分享的 skill 沉淀成仓库，用工作坊把&rdquo;看长轨迹、盯数据&rdquo;的信心复制给其他人，11 月还安排两天把所有 PM 拔出日常工作专门玩工具。行为改变的关键机制：只需要一个&rdquo;它真帮到我了&rdquo;的例子，心态就变。</li>
+<li><strong>解读</strong>：AI 提效要落到&rdquo;删掉哪一步&rdquo;上，否则提效只会变成加班。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>&ldquo;你心里的好是什么&rdquo;就是研究本身</strong>。她讲 eval 的起点时，最反直觉的一句是：在长多步多轮轨迹里，&rdquo;能识别你是怎么想&rsquo;好&rsquo;的，其实非常难&rdquo;——先攒一组你自己认可的好例子，先获得自我清晰度，再谈规模化。这对用户研究是直接方法论：<strong>先把自己的价值判断外化成可复述的标准，再去量化</strong>。</li>
+<li><strong>刻度可能自带偏见</strong>。菲茨帕特里克案例揭示的坑极具体：业界沿用一把只有 6 档、且为医疗目的而造、极端偏浅肤色的尺子来评估产品，结果连&rdquo;覆盖全球人口&rdquo;这个基本目标都达不到。用户研究的推论：<strong>继承来的测量工具需要被审讯其来源与目的</strong>，否则你在精准地测一个错的东西。</li>
+<li><strong>vibes 与 eval 不是对立，是两套采样器</strong>。她要 PM&rdquo;每天玩、有自己的用例、亲自压测&rdquo;，同时要&rdquo;20 个 prompt 就能看出 A/B 信号&rdquo;。对研究员而言：定性手感负责发现&rdquo;模型在哪里发光&rdquo;，小规模结构化 eval 负责裁决&rdquo;是不是真的变好了&rdquo;，两者串联才是完整证据链。她还提醒评估要端到端想清楚：<strong>打分者（judge）的质量、生产栈上的缓解与过滤、服务方式都会影响结果</strong>——音频就是典型，内容之外还有自然度、音色、语调，服务层就能改变体感。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>&ldquo;叙事要抢前沿，落地要讲生活&rdquo;</strong>。她的表述可以当作品牌口径模板：一边硬气&rdquo;我们要赢前沿对话&rdquo;，一边把落点放在&rdquo;让人们的生活真的变好&rdquo;和帕累托曲线上的多类用户。营销侧的启示是<strong>双层叙事</strong>：用前沿叙事占住心智高地，用具体人群场景（搜索者、工程师、防御者）承接转化。</li>
+<li><strong>&ldquo;修漏洞的故事&rdquo;是更好的品牌资产</strong>。她说&rdquo;我们喜欢修漏洞的故事，那是我们的好位置&rdquo;——在一个充满&rdquo;AI 作恶&rdquo;恐慌的舆论场里，主动供给&rdquo;AI 加固系统、补医院漏洞&rdquo;的正面案例，是低成本高可信的叙事占位。</li>
+<li><strong>对&rdquo;为什么还没做出爆款&rdquo;的回答方式</strong>。面对&rdquo;别人都在用我的 Gmail 数据做魔法，Google 为什么没做出来&rdquo;的追问，她的答法是&rdquo;团队在做了不起的东西&rdquo;&ldquo;stay tuned&rdquo;&ldquo;你说得对，我们还有更多工作要做&rdquo;——外加主持人补的分发优势论。这是危机沟通的范式：<strong>承认差距 + 保留期待 + 亮出结构性优势</strong>，而不是辩解。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>602020 就是选品与功能上架的节奏表</strong>。把 60/20/20 平移到运营：60% 的货盘与功能今天就能转化，20% 是&rdquo;模型/供应链再强一点就能爆&rdquo;的预备位，20% 是只有微光但一旦成立就是差异化的赌注。<strong>关键是别把货盘钉死在&rdquo;今天的能力&rdquo;上</strong>——她举的僵化系统案例，等价于&rdquo;为旧模型建的运营流程，会在新模型到来时变成枷锁&rdquo;。</li>
+<li><strong>&ldquo;洞察由人给，数据由模型给&rdquo;可直接用于复盘与投放报告</strong>。她描述的理想 AI 文档是&rdquo;发布两周后拉谁在用、怎么用、反馈是什么，从多块看板、Twitter、Reddit 汇总优缺点&rdquo;——这就是电商的周度经营复盘模板：<strong>数据抓取自动化，结论必须人写</strong>，否则就是 AI slop。</li>
+<li><strong>分发优势的复利</strong>。主持人点出 Google 与 Apple 类似的特性：一旦产品到位，分发会让事情&rdquo;很快变好&rdquo;。对渠道运营的启示：<strong>先建渠道与用户资产，产品到位时的斜率由存量分发决定</strong>——这也是为什么&rdquo;还没做出爆款&rdquo;不等于失败。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <ul>
+<li><strong>AI 真正发挥作用的阶段：vibes 判断、评估、数据、原型，而非硬件定义</strong>。本期没有涉及 ID 图、MD 堆叠、电子设计 demo 的具体工作流，不能替它编造。但有几条可迁移的信号：<strong>原型制作是她点名的 PM 第一大变化</strong>（&rdquo;原型是新的 PRD&rdquo;），<strong>数据科学第二</strong>（PM 能自己拿到数据做决策），而 eval 成为新的&rdquo;需求文档&rdquo;——PM 要亲自给需求以&rdquo;分量&rdquo;，而不是写完需求就等人填肉。<strong>推论（非原话）</strong>：在硬件项目里，这套逻辑最可能先落在&rdquo;产品定义与验证&rdquo;环节——用模型快速做交互原型、做能力边界评估、做竞品手感对比；而 ID/结构/电子这类强物理约束环节，本期没有给出 AI 可替代的证据。</li>
+<li><strong>边界：模型不可预测这件事，在硬件上代价更高</strong>。她反复强调&rdquo;模型会变，产品要敏捷&rdquo;&ldquo;别用旧结构挤压新模型&rdquo;，并提到有客户因围绕旧模型建僵化系统而被卡住。<strong>推论</strong>：软件可以持续重测、随时拆 harness（她引用&rdquo;时不时把技能全删掉看看&rdquo;），硬件的模具与堆叠一旦定下就难改，所以硬件 PM 更需要在 602020 里把&rdquo;20% 的微光&rdquo;视为<strong>接口与算力余量问题</strong>，而非功能问题——这是本报告基于她框架的外推，不是她的原话。</li>
+<li><strong>岗位职责演变的信号</strong>：她给出三条招聘标准（vibes / eval / adaptive）、&rdquo;每两周变一次、roadmap 两月重写&rdquo;的节奏感、&rdquo;技能飞轮 + 两天脱产工作坊&rdquo;的组织手段，以及&rdquo;如果一件事做第二遍，还要自己做吗&rdquo;的个人习惯。<strong>解读</strong>：AI 时代 PM 的新定义更接近&rdquo;有品味的能力侦察兵 + 会用小 eval 下判断的裁决者 + 能把混乱变秩序的整合者&rdquo;，而不是流程协调员。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「你可以把所有配料都放进去，但你也要预期会有一点魔法，而那点魔法会令人惊讶。」（中段，谈模型开发）——这是全期最好记的一句，一句话讲清了&rdquo;设目标&rdquo;与&rdquo;接受涌现&rdquo;的并存关系。</li>
+<li>「我确实认为我们想赢下前沿对话。我不认为我们应该说 Google 没有参与前沿。」（中段，谈 Google 位置）——最直白的战略表态，也是判断 Google 后续动作的口径基准。</li>
+<li>「通往乐观的路径，是穿过对它的思考。」（中段，谈 AI 安全）——把&rdquo;乐观/悲观&rdquo;的情绪争论转成&rdquo;是否有足够多人在审慎审讯&rdquo;的工程问题。</li>
+<li>「你想要真的去构建那些今天不一定总能工作的功能。」（中后段，谈 602020）——反 MVP 直觉的一句话，是整个框架的入口。</li>
+<li>「如果一件事你要做第二遍，你还需要自己做吗？」（后段，谈习惯）——最容易当天就用上的行为开关，配合她说的&rdquo;一个成功例子就能改变心态&rdquo;。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在做 AI 产品（尤其模型/平台型产品）的 PM、以及要带 AI 产品团队的管理者——这期给的是可落地的判断框架（602020、小 eval 起步、模型 UX、skill 飞轮），不是宏大叙事。做用户研究、品牌、电商的人也能从中拿到三样东西：测量工具本身可能有偏、正面案例的叙事价值、&rdquo;数据由模型给、洞察由人给&rdquo;的复盘原则。想了解 Google 前沿模型产品线全貌（不止 Gemini）与其安全思路的人，同样值得花这一小时。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
