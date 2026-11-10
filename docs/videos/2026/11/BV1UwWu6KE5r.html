@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Claude小白入门：先弄懂12个词</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Claude小白入门：先弄懂12个词</h1>
+      <div class="reader-meta">AI转型迪迪 · 2026-11-10</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>六个字：先跑小任务，再沉淀Skill——Claude十二词一次讲透。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这是一个6分39秒的入门科普视频，UP主迪迪用「整理笔记→提炼分享提纲」这一条贯穿始终的任务线，把Claude生态里最容易被混淆的12个概念串讲了一遍。全片不讲技术原理，只讲&rdquo;每个词到底管什么、在任务里帮什么忙、卡点在哪&rdquo;。</p>
+<p><strong>第一层：入口——Cloud Code 与 Cowork</strong>
+UP主把这两个定位为&rdquo;交任务的入口&rdquo;。Cloud Code能读文件、改文件、运行命令，名字里带code，但UP主明确说&rdquo;文科背景、不懂代码的人也能用大白话自然语言交给它完成任务&rdquo;——比如让它在指定笔记文件夹里找出同一主题的内容、整理成大纲。Cowork则偏向整理资料、处理表格、生成文档这类文字型内容。UP主也承认两者&rdquo;有很多重叠的地方&rdquo;，给出的处理办法很实用：从一个顺手的入口先完成一个小任务即可；并提醒有些账号只有一个chat和一个Code、Cowork已经被合并进去，&rdquo;这是需要注意的地方&rdquo;。这一层是入门者第一道卡点：不知道从哪个入口下手。</p>
+<p><strong>第二层：能力层——模型、Token、上下文、记忆、项目规则</strong>
+模型层面，UP主列举了Sonnet、Opus以及&rdquo;今天出来的&rdquo;VIVO5.2（按原话转录），但特意劝退&rdquo;记版本号&rdquo;：不用把5.1、5.2都背下来，只要看它能不能达到你自己的预期。Token则用&rdquo;文字被拆成一个个小片段来处理&rdquo;来解释，并强调&rdquo;不是一个token就等于一个汉字&rdquo;，输入资料和生成内容都会影响整体用量。上下文是&rdquo;当前处理任务时拿到的信息&rdquo;——你给的要求、读到的笔记、前面的讨论都在里面，窗口容量大部分是100万；UP主由此推出一条使用原则：不是放得越多越好，而是把最相关的放进去，整理提纲时只交主题相关笔记，不相干的资料没必要放。记忆（Memory）解决的是&rdquo;下次新开对话还记得吗&rdquo;，它保留的是背景和偏好（比如你喜欢短句还是详细解释），&rdquo;但不能指望它记住所有笔记，这不现实&rdquo;，具体保留了什么都可在对应机器设置里查询。项目规则层，Code里长期做同一项目会用到CLAUDE.md（字幕记为&rdquo;CD点markdown&rdquo;），在Codex里对应AGENTS.md（字幕&rdquo;agent点markdown&rdquo;），&rdquo;本质上都是一样的东西&rdquo;——写清楚分享给谁听、材料放在哪、哪些信息不能乱编这些红线，适合放稳定要求，不能把原始笔记全塞进去。</p>
+<p><strong>第三层：执行层——Skill、MCP、Plugin、Agent、Artifacts</strong>
+Skill被UP主定义为&rdquo;保存下来的一套知识或操作的说明&rdquo;。这里给出了全片最完整的一个方法论案例（UP主原话的流程，非外部案例）：整理分享提纲这件事，拆成三步——先找主题，然后找支撑主题的笔记，最后标出所缺的材料；这套做法反复用，就可以整理成Skill，下次做类似的事直接调用步骤。MCP则是连接协议：当材料在别的应用里，需要把工具和数据连起来，获得授权后Claude才能通过连接去读取资料或执行操作；UP主强调要分开看两件事——&ldquo;他能做哪些事情，要看它连接了什么样的能力，以及他给了你什么样的一个权限&rdquo;。Plugin是打包器，把Skill、工具连接等能力打包安装，选插件就看它包含什么、解决哪一步的问题；&rdquo;整理几份已经在手里的笔记，通常不用先装一堆插件&rdquo;。Agent是手写智能体：给一个目标，它能调用不同工具、分步骤执行、根据结果调整下一步，自己闭环——比如找笔记→整理主题→写出提纲→查漏掉的要求；Cloud Code就具备这种工作方式，但&rdquo;最后还是得人去做协作&rdquo;，人检查所选材料对不对、提纲里有没有编出来的内容。Artifacts是成果展示层：在左侧栏聊天里单独打开、查看和修改作品，比如把提纲做成可切换的演示页面，方便查看和分享。</p>
+<p><strong>收尾方法论</strong>：12个词不必一次配齐。先选几份笔记，让Claude出一个提纲，哪里没讲清楚就补什么，从小事跑起循环；等真正发现某一步很有价值，再沉淀成Skill，反复迭代优化，之后每次调用都是让你满意的状态。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【入口二选一】Code和Cowork像两扇门，先推开顺手那扇做小事——入口不必纠结，重叠是常态。
+【记能力不记版本】模型看疗效不看型号，5.1还是5.2，能干活的就是好模型——对应&rdquo;看它能不能达到预期&rdquo;。
+【上下文像行李箱】100万容量也有盖不上的一天，只装最相关的——对应&rdquo;不是越多越好&rdquo;。
+【记忆是便签不是硬盘】记住你的偏好，记不住你所有笔记——对应Memory的边界。
+【Skill是菜谱】第一次做菜摸索，第二次照着菜谱炒——对应&rdquo;反复用的步骤沉淀成Skill&rdquo;。
+【MCP看两样】能力和权限分开查，能连什么≠允许它干什么——对应UP主强调的双重确认。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>入口不必纠结，先跑通一个小任务</strong></li>
+<li>原文引用：「你可以先从一个顺手的入口完成一个小任务」</li>
+<li>案例还原：UP主指出Code和Cowork&rdquo;有很多重叠的地方&rdquo;，有的账号甚至已把Cowork合并进Code只剩chat和Code。她给出的路径是：想在笔记文件夹里找同主题内容整理大纲，用Code；想交几份笔记整理出分享主题、提纲和缺少的资料，用Cowork，先跑通哪个算哪个。</li>
+<li>
+<p>解读：新手最大的时间浪费在选工具而不是用工具，先动起来。</p>
+</li>
+<li>
+<p><strong>上下文是有限资源，只放最相关的</strong></p>
+</li>
+<li>原文引用：「不是我放的越多越好，而是要把它最相关的给放进去」</li>
+<li>案例还原：上下文窗口大部分是100万，整理提纲时UP主建议只交主题相关的笔记，&rdquo;其他不相干的资料就没有必要再放上去了，因为它的容量是有限的&rdquo;。这是全片唯一给出的量化数字，也是唯一明确的操作纪律。</li>
+<li>
+<p>解读：把上下文当预算来管，对任何重度使用AI的人都直接适用。</p>
+</li>
+<li>
+<p><strong>Skill不是玄学，是把做过的步骤存下来</strong></p>
+</li>
+<li>原文引用：「这套做法反复用上呢，其实就是可以整理成skill」</li>
+<li>案例还原：UP主完整拆解了&rdquo;整理分享提纲&rdquo;的做法——先找主题→找支撑主题的笔记→标出所缺材料；三步反复用就固化成Skill，下次类似任务直接调用，且&rdquo;可以反复的迭代、反复的优化&rdquo;。配套的成长路径是：先小任务循环，发现某一步有价值再沉淀。</li>
+<li>
+<p>解读：这是全片最可复用的方法论：先手动跑通，再固化，再迭代。</p>
+</li>
+<li>
+<p><strong>MCP的能力与权限必须分开看</strong></p>
+</li>
+<li>原文引用：「他能做哪些事情，要看它连接了什么样的能力，以及他给了你什么样的一个权限，这两个是分开来看的」</li>
+<li>案例还原：场景设定为&rdquo;材料在其他的应用里&rdquo;——需要把工具和数据连起来，MCP作为中间连接协议，获得授权后才通过连接读取资料或执行操作，例如在笔记工具里检索相关内容再通过协议返回给AI。UP主特别提醒确认MCP时要把能力与权限当两件事查。</li>
+<li>
+<p>解读：这是数据安全的第一道自查清单，对把工作资料接入AI的人尤为关键。</p>
+</li>
+<li>
+<p><strong>Agent能闭环，但人必须做质检</strong></p>
+</li>
+<li>原文引用：「最后还是得人去做协作……检查所选的材料对不对，提纲里面有没有编出来的一些内容」</li>
+<li>案例还原：Agent的工作流是找笔记→整理主题→写提纲→查漏掉的要求，能根据结果调整下一步、自己闭环。UP主紧接着划出人的职责边界：检查选材是否正确、提纲里有没有编造内容，最后成果交到人手里。</li>
+<li>
+<p>解读：AI越自主，人的审查责任越重，&rdquo;查有没有编&rdquo;是必做动作。</p>
+</li>
+<li>
+<p><strong>别预装一堆插件，按问题选</strong></p>
+</li>
+<li>原文引用：「整理几份已经在手里的笔记，通常不用先装一堆的插件」</li>
+<li>案例还原：Plugin的定位是把Skill、工具连接等能力打包安装；UP主的选法是看它&rdquo;包含了什么、能够解决哪一步的问题&rdquo;。反面场景就是手头只有几份笔记的轻任务，装插件纯属过度配置。</li>
+<li>解读：工具堆叠是新手通病，按任务缺口选能力才省时间。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：UP主&rdquo;上下文只放最相关的&rdquo;原则，可直接迁移到调研资料管理——访谈记录、竞品资料不必全量喂给AI，按主题分批投喂，产出质量更可控。</li>
+<li>可借鉴的方法：把&rdquo;整理分享提纲&rdquo;的三步流程（找主题→找支撑笔记→标缺失材料）改造成调研流程——找主题=确定研究问题，找支撑=匹配证据，标缺失=列出待补数据，并沉淀为可复用的Skill。</li>
+<li>被揭示的坑：Memory&rdquo;不能指望它记住所有笔记&rdquo;——提醒研究者别把长期项目背景寄托在AI记忆上，关键约束应写进项目规则文件（CLAUDE.md/AGENTS.md），且规则里只放稳定要求、不放原始笔记。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新思路：Artifacts可直接把提纲做成&rdquo;能够切换的演示页面&rdquo;并方便分享——这为内容团队提供了一个轻量的提案/汇报交付形态，从&rdquo;聊天记录&rdquo;升级为&rdquo;可展示作品&rdquo;。</li>
+<li>值得研究的路径：UP主强调的&rdquo;先小任务循环、有价值再沉淀Skill&rdquo;，对应营销团队的SOP建设逻辑——先跑通一次内容生产流程，再把有效步骤固化为可迭代的模板。</li>
+<li>注意点：Agent产出必须人工查&rdquo;有没有编出来的内容&rdquo;，营销文案的事实核查环节不可省。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营 & 渠道管理</h3>
+          <ul>
+<li>可参考的策略：本视频未涉及电商场景（如实说明）。可迁移的只有通用原则——上下文窗口100万的容量纪律，类比运营中&rdquo;信息投喂按相关性分层&rdquo;；以及Plugin&rdquo;按解决哪一步的问题来选&rdquo;的选型思路，可类比工具/服务商的引入标准。</li>
+<li>转化路径：视频无相关内容。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>本视频未涉及智能硬件、ID设计、MD堆叠或电子设计demo的任何内容，无法从逐字稿中提炼相关信号，此处不作推断。</li>
+<li>唯一可迁移的通用启发（解读/推论）：UP主对Agent边界的划法——&ldquo;能闭环执行，但人负责检查材料对不对、有没有编内容&rdquo;——可以作为PM使用AI工具时的通用协作原则；以及&rdquo;先小任务验证、有价值再沉淀Skill&rdquo;的路径，适用于PM把重复性文档工作逐步工具化。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「不用把每个版本号都给记下来……而是这个模型，它能不能够达到你自己的一个预期」（中段）——把&rdquo;追新&rdquo;扭回&rdquo;看疗效&rdquo;，是入门者最该建立的判断标准。</li>
+<li>「不是我放的越多越好，而是要把它最相关的给放进去」（中段）——上下文管理的核心纪律，一句话可当操作口诀。</li>
+<li>「哪里没有讲清楚就要补什么，这个循环能够给他从小事情能够做起来」（结尾）——给出了从零启动AI工作流的完整成长路径，是全片方法论落点。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>刚接触Claude、被memory/上下文/MCP/Skill/Plugin一堆术语绕晕的新手，尤其是非技术背景、想用AI整理笔记和产出提纲的知识工作者；6分钟即可建立一张&rdquo;每个词管什么&rdquo;的清晰地图，避免在入口选择和插件堆叠上走弯路。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
