@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🚀Gemini 4 Carbon复杂编程实测：我用Antigravity连测9个复杂开发案例，3D场景、游戏开发、原生macOS应用！能否超越Fable5.2</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🚀Gemini 4 Carbon复杂编程实测：我用Antigravity连测9个复杂开发案例，3D场景、游戏开发、原生macOS应用！能否超越Fable5.2</h1>
+      <div class="reader-meta">AI超元域 · 2026-11-11</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>Gemini Carbon 九连测：3D场景能跑，游戏和原生应用拉胯，电脑烫手。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>UP主“AI超元域”在谷歌上线 Gemini Carbon 模型当天，用 Antigravity CLI（推理级别 medium，模型标识写作 GMSSCARBBY）对 Gemini Carbon 连续做了 9 个复杂开发案例实测，并以自己前一天用 Cloud Fable 5.2 的测试结果为基准进行对照。视频开篇，UP主先澄清了一个背景：最近国内疯传的“国产3A大作射击游戏”实际是 Cloud 工程师开发的，国内流传版本只是把封面换成了自己的 ID，UP主称这种行为“还是挺可笑的”——这也是他强调要完整展示每个案例对话记录的原因：用可验证的记录说话。</p>
+<p><strong>案例一：像素风云端城堡。</strong> 同样的提示词昨天测过 Cloud Fable 5.2。结果两者效果“看上去相差无几，甚至风格非常像”。城堡可以切换黎明、傍晚、深夜，深夜时建筑灯光全部亮起，飞艇尾部还冒着烟，UP主评价“比昨天 Cloud Fable 5.2 效果还要更好”，云层也会飘动。但缺点立刻暴露：UP主摸电脑发现“有些烫手”，风扇开始转动，说明模型没有对游戏性能做优化。</p>
+<p><strong>案例二：模仿 Apple Music 风格的原生 macOS 音乐播放器。</strong> 模型先没加音乐，UP主追加要求加入演示音乐，之后在 Xcode 中打开并运行成功。界面非常接近 Apple Music：主题色跟随系统（切成亮色后播放器也变亮），有主页、歌曲列表、专辑、歌手、导入音乐、创建播放列表，播放效果“比较不错”，迷你播放器也不错。但出现了一个明显 bug：迷你播放器隐藏了时间，把界面拖大后时间依然不显示。UP主强调，相同提示词此前测其他大模型“基本都能做得比较完美”，这次 Gemini Carbon 却出现遮挡时间的 bug，据此判断其编程能力与 OS5.5、Cloud Fable 5.2 有差距。</p>
+<p><strong>案例三：为 Unity3D 开发射箭手角色。</strong> 对照物是此前 Cloud Ops 5.5 的版本：面部细节很好、能拉弓射箭、走路自然。Gemini Carbon 版本整体“还算可以”，但放大后问题密集：眼球突出、嘴突出，走路僵硬呆板，拉弓时弓箭变形，手指嵌进弓身。UP主结论：“跟 Cloud Ops 5.5 实现的效果相差太大了。”</p>
+<p><strong>案例四：用格斗四游戏引擎开发侏罗纪时代《我的世界》式沙盒游戏。</strong> 游戏运行起来“非常简陋”，地面和树木不如其他模型。加特林射击恐龙效果尚可，转速和音效都在，打方块、挖坑也能用。但关键短板是地图无法无限加载：走到边界就停了，而其他模型都能无限探索。UP主判断，Gemini Carbon 在“比较复杂的游戏开发”上“捉襟见肘”。</p>
+<p><strong>案例五：根据室内平面图还原 3D 可探索房间。</strong> 俯视查看后进入探索，整体尚可，但地板、家具、墙体颜色“融为一体”。更严重的是上二楼楼梯走到某位置“就走不动了，然后就会掉下来”，UP主称这是“非常大的 bug”。同时电脑开始烫手、风扇呼呼转——还原了 3D 空间却没做性能优化。</p>
+<p><strong>案例六：复刻巴塞罗那圣家堂。</strong> 对照昨天的 Cloud Fable 5.2 版本，Gemini Carbon 版“外观非常简陋”，进入内部后玻璃效果也一般，而 Cloud Fable 5.2 有“非常完美的光影效果”和彩色玻璃。UP主称差距“非常明显”。</p>
+<p><strong>案例七：3A 级射击游戏。</strong> 对照 OS 5.5 版本（枪械真实、效果很好），Gemini Carbon 版的枪“非常简陋”，且角色不动时“无论怎么打都不会被打死”，UP主认为这种 bug“不该存在”。</p>
+<p><strong>案例八：复刻小说《极光号》中的宇宙飞船。</strong> 外观“还算可以”，左侧位置可点击查看，但进入飞船内部后建筑“设计得非常简陋”；探索不到一分钟电脑就呼呼发烫。</p>
+<p><strong>案例九：超大质量黑洞吞噬恒星动画。</strong> 黑洞撕裂恒星、恒星物质汇入吸积盘，UP主评价“看上去还是挺震撼的”，是九个测试中完成得比较好的一个——但缺点依旧是电脑发烫、风扇狂转。</p>
+<p>总结结论：Gemini Carbon “好像并不如官方宣传的这么厉害”，与 OS 5.5、Cloud Fable 5.5 仍有很大差距。需要说明的是，本次所有对照结论均来自 UP主自己前一日/此前的同题测试，属于单一评测者的主观横向比较。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【烫手的成绩单】九个案例全部跑完，电脑先“抗议”——视觉过关不等于工程过关，性能优化是模型的隐形短板。</li>
+<li>【播放器丢时间】UI 形似 Apple Music，时间却被吞掉——UI 复刻看皮相，细节 bug 看功力。</li>
+<li>【射箭手的手指】手指嵌进弓身、弓箭变形——“能生成”与“能正确形变”之间隔着一个档次。</li>
+<li>【走不到的二楼】楼梯走到一半掉下来——3D 空间不是画出来就行，碰撞与导航是硬门槛。</li>
+<li>【打不死的敌人】角色不动就永远打不死——逻辑闭环缺失，再炫的画面也撑不起“3A”。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>性能优化是普遍短板</strong></li>
+<li><strong>原文引用</strong>：「他并没有对游戏的性能做优化」「我的电脑开始烫手，然后风扇呼呼的转」</li>
+<li><strong>案例还原</strong>：云端城堡运行后电脑发烫；3D 房间探索中风扇狂转；极光号飞船探索不到一分钟就开始发烫；黑洞动画效果震撼但电脑同样发烫。九个案例中多数出现发烫，UP主据此推断模型“好像不会优化这种项目的性能”。</li>
+<li>
+<p><strong>解读</strong>：评估代码模型不能只看“跑出来的样子”，还要看运行时开销，对做 demo 评审的人尤其重要。</p>
+</li>
+<li>
+<p><strong>原生应用能跑通，但细节会翻车</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这次 GEMINI4carbon 它竟然会出现这种遮挡时间的这种 bug」</li>
+<li><strong>案例还原</strong>：macOS 音乐播放器在 Xcode 中运行成功，主题跟随系统、页面结构完整、播放与迷你播放器均可用；但迷你播放器隐藏时间，拖大界面也不显示。UP主指出相同提示词下其他大模型“基本都能做得比较完美”。</li>
+<li>
+<p><strong>解读</strong>：复杂 UI 的验收要看边界状态（缩放、迷你模式），别被首页截图骗过。</p>
+</li>
+<li>
+<p><strong>3D 与游戏是分水岭</strong></p>
+</li>
+<li><strong>原文引用</strong>：「在完成这种比较复杂的游戏开发的时候，他的能力就有些捉襟见肘了」</li>
+<li><strong>案例还原</strong>：沙盒游戏走到边界无法无限加载；射箭手面部眼球嘴突出、拉弓变形、手指嵌入弓身；3D 房间上二楼卡住掉落；圣家堂外观简陋、玻璃光影远逊 Cloud Fable 5.2；3A 射击游戏枪械简陋且敌人打不死。</li>
+<li>
+<p><strong>解读</strong>：凡是涉及物理、碰撞、无限加载、骨骼动画的任务，都要预留人工兜底与验收环节。</p>
+</li>
+<li>
+<p><strong>也有高光：视觉氛围类任务完成度好</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这也算是这几个测试题中，他完成的比较好的一个测试题」</li>
+<li><strong>案例还原</strong>：黑洞吞噬恒星动画中，恒星被撕裂、物质汇入吸积盘，UP主称“看上去还是挺震撼的”；像素城堡的昼夜切换、飞艇冒烟、云层飘动也被评价“比昨天 Cloud Fable 5.2 效果还要更好”。</li>
+<li>
+<p><strong>解读</strong>：偏“视觉演出”而非“交互逻辑”的任务，是该模型相对擅长的区间（此为基于案例的推论）。</p>
+</li>
+<li>
+<p><strong>用完整对话记录对抗造假</strong></p>
+</li>
+<li><strong>原文引用</strong>：「所以我会展示每个测评案例的这种完整对话记录」</li>
+<li><strong>案例还原</strong>：UP主开场提到国内疯传的“国产3A射击游戏”实为 Cloud 工程师开发、封面被换成他人 ID，称“这种造假行为还是挺可笑的”，因此每个测试题在 Antigravity CLI 中都保留完整测试记录供核查。</li>
+<li><strong>解读</strong>：AI 能力宣传满天飞的时代，可复现的原始记录比结论本身更有说服力。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>本视频提供了一套可借鉴的“同题对照实验”方法：固定提示词、固定工具（Antigravity CLI）、固定推理级别（medium），只更换模型，并保留完整对话记录，这与用户研究中的控制变量 A/B 测试思路一致。</li>
+<li>评测维度不只看“能不能做出来”，还看细节正确性（时间显示、手指形变、碰撞掉落）、边界行为（无限加载）与运行成本（发烫、风扇）——提示做产品评测时要把“隐性成本”纳入指标体系。</li>
+<li>被揭示的坑：单看成品截图会严重高估模型能力；不看对话记录就无法排除“封面造假”式的宣传失真。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频本身是一个“反宣传”内容样本：官方宣传“非常擅长复杂编程”，UP主用九个案例逐条对照，形成强反差叙事，天然具备传播张力。</li>
+<li>传播路径值得研究：借“国产3A游戏造假”热点开场建立可信度，再用“完整对话记录”做信任背书——热点引流 + 证据链留人，是可复用的内容结构。</li>
+<li>对 AI 产品营销的启示（推论）：宣传语与实际体验的落差会被实测内容放大，承诺“擅长”不如明确“擅长哪类任务”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>本视频不涉及电商运营内容，逐字稿中无相关案例、转化路径或用户旅程信息，不做延伸推断。</li>
+<li>唯一可迁移的启发（推论）：UP主“同题对照 + 全程留痕”的比价式评测逻辑，与电商选品比测的记录化思路相通，但视频未展开，仅供参考。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>本视频讨论的是软件/游戏/3D 场景开发，未涉及 ID 设计、MD 堆叠、电子设计 demo 等硬件流程，因此不能据此判断 AI 在硬件 PM 各阶段的能力边界，逐字稿无相关信息。</li>
+<li>可间接参考的信号（推论）：模型在“视觉生成”上表现较好（城堡氛围、黑洞动画），但在“工程正确性”（碰撞、形变、性能、逻辑闭环）上频繁翻车——若类比到硬件，AI 或可加速外观/概念可视化，但凡涉及结构与性能约束的环节仍需人来把关。此为本报告基于软件案例的类推，非视频原意。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「他并没有对游戏的性能做优化」（中段，云端城堡测试后）——一句话点破“效果好看”与“工程可用”的差距，是全场反复出现的主题。</li>
+<li>「这次 GEMINI4carbon 它竟然会出现这种遮挡时间的这种 bug」（中段，音乐播放器测试后）——同题对比下暴露的细节翻车，最能说明模型档次差异。</li>
+<li>「在完成这种比较复杂的游戏开发的时候，他的能力就有些捉襟见肘了」（中段，沙盒游戏测试后）——对模型能力边界的精炼概括。</li>
+<li>「好像并不如官方宣传的这么厉害」（结尾）——全片结论句，提醒观众对宣传口径保持警惕。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在选型 AI 编程模型、纠结 Gemini Carbon 与 Cloud Fable/OS 系列差异的开发者与团队技术负责人；以及需要做 AI 工具横向评测、关心“实测 vs 宣传”落差的评测类内容创作者。10 分钟即可获得九个可复现的对照案例，性价比高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
