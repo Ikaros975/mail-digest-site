@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>2026-11-11 大盘复盘</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+
+<style id="stock_reader_overrides">
+/* Stock report visual overrides — brighter + mobile-friendly tables/kv */
+
+:root {
+  --bg-deepest: #12151f;
+  --bg-surface: #1a1e2b;
+  --bg-card: #222736;
+  --bg-card-hover: #2a3042;
+  --bg-elevated: #1c2130;
+  --border: rgba(255, 255, 255, 0.14);
+  --border-hover: rgba(255, 255, 255, 0.24);
+  --text-primary: #f5f7fc;
+  --text-secondary: #d0d5e4;
+  --text-tertiary: #a7aec2;
+}
+
+body {
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+}
+
+.block-card p,
+.block-card ul,
+.block-card ol,
+.block-card li {
+  color: var(--text-secondary);
+}
+
+.block-card strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.reader-meta { color: var(--text-tertiary); }
+
+/* ---- Classic tables (2–3 cols) ---- */
+.block-card .table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 12px 0 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+}
+
+.block-card table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.block-card thead th {
+  background: #323a52;
+  color: #f3f5fb;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.block-card tbody td {
+  padding: 11px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.block-card tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.block-card tbody tr:last-child td { border-bottom: none; }
+
+.block-card tbody td:first-child {
+  color: var(--text-primary);
+  font-weight: 650;
+}
+
+/* Advice tables: label column fixed-ish */
+.block-card table.table-advice td:first-child {
+  width: 28%;
+  white-space: nowrap;
+}
+.block-card table.table-advice td:last-child {
+  color: var(--text-secondary);
+}
+
+/* ---- KV metric grid (replaces wide OHLC tables on mobile) ---- */
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 6px;
+}
+
+.kv-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+.kv-item .k {
+  display: block;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.kv-item .v {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.kv-item.kv-wide {
+  grid-column: 1 / -1;
+}
+
+.kv-item.kv-wide .v {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* Stacked advice cards */
+.advice-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0 6px;
+}
+.advice-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.advice-card .advice-label {
+  font-size: 13px;
+  font-weight: 750;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.advice-card .advice-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 480px) {
+  .kv-grid { gap: 8px; }
+  .kv-item { padding: 10px 11px; }
+  .block-card thead th,
+  .block-card tbody td { padding: 10px 12px; font-size: 13.5px; }
+}
+
+</style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">大盘复盘 · 全文</div>
+      <h1>2026-11-11 大盘复盘</h1>
+      <div class="reader-meta">2026-11-11</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>2026-11-11 大盘复盘</h2>
+        <blockquote>
+<p>今日是“成长领涨、权重拖累”的结构性强势日：创业板与科创50放量大涨，上证50逆势收跌；核心矛盾在于科技算力主线的资金集中度极高，而消费权重持续被抽离。明日优先观察创业板涨幅能否守住、以及上证在3680点上方能否站稳。</p>
+</blockquote>
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>一、盘面总览</h3>
+          <p>三大指数中深强沪弱格局清晰：创业板指 +3.01%、科创50 +2.72% 明显领跑，上证仅 +0.50%，上证50 逆势 -0.17%。全市场上涨3399家、下跌1930家，涨停82家、跌停仅2家，两市成交15760亿元，情绪温度处于<strong>偏暖且偏进攻</strong>的状态。但1930家下跌叠加权重指数收绿，说明这是<strong>结构性强势而非全面普涨</strong>，赚钱效应集中在科技成长一侧。</p>
+<ul>
+<li><strong>盘面信号</strong>：70/100（强势，可进攻）</li>
+<li><strong>信号依据</strong>：上涨家数占比 64%，赚钱效应扩散；主要指数平均涨跌幅 +1.29%；涨跌停差 +80</li>
+<li><strong>操作建议</strong>：风险偏好尚可，关注主线延续与仓位纪律。</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>数值</th>
+<th>观察</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上涨/下跌/平盘</td>
+<td>3399 / 1930 / 244</td>
+<td>上涨占比(不含平盘) 63.8%</td>
+</tr>
+<tr>
+<td>涨停/跌停</td>
+<td>82 / 2</td>
+<td>涨跌停差 +80</td>
+</tr>
+<tr>
+<td>两市成交额</td>
+<td>15760 亿</td>
+<td>高活跃度</td>
+</tr>
+</tbody>
+</table></div>
+        </div>
+        <div class="block-card sub-card rail-purple">
+          <div class="label">purple</div>
+          <h3>二、指数结构</h3>
+          <ul>
+<li><strong>创业板指与科创50是今日的进攻端。</strong> 创业板单日 +3.01%，在主要指数中涨幅居首，科创50 +2.72% 紧随，两者共同指向科技成长资金正在加速回流。结合近三日媒体复盘提到的“创业板回踩至24年底牛市启动第一波高点附近获得支撑”，当前位置属于<strong>支撑确认后的反弹延续</strong>，但需注意该判断来自媒体观点，未获数据独立验证。</li>
+<li><strong>上证指数偏被动跟随。</strong> +0.50% 的涨幅明显弱于深市，3682.16点已越过此前媒体提及的 3660—3681 缺口压力区与 3693 附近日图中轨，短线进入前期压力密集带；再上方的 3720 属于媒体给出的参考压力，非精确测算位。<strong>3680一线是明日多空的第一道观察线。</strong></li>
+<li><strong>上证50是唯一拖累项。</strong> -0.17% 的下跌与沪深300 +0.44% 形成对比，说明权重内部也在分化，拖累主要来自消费白马而非全部大盘股。护盘力量存在但不强，指数上行的主要动力来自成长，而非权重搭台。</li>
+</ul>
+<div class="advice-stack"><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">上证指数</span></div><div class="kv-item"><span class="k">最新</span><span class="v">3682.16</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.50%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">3655.66</span></div><div class="kv-item"><span class="k">最高</span><span class="v">3689.65</span></div><div class="kv-item"><span class="k">最低</span><span class="v">3650.32</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">1.07%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">6776</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">深证成指</span></div><div class="kv-item"><span class="k">最新</span><span class="v">11382.78</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +1.26%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">11205.35</span></div><div class="kv-item"><span class="k">最高</span><span class="v">11415.97</span></div><div class="kv-item"><span class="k">最低</span><span class="v">11170.35</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">2.18%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">8666</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">创业板指</span></div><div class="kv-item"><span class="k">最新</span><span class="v">2569.38</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +3.01%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">2490.10</span></div><div class="kv-item"><span class="k">最高</span><span class="v">2580.35</span></div><div class="kv-item"><span class="k">最低</span><span class="v">2490.10</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">3.62%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">4433</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">科创50</span></div><div class="kv-item"><span class="k">最新</span><span class="v">1299.37</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +2.72%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">1260.07</span></div><div class="kv-item"><span class="k">最高</span><span class="v">1303.06</span></div><div class="kv-item"><span class="k">最低</span><span class="v">1254.25</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">3.86%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">711</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">上证50</span></div><div class="kv-item"><span class="k">最新</span><span class="v">2768.22</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🔴 -0.17%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">2766.80</span></div><div class="kv-item"><span class="k">最高</span><span class="v">2772.60</span></div><div class="kv-item"><span class="k">最低</span><span class="v">2753.37</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">0.69%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">1016</span></div></div><div class="kv-grid"><div class="kv-item kv-wide"><span class="k">指数</span><span class="v">沪深300</span></div><div class="kv-item"><span class="k">最新</span><span class="v">4077.15</span></div><div class="kv-item"><span class="k">涨跌幅</span><span class="v">🟢 +0.44%</span></div><div class="kv-item"><span class="k">开盘</span><span class="v">4049.43</span></div><div class="kv-item"><span class="k">最高</span><span class="v">4085.00</span></div><div class="kv-item"><span class="k">最低</span><span class="v">4035.40</span></div><div class="kv-item"><span class="k">振幅</span><span class="v">1.22%</span></div><div class="kv-item"><span class="k">成交额(亿)</span><span class="v">4075</span></div></div></div>
+        </div>
+        <div class="block-card sub-card rail-orange">
+          <div class="label">orange</div>
+          <h3>三、板块主线</h3>
+          <p><strong>主线明确：AI算力—光通信产业链形成行业与概念的双重共振。</strong> 行业端通信网络设备及器件 +7.12%、通信线缆及配套 +5.78%，概念端CPO +5.64%、光通信模块 +5.14%、光纤概念 +4.55%，另有其他数字媒体 +6.83%。这种“硬件+传输+内容”同步大涨的形态，说明资金在做产业链整体定价，而非单点炒作，<strong>具备成为阶段性主线的条件</strong>。但单日7%级别的行业涨幅已属情绪高位，明日大概率出现内部分歧，需观察龙头是否继续封板带动。</p>
+<p><strong>另一条线索是机器人/端侧AI。</strong> 近三日复盘文章提及“机器人端侧AI领涨”，与今日通信科技强势方向一致，属于科技主线内部的扩散分支，可作为主线的补充观察，但今日数据未直接给出该板块涨幅，强度需盘中验证。</p>
+<p><strong>规避方向清晰：消费权重持续失血。</strong> 白酒Ⅲ -3.08%、酿酒概念 -1.90%、茅指数 -1.44%，与上证50下跌互相印证，属于资金主动撤离而非被动回调。纺织鞋类制造 -8.90% 为今日最大跌幅，但数据未提供具体原因，<strong>不排除个别权重股或事件性冲击，不宜简单外推为板块逻辑</strong>；涂料 -3.25% 同属弱势但缺乏催化解释。</p>
+<h4>行业板块领涨 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>行业板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>通信网络设备及器件</td>
+<td>+7.12%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>其他数字媒体</td>
+<td>+6.83%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>通信线缆及配套</td>
+<td>+5.78%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>印制电路板</td>
+<td>+5.47%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>其他能源发电</td>
+<td>+4.88%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>行业板块领跌 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>行业板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>纺织鞋类制造</td>
+<td>-8.90%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>涂料</td>
+<td>-3.25%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>白酒Ⅲ</td>
+<td>-3.08%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>白酒Ⅱ</td>
+<td>-3.08%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>光伏主材</td>
+<td>-2.61%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>概念板块领涨 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>概念板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>CPO概念</td>
+<td>+5.64%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>光通信模块</td>
+<td>+5.14%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>光纤概念</td>
+<td>+4.55%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>F5G概念</td>
+<td>+4.02%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>昨日连板_含一字</td>
+<td>+4.01%</td>
+</tr>
+</tbody>
+</table></div>
+<h4>概念板块领跌 Top 5</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>排名</th>
+<th>概念板块</th>
+<th>涨跌幅</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>酿酒概念</td>
+<td>-1.90%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>白酒</td>
+<td>-1.57%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>茅指数</td>
+<td>-1.44%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>乳业</td>
+<td>-1.34%</td>
+</tr>
+<tr>
+<td>5</td>
+<td>超级品牌</td>
+<td>-1.33%</td>
+</tr>
+</tbody>
+</table></div>
+        </div>
+        <div class="block-card sub-card rail-green">
+          <div class="label">green</div>
+          <h3>四、资金与情绪</h3>
+          <ul>
+<li><strong>量能：</strong> 两市15760亿元属活跃水平，但数据未提供前一交易日成交额，<strong>量能环比是否放大无法验证</strong>，因此不能直接判定为“放量突破”，只能确认资金参与度不低。</li>
+<li><strong>情绪结构：</strong> 涨停82家对跌停2家，比例极度倾斜，短线风险偏好明显回升；但涨停家数尚未到极端亢奋区间，情绪处于“回暖但未过热”阶段。</li>
+<li><strong>市场宽度：</strong> 上涨3399家占比约六成，宽度健康但非一边倒。真正的问题是<strong>资金分布极不均衡</strong>——成长赛道拥挤、消费赛道失血，属于典型的存量博弈下的高低切换，而非增量资金全面进场。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>五、消息催化</h3>
+          <ul>
+<li><strong>期权信号偏“谨慎乐观+观望”。</strong> 近三日媒体复盘提到A股ETF与中证1000期权盘路偏谨慎乐观、更多是观望，且港股资金比A股更积极。这意味着衍生品层面尚未形成一致性做多共识，<strong>今日成长大涨的持续性仍需现货量能确认</strong>。</li>
+<li><strong>外部变量是主要扰动。</strong> 同一篇复盘明确指出“A股和港股接下来仍要看美股怎么走”，隔夜美股波动是明日开盘的直接输入项，属于当前最需要盯住的外生催化。</li>
+<li><strong>技术面参考位。</strong> 媒体复盘给出的沪指多空分界 3640—3649、压力 3660—3681 与 3720，可作为盘前预案的坐标参考，但均为媒体观点，需以实际盘面为准。</li>
+<li>需说明：所给新闻多为媒体/自媒体复盘观点，缺乏官方披露与资金流向（如北向）数据，<strong>催化强度判断存在信息缺口</strong>。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>六、明日交易计划</h3>
+          <p><strong>结论：均衡偏进攻。</strong> 指数共振向上（除上证50）、涨停82家对跌停2家、主线产业逻辑清晰，具备进攻条件；但权重拖累、1930家下跌、量能环比不可验证，尚不足以满仓进攻。</p>
+<ul>
+<li><strong>仓位区间：</strong> 五至七成，保留机动仓应对主线分歧。</li>
+<li><strong>关注方向：</strong> ①光通信/CPO/光模块/光纤产业链，优先选择今日涨幅居前且有龙头封板的细分，回踩不破日内均价可参与；②通信设备与数字媒体等主线扩散方向；③机器人/端侧AI作为科技主线内的补涨分支，需盘中确认强度。</li>
+<li><strong>回避方向：</strong> ①白酒、酿酒、茅指数等消费权重，趋势未止跌前不博弈反弹；②纺织鞋类制造等无明确催化却急跌的品种；③今日涨幅已达5%—7%的高位题材股追高，防分歧日回撤。</li>
+<li><strong>触发失效条件：</strong> 若明日创业板指冲高回落并回吐今日大部分涨幅、或上证失守3680并回落至3660下方，同时涨停家数萎缩至50家以下，则判定进攻逻辑失效，仓位降至三成以下，转为防守。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>七、风险提示</h3>
+          <ol>
+<li><strong>数据缺口风险：</strong> 缺少前一日成交额、北向资金、融资余额与板块内个股涨停分布，量能扩张与资金性质的判断精度受限。</li>
+<li><strong>主线拥挤风险：</strong> 通信与CPO单日涨幅达5%—7%，短期获利盘厚重，明日高开低走的分歧概率不低。</li>
+<li><strong>风格极致分化风险：</strong> 成长独强、消费独弱的格局若延续，指数层面易出现“赚指数不赚钱”或“指数涨、账户跌”的体感落差。</li>
+<li><strong>外生扰动风险：</strong> 隔夜美股走势是当前媒体普遍提示的关键变量，可能直接改变明日开盘情绪。</li>
+<li><strong>个股异常波动风险：</strong> 纺织鞋类制造 -8.90% 的原因未在数据中说明，若为事件性冲击，需核实是否扩散至相关产业链。</li>
+</ol>
+<p>建议仅供参考，不构成投资建议。</p>
+        </div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">股票分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
