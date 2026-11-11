@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>The 2-Minute AI Check My Team Runs</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>The 2-Minute AI Check My Team Runs</h1>
+      <div class="reader-meta">Neil Patel · 2026-11-11</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用AI问客户会问的问题，看你在不在名单上、说得对不对。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这是一条极短的实操型视频，Neil Patel 给出了一个他团队在接触新客户时会跑的“2分钟AI检查”，核心逻辑只有一句：<strong>让你的业务对机器来说容易理解，对除你之外的人（“humans to delete”应为口误或字幕误差，按语义解读为“让机器能读懂你”）来说更容易处理</strong>。以下按视频给出的两步流程梳理。</p>
+<p><strong>第一步：AI搜索可见性体检（面向所有业务）。</strong>
+具体做法是：当晚花2分钟，打开 ChatGPT 或 Gemini，输入你最好的客户会问的那个确切问题。视频给了两个示例问法——“What&rsquo;s the best payroll solver for a 20 person restaurant?”（一家20人餐厅最好的薪资软件是什么）和“Who&rsquo;s the best personal injury lawyer in Austin?”（奥斯汀最好的人身伤害律师是谁）。然后只看两件事：<strong>第一，你在不在这个名单上？第二，如果你在，它说你的那些内容是不是真的准确？</strong> 接着去修复你发现的第一个缺口。这是视频里唯一带时间承诺的动作，也是整个检查的起点。</p>
+<p><strong>第二步：按业务类型分流修复。</strong>
+视频把业务分成两类给出不同动作。<strong>如果你卖产品</strong>：把你最畅销的产品跑一遍 Google 免费的 rich results test（富媒体搜索结果测试），然后把该页面上显示的价格、库存、运费、退货政策，与你自己的 product feed（产品数据源）逐项对比——如果不一致，那就是你的第一条线索（第一个要修的地方）。<strong>如果你卖软件或服务</strong>：确保每一个核心使用场景或服务都有自己的独立页面，页面上要回答三件事——这是给谁的？价格怎么算？以及一个来自真实客户的具名结果。</p>
+<p><strong>为什么这么做：这是他们团队的真实工作流。</strong>
+视频明确说，这就是 NP Digital 在新客户进来时跑的同一套检查：看 ChatGPT、Gemini 和 Google 如何描述这个品牌，找出信息对不上的地方，然后在“AI 抓取信息的所有来源”上统一修好——包括网站、产品数据源、各类档案页（profiles）。最后附带一句商业转化：不想自己动手的，可以去 npdigital.com 找他们团队做。</p>
+<p><strong>关键结论（含解读）</strong>：这条视频真正的主张不是“做AI营销”，而是<strong>在AI开始替你向客户介绍你自己的时代，你的品牌事实必须在所有机器可读取的触点上是自洽的</strong>。解读/推论：它把“品牌一致性”从审美问题变成了数据准确性问题——AI 说的是不是你，取决于你散落在网站、feed、档案页上的信息是否一致。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【AI点名测试】</strong> 像查高考录取榜一样查AI名单：先看有没有你，再看写没写错。对应逻辑：AI搜索可见性检查只有两个判断项——在不在、准不准。</li>
+<li><strong>【三个抽屉对齐】</strong> 网站、产品feed、档案页是三个抽屉，AI会把它们同时拉开——里面东西不一样，它就随便挑一个说。对应逻辑：信息不一致是AI描述错误的根源。</li>
+<li><strong>【一页一场景】</strong> 卖服务就像开专卖店，每个使用场景、每项服务都得有独立门面：给谁用、多少钱、谁说过好。对应逻辑：核心场景需独立页面承载三要素。</li>
+<li><strong>【免费体检先做】</strong> 富媒体测试是免费的，价格库存运费退货四项对不上，就是第一个该修的漏洞。对应逻辑：产品页与feed的四项数据必须一致。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：AI 已经是客户的第一个提问对象</strong></li>
+<li><strong>原文引用</strong>：「Type the exact question your best customer would ask.」</li>
+<li><strong>案例还原</strong>：视频让人当晚打开 ChatGPT 或 Gemini，原样输入最好客户会问的问题，示例是“一家20人餐厅最好的薪资软件是什么”和“奥斯汀最好的人身伤害律师是谁”，然后检查自己是否出现在答案名单中、描述是否准确。全程无外部工具，2分钟完成。</li>
+<li>
+<p><strong>解读</strong>：把“客户视角”变成一条可执行的提示词，任何角色今晚就能自测。</p>
+</li>
+<li>
+<p><strong>要点：可见性只是第一步，准确性才是得分项</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Are you on the list? And if you are, is what it says about you actually correct?」</li>
+<li><strong>案例还原</strong>：视频把检查拆成两个连续判断——先看在不在名单，再看AI对你的描述准不准，然后“修复你发现的第一个缺口”。它没有展开具体错例（逐字稿未提供），但把“准确”放在“出现”之后，说明上榜不等于过关。</li>
+<li>
+<p><strong>解读</strong>：被AI提到但说错了，比没被提到更危险，这是品牌事实管理的盲区。</p>
+</li>
+<li>
+<p><strong>要点：产品业务查“页面 vs feed”的四项一致性</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Compare the price, stock, shipping, and returns on that page against your product feed.」</li>
+<li><strong>案例还原</strong>：做法是把最畅销产品放进 Google 免费的 rich results test，然后把页面上呈现的价格、库存、运费、退货四项，与自己的产品数据源逐项比对；视频明确说，不一致的地方“就是你的第一条线索”。</li>
+<li>
+<p><strong>解读</strong>：四项全是交易决策字段，对电商和转化直接相关，是可当天修完的硬漏洞。</p>
+</li>
+<li>
+<p><strong>要点：服务/软件业务按“场景建页”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Make sure every core use case or service has its own page. Who&rsquo;s it for? How pricing works, and one name result from a real customer.」</li>
+<li><strong>案例还原</strong>：视频要求每个核心使用场景或服务独立成页，页面必须回答三件事——面向谁、定价机制如何、以及一个真实客户的具名成果。逐字稿未给出具体客户案例，只给出这三项内容标准。</li>
+<li>
+<p><strong>解读</strong>：这是把销售话术结构化，让AI能直接摘取，服务型团队可照单检查。</p>
+</li>
+<li>
+<p><strong>要点：这是代理商的标准进场流程</strong></p>
+</li>
+<li><strong>原文引用</strong>：「This is the same check my team at NP Digital runs when a new client comes in.」</li>
+<li><strong>案例还原</strong>：NP Digital 在新客户进来时，会看 ChatGPT、Gemini、Google 如何描述该品牌，找出信息不一致处，然后在 AI 抓取的所有来源上统一修复——网站、产品数据源、档案页，三处并列。视频结尾引导至 npdigital.com 由团队代做。</li>
+<li><strong>解读</strong>：说明这不是理论，而是一套已被产品化的服务流程，侧面印证其商业价值。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频给的其实是一个<strong>零成本的需求洞察方法</strong>：把“最好客户会问的问题”原样输入AI，等于观察客户决策旅程的第一站正在发生什么。示例问法（20人餐厅找薪资软件、奥斯汀找人身伤害律师）都带有明确的场景限定词，提示研究者在设计问题时也要带规模和地域等约束。</li>
+<li>可借鉴的调研动作：用AI答案名单做<strong>竞品可见度快照</strong>——谁被列出、被如何描述，就是一份AI视角的竞争格局。注意这是解读/推论，视频本身只说“看你是否在名单上”。</li>
+<li>被揭示的坑：<strong>AI对你的描述可能不准确</strong>，这意味着任何以AI输出为二手资料的桌面研究，都必须回到一手来源核对。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>核心新思路：品牌传播的对象多了一个——机器。视频的主张是让业务“easy for machines to understand”，即品牌信息要为AI抓取而结构化。</li>
+<li>可研究的传播路径：ChatGPT、Gemini、Google 三处对品牌的描述需一致，修复动作落在网站、产品feed、档案页三类载体上——这是一条清晰的“AI品牌一致性”传播链路。</li>
+<li>解读/推论：这实质是把传统的一致性营销（同一品牌故事处处相同）翻译成机器可读版本，内容团队可据此建立品牌事实清单。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可直接抄的运营检查：畅销品跑 Google 免费 rich results test，比对<strong>价格、库存、运费、退货</strong>四项与产品feed是否一致，不一致即列为第一优先修复项。这四项都是转化路径上的敏感字段，错一项就影响成交。</li>
+<li>转化路径新发现：AI 回答正在成为用户旅程的前置环节，用户在点进商品页之前就可能已被AI的（可能错误的）描述影响。解读/推论：feed 数据质量因此从后台事务升级为前台转化问题。</li>
+<li>视频未涉及具体转化率数据或案例，此处仅能确认方法论层面。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>本视频<strong>不涉及</strong> ID设计、MD堆叠、电子设计demo 等硬件开发环节，逐字稿中没有任何相关内容，因此无法据此讨论 AI 在这些阶段的作用与边界（如强行关联即为编造）。</li>
+<li>唯一可迁移的信号是方法论层面的：视频强调“产品页与产品feed四项数据必须一致”，对硬件PM的启示（解读/推论）是——产品对外发布时，各渠道的参数、价格、状态信息必须同源同值，AI 只会照抄你散落各处的数据，不会替你纠错。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「Make your business easy for machines to understand」（开头）——一句话定义了视频的世界观：机器已成为必须被服务的“读者”，值得记住是因为它把SEO思维推进到AI可读性层面。</li>
+<li>「Are you on the list? And if you are, is what it says about you actually correct?」（开头）——把复杂的AI可见性拆成两个是非题，是整个2分钟检查的操作内核。</li>
+<li>「If they don&rsquo;t match, that&rsquo;s your first lead.」（中段）——给了一个明确的行动触发条件：不一致就等于线索，消除了“从哪开始”的犹豫。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合所有需要被客户搜索到的业务负责人——尤其是中小商家、服务型创业者、电商运营和品牌/营销人员。花2分钟看（做）这个视频，是因为它给的是一套当晚即可执行、零成本的AI可见性与信息一致性自检流程。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
