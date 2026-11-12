@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>一条视频教你做一套自己的模型评测标准</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>一条视频教你做一套自己的模型评测标准</h1>
+      <div class="reader-meta">清华姜学长 · 2026-11-12</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>别信别人的跑分榜，拿自己工作里的活儿当考题，给自己建一套模型评测标准。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频很短（2分21秒），但讲了一件对每个用AI的人都实用的事：<strong>与其看网上统一的模型榜单，不如自己做一套私人benchmark。</strong></p>
+<p><strong>背景与痛点</strong>：每次新模型发布，网上都在喊&rdquo;某某榜单第一&rdquo;&ldquo;比上一代高多少&rdquo;。UP主（清华姜学长）说，这些分数他做研究时会看，但对大多数人&rdquo;离自己太远了&rdquo;——数学竞赛题做得再好，不代表能帮你把周报写明白。榜单是一张&rdquo;统一的考卷&rdquo;，考的是大家在乎的事，但不一定是<strong>你</strong>在乎的事。所以结论是：与其看别人的跑分和演示，不如从自己的生活和工作里出题，标准也自己定。</p>
+<p><strong>外部佐证（UP主引用的说法）</strong>：Google负责Gemini的产品负责人在一期访谈里讲过，他招产品经理时会看这个人有没有&rdquo;自己常用的、用来判断模型好坏的场景&rdquo;。他的建议很简单：先写五道题，自己当评分人，慢慢攒到20道左右。</p>
+<p><strong>五道题怎么来</strong>：UP主的方法是翻自己最近一周真正让AI干过的活——读过的消息、写过的总结、查过的资料，都算。然后挑&rdquo;AI能做得还行、但我得自己改一遍&rdquo;的题。比如写的邮件意思都对、就是语气不像我，每次都要重调——这种题最有用。太简单的（翻译一句话，哪个模型都对，测不出差别）不行；完全做不到的（所有模型都不会）也不行，因为看不出谁在进步。用那位产品负责人的话说，要挑&rdquo;模型已经有点苗头、但按你自己的标准还不够好&rdquo;的。</p>
+<p><strong>很多人跳过的一步：先写标准</strong>。每道题先写下&rdquo;怎么样才算好&rdquo;。因为很多时候我们觉得一个回答不好，但说不出哪里不好；标准只在脑子里，换个模型就只能凭感觉比。写下来才能拿去比。例如UP主判断一段口播稿改得好不好，就看两条：念出来顺不顺、里面有没有我自己的判断。</p>
+<p><strong>落地方法</strong>：把题目和标准存在一个文档里固定下来。每出一个新模型，就用同一道题跑一遍，对着标准打分。</p>
+<p><strong>UP主的五道题（原文实例，都在他日常工作里）</strong>：
+1. 把一段访谈记录整理成三个要点——不能漏掉关键判断，也不能加原文没有的话；
+2. 给零基础的人讲清一个概念——不能用术语解释术语；
+3. 从一段口播稿里挑出最弱的一段去改写——改完念出来要足够顺；
+4. 读一个GitHub项目，判断值不值得推荐——要说得出它跟同类工具差在哪里；
+5. 写一个算字数和时长的小工具——要一次就能跑、结果算得对。</p>
+<p>新模型出来，花20分钟把这五道题跑一遍，&rdquo;比看十个演示心里都有数得多&rdquo;。</p>
+<p><strong>诚实的边界</strong>：五道题只能说明模型在&rdquo;你这件事&rdquo;上好不好，不代表它在所有事情上都好；题目可以慢慢加，用着用着会发现新的。</p>
+<p><strong>关键结论</strong>：模型评测的私人化——题从你的真实工作来、标准由你的真实偏好定、题库随使用不断长出来。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【统一考卷 vs 私人考卷】榜单是别人出的卷子，你自己出的卷子才考得出你关心的分——评测标准要从自己的生活和工作里出题。</li>
+<li>【改写题定律】挑&rdquo;答得还行、但你每次都得改一遍&rdquo;的题——这类题最能测出模型之间的差距。</li>
+<li>【两头都不要】太简单的题测不出差别，全错的题看不出进步，要挑&rdquo;有点苗头但还不够好&rdquo;的。</li>
+<li>【标准先落地】说不出的&rdquo;不好&rdquo;等于没标准——先把&rdquo;怎么样算好&rdquo;写进文档，模型才能被比较。</li>
+<li>【五题二十分钟】新模型一出，五道题跑一遍，比看十个演示更有底。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>榜单分数离真实工作太远</strong></li>
+<li><strong>原文引用</strong>：「数学竞赛题做的再好，不代表他能帮你去把周报给他写明白」</li>
+<li><strong>案例还原</strong>：UP主说每次新模型发布，网上都在说它在哪个榜单拿了第一、比上一代高多少。他做研究时会看这些分，但对大多数人来说，榜单考的是&rdquo;大家都在乎的事情&rdquo;，不一定是你在乎的——所以看了一圈还是不知道该不该换模型。</li>
+<li>
+<p><strong>解读</strong>：换模型决策应该基于你的真实任务，而不是公共分数。</p>
+</li>
+<li>
+<p><strong>选题要挑&rdquo;能改一改就用的&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「挑那种AI能做的还行，但是我得自己去改一遍的」</li>
+<li><strong>案例还原</strong>：来源是翻最近一周真正让AI干过的活（读消息、写总结、查资料）。反例也给了：让他翻译一句话，哪个模型都对，测不出差别；完全做不到的题，所有模型都不会，也看不出谁进步了。正例是写邮件——意思都对、就是语气不像我，每次都要重调，UP主说这种题最有用。</li>
+<li>
+<p><strong>解读</strong>：题目难度要卡在&rdquo;模型能力边缘&rdquo;，这样差距才显形。</p>
+</li>
+<li>
+<p><strong>先写标准，再比模型</strong></p>
+</li>
+<li><strong>原文引用</strong>：「每道题先写下怎么样才算好」「标准只在脑子里，下次换一个模型，你就只能去凭感觉比」</li>
+<li><strong>案例还原</strong>：UP主指出很多人会跳过这一步：觉得回答不好却说不出哪里不好。他自己的标准例子是判断一段口播稿改写——只看两条：念出来顺不顺、里面有没有我自己的判断。把题目和标准存进一个文档固定下来，新模型出来就对着标准打分。</li>
+<li>
+<p><strong>解读</strong>：把模糊偏好显性化，是可复用评测的前提。</p>
+</li>
+<li>
+<p><strong>五道题是起步，不是终点</strong></p>
+</li>
+<li><strong>原文引用</strong>：「五道题只能说明他在你这件事情上好不好，不代表他在所有的事情上都好」</li>
+<li><strong>案例还原</strong>：UP主引用Gemini产品负责人的建议——先写五道题、自己当评分人、慢慢攒到20道左右。他自己的五道题覆盖访谈整理、概念讲解、口播稿改写、GitHub项目评估、小工具编写，都来自日常工作；新模型发布后花20分钟跑一遍。</li>
+<li>
+<p><strong>解读</strong>：题库按你的使用场景自然生长，不必一开始就求全。</p>
+</li>
+<li>
+<p><strong>评测成本可以很低</strong></p>
+</li>
+<li><strong>原文引用</strong>：「花20分钟把这五道题给他跑一遍，比看十个演示心里都有数的多」</li>
+<li><strong>案例还原</strong>：整套流程是：文档存题+标准 → 新模型出来后同一套题跑一遍 → 对照标准打分。没有工具链、没有复杂流程，一个文档加20分钟。</li>
+<li><strong>解读</strong>：个人和小团队完全可复制，门槛几乎为零。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>核心方法论可平移</strong>：UP主&rdquo;从最近一周真实使用记录里找题&rdquo;的做法，本质就是<strong>行为日志式需求挖掘</strong>——不靠问卷问&rdquo;你想要什么&rdquo;，而是回看用户真实做过的事（读过的消息、写过的总结、查过的资料），从中挑高价值场景。做用户研究的人可以把这套&rdquo;翻使用记录→筛选→定标准&rdquo;的流程直接用在需求洞察上。</li>
+<li><strong>&ldquo;能改一改就用&rdquo;是个好筛选器</strong>：这个标准对应到调研里，就是找&rdquo;用户已在用替代方案、但每次都要手动补救&rdquo;的场景——痛点真实存在、又有改进空间，比极端好用或完全不能用的场景更有洞察价值。</li>
+<li><strong>揭示的坑</strong>：公共榜单≈&rdquo;大家都在乎的事&rdquo;，用户调研里同样存在&rdquo;行业通用指标≠你的用户在乎的东西&rdquo;的陷阱；以及&rdquo;说不清哪里不好&rdquo;的模糊反馈——UP主的解法（先把标准写下来）值得迁移到用户访谈的评分量表设计里。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>模板可直接借用</strong>：标题和结构本身就是一堂内容营销课——&ldquo;痛点（榜单离你太远）→ 权威背书（Gemini产品负责人访谈）→ 可操作步骤（五道题）→ 现身示范（晒出自己的五道题）→ 互动钩子（&rsquo;你自己的第一道题是什么呢？评论区写下来&rsquo;）&rdquo;。这个&rdquo;痛点+权威+方法+示范+互动&rdquo;的结构，短内容创作者可以直接复用。</li>
+<li><strong>传播钩子</strong>：结尾的评论区提问是低成本UGC引导，把观众从&rdquo;看完&rdquo;推向&rdquo;参与&rdquo;；&rdquo;五道题、20分钟&rdquo;这种具体数字也是易传播的记忆点。</li>
+<li><strong>可研究的点</strong>：引用大厂产品负责人访谈作为信任背书，是知识类内容常见的权威嫁接手法（解读：此处为对内容结构的分析，非视频原话）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营 & 渠道管理</h3>
+          <ul>
+<li><strong>方法论转译为&rdquo;私域评测&rdquo;</strong>：对电商运营，这套逻辑对应的是——别只看平台通用榜单/行业大盘数据，要建自己品类的&rdquo;考题&rdquo;：用你店铺真实的转化场景（详情页文案、客服话术、推荐语）去测工具或方案，先写&rdquo;什么样算合格&rdquo;（如客服回复要顺、要带我的判断），再横向比较（解读：此处为方法迁移，视频本身不涉及电商）。</li>
+<li><strong>用户旅程启示</strong>：UP主&rdquo;从最近一周真实做过的事里找题&rdquo;，等价于运营里&rdquo;从真实用户行为路径里找高价值触点&rdquo;；&rdquo;每次都要改一遍&rdquo;的环节，往往就是转化旅程中体验断点所在。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频未直接涉及智能硬件或ID/MD/电子设计，但从<strong>AI时代PM能力定义</strong>角度可提取信号（解读为主）：
+- <strong>Gemini产品负责人的招聘标准是直接信号</strong>：他招PM时看&rdquo;有没有自己常用的、判断模型好坏的场景&rdquo;——即AI时代的PM需要具备<strong>面向真实场景的模型评估能力</strong>，而不是只看跑分。硬件PM同理：评估AI能力（语音交互、端侧模型）时，要以产品真实任务为考题。
+- <strong>AI无法替PM做的事（边界）</strong>：UP主的方法论恰恰说明——&ldquo;什么算好&rdquo;的标准必须由人写下来，题目必须从人的真实工作里来。这部分判断力是AI替代不了的，也是PM的核心价值。
+- <strong>可操作动作</strong>：硬件PM可以为AI功能建一套类似的五题清单（如&rdquo;给零基础用户讲清一个功能&rdquo;&ldquo;整理一次用户访谈要点&rdquo;），在选型端侧模型/云服务时用同一套题对比，20分钟得出比看厂商演示更可靠的结论。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「榜单是一张统一的考卷，考的是大家都在在乎的事情，但不一定是你在乎的事情」（中段）——一句话点破公共跑分与个人需求的错位，是整个视频的立论。</li>
+<li>「挑那些模型已经有点苗头，但按你自己的标准还不够好的」（中段）——选题黄金准则，转述自Gemini产品负责人的说法，直接决定评测有没有区分度。</li>
+<li>「标准只在脑子里，下次换一个模型，你就只能去凭感觉比」（中后段）——解释为什么&rdquo;写下标准&rdquo;是不能跳过的一步。</li>
+<li>「花20分钟把这五道题给他跑一遍，比看十个演示心里都有数的多」（结尾）——用极低的成本量化了自建评测的收益。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>天天用AI干活、每次新模型发布就纠结&rdquo;要不要换&rdquo;的普通用户和知识工作者；以及需要为团队选模型、却苦于公共榜单没有参考价值的从业者。花2分钟看完，就能在20分钟内搭起自己的第一套评测题库。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
