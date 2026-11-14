@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>60万块英伟达芯片卡在香港，卡住它的不是美国</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>60万块英伟达芯片卡在香港，卡住它的不是美国</h1>
+      <div class="reader-meta">AI转型迪迪 · 2026-11-14</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>一块AI芯片绕地球四站，每站只有一两家能干活，谁都能卡谁。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频用不到三分钟讲清一件事：你问AI一个问题，背后那块芯片要先绕地球一大圈才能开始工作。UP主以“跟着一块AI芯片走一遍”为线索，把这条链拆成四站，逐站点名“每一站握在谁的手里”。</p>
+<p><strong>第一站美国——画图纸。</strong> UP主特别点出一个反常识的事实：英伟达不自己造芯片，它做的是设计，把几百亿个晶体管怎么排列画出来。这是整条链的起点，也是美国“卡出口”的抓手所在。</p>
+<p><strong>第二站荷兰——把图纸变成实物。</strong> 需要光刻机把电路印在硅片上，最先进的是EUV极紫外光刻机，全世界只有ASML一家制造，最新一代High-NA机型一台约3.5亿欧元。独此一家，别无分号。</p>
+<p><strong>第三站中国台湾——大批量稳定制造。</strong> 台积电今年第二季度拿下全球晶圆代工72.5%的收入，7nm及以下先进芯片九成以上由它制造，英伟达、苹果、AMD最先进的芯片都在排队等它。</p>
+<p><strong>第四站韩国——喂得快。</strong> AI芯片算得快还要喂得快，靠的是HBM高带宽内存。今年第二季度SK海力士占一半，三星33%，美光18%，三家就是全世界的供应，而且今年的货早就卖光了。</p>
+<p>四站讲完，UP主提炼出这条链的本质：<strong>每一环都只有一两家能做、几乎没有替代——它很高效，但每一环都很脆。</strong> 最精彩的例证是台积电：全球最大芯片制造商够强了吧，但ASML推出High-NA新机器后，台积电嫌贵、公开说不急着买，先把现有机器用久一点——“最大的买家也只能跟唯一的卖家讨价还价，没法换人”。</p>
+<p>回到“谁能卡住谁”：美国不许英伟达最先进的Blackwell和Rubin卖给中国；上一代H200今年1月美国商务部规则有条件放行——买家要审查、芯片要在美国做第三方检测、美国政府还要从销售里抽成25%。而中国这边没有批准大规模进口，于是就有了开头那60万块H20（UP主口播为H20，后文服务器报价处说的是H200）堆在香港。官方渠道一紧，中间商就涨价：10月底内地一台八卡H200服务器，中间商报价超过90万美元，差不多是一年前的三倍。结论是双向的：<strong>美国能卡出口，中国能卡进口</strong>；连卖光刻机的ASML也有约两成收入来自中国客户——每个站都握着别人的命门，也都怕被别人卡着。结尾UP主留了钩子：中国能不能把这条链补齐，下期接着讲。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【四站接力】画图纸→印电路→造出来→喂得快：设计、光刻、代工、内存，一站一关卡。
+【独木桥链】高效但脆：每环一两家，桥窄但必经，谁都怕掉下去。
+【大买家也没辙】台积电嫌High-NA贵也只能等：唯一卖家面前，最大买家也只能讨价还价。
+【双向闸门】美国卡出口，中国卡进口：闸门不止一道，扣在谁手里谁就有筹码。
+【三倍报价】60万块堆在香港→中间商报价90万美元：官方渠道一紧，灰色价格就起飞。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>英伟达不造芯片，只画图纸</strong></li>
+<li><strong>原文引用</strong>：「英伟达其实他不自己造芯片，他做的是画图纸，把几百亿个晶体管怎么排列设计出来」</li>
+<li><strong>案例还原</strong>：UP主用“第一站美国”讲设计环节，说明美国掌握的是设计端而非制造端，随后引出美国对Blackwell、Rubin禁售、对H200有条件放行（审查、第三方检测、抽成25%）的出口管制——管制抓手正是这张“图纸”。</li>
+<li>
+<p><strong>解读</strong>：理解芯片战要先分清“设计权”和“制造权”在哪只手里。</p>
+</li>
+<li>
+<p><strong>光刻机只有一个卖家</strong></p>
+</li>
+<li><strong>原文引用</strong>：「全世界只有一家公司制造，就是荷兰的ASML，它最新一代的High-NA机型一台大约3.5亿欧元」</li>
+<li><strong>案例还原</strong>：第二站荷兰，EUV光刻机全球独家。UP主随后用台积电举例：ASML推出High-NA新机器后，台积电嫌贵、公开说不急着买，先把手上的机器用久一点——最大买家面对唯一卖家也只能讨价还价，没法换人。</li>
+<li>
+<p><strong>解读</strong>：判断供应链风险，先数“这一环有几家能做”。</p>
+</li>
+<li>
+<p><strong>先进制程高度集中在台积电</strong></p>
+</li>
+<li><strong>原文引用</strong>：「台积电拿下了全球晶圆代工72.5%的收入，7nm及以下的先进芯片，它造成了九成以上」</li>
+<li><strong>案例还原</strong>：第三站中国台湾，UP主给出二季度数据：72.5%的代工收入份额，7nm及以下九成以上，英伟达、苹果、AMD最先进的芯片都在排队等它——不是“想换就能换”的环节。</li>
+<li>
+<p><strong>解读</strong>：份额数字就是议价权数字，评估代工风险看集中度。</p>
+</li>
+<li>
+<p><strong>HBM三家卖光全年货</strong></p>
+</li>
+<li><strong>原文引用</strong>：「SK海力士一家占了一半，三星呢33%，美光18%，这三家呢就是全世界的供应，而且今年的货早就卖光了」</li>
+<li><strong>案例还原</strong>：第四站韩国，AI芯片要“喂得快”就得靠HBM高带宽内存，二季度海力士约50%、三星33%、美光18%，三家即全球供应，且今年货已售罄——算力再强，内存断供一样停摆。</li>
+<li>
+<p><strong>解读</strong>：AI硬件瓶颈常在“配角”环节，别只盯GPU。</p>
+</li>
+<li>
+<p><strong>双向卡脖子与灰色溢价</strong></p>
+</li>
+<li><strong>原文引用</strong>：「美国能卡出口，中国能卡进口」「中间商报价超过90万美元，差不多是一年前的三倍」</li>
+<li><strong>案例还原</strong>：美国1月规则对H200有条件放行（审查、美国第三方检测、政府抽成25%），中国未批准大规模进口，结果是约60万块H20堆在香港；10月底内地一台八卡H200服务器中间商报价超90万美元，约为一年前3倍。连ASML也有约两成收入来自中国客户。</li>
+<li><strong>解读</strong>：管制是双向筹码，价格信号是渠道松紧的温度计。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：UP主示范了一种“沿链条一站一站点名”的分析法——不问“市场多大”，而问“每一站有几家能做、能不能换人”。这比传统五力模型更具体可操作。</li>
+<li><strong>可借鉴方法</strong>：用份额数据（72.5%、九成以上、50%/33%/18%）定位每一环的集中度，把“几乎没有替代”作为风险判据；用价格异动（90万美元、三倍）反推渠道真实松紧，作为官方口径之外的交叉验证。</li>
+<li><strong>被揭示的坑</strong>：只看新闻标题会以为“美国放行=畅通”，实际放行后面还有审查、检测、抽成25%和进口端未批——调研要追到第二、第三道闸门。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>营销思路</strong>：UP主把枯燥的供应链讲成“跟着一块芯片走一遍”的旅程叙事，四站结构天然适合做系列内容（结尾已埋“下一期”钩子），这是知识类内容的标准增长打法。</li>
+<li><strong>值得研究的传播路径</strong>：用反差事实做标题钩子——“卡住它的不是美国”，与正文“双向闸门”结论形成张力；用具体数字（3.5亿欧元、60万块、90万美元）制造记忆点。</li>
+<li><strong>解读（推论）</strong>：对B端品牌而言，把复杂链条翻译成“谁握谁的命门”，本身就是建立专业信任的内容资产。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营 & 渠道管理</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：视频给出一个典型“官方渠道收紧→中间商涨价三倍”的渠道模型。启示是做渠道监控时，官方配额与灰色市场报价应同时跟踪，价差就是供需缺口的量化指标。</li>
+<li><strong>转化路径发现</strong>：H20堆在香港、H200服务器靠中间商报价成交，说明高价值硬件的“最后一公里”往往不在官方链路里，渠道管理要识别二级分销的定价权。</li>
+<li><strong>解读（推论）</strong>：缺货品类的运营重点不是促销，而是价格秩序与货源真实性。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <ul>
+<li><strong>AI能发挥作用的阶段</strong>：逐字稿未涉及ID图→MD堆叠→电子设计demo的具体流程，也未提及任何AI辅助设计工具，故不对该问题做超出原文的推断。UP主唯一相关的表述是AI芯片“算得快还要喂得快”，即算力与HBM内存需配套——可作为硬件PM做规格定义时的“配套思维”提醒。</li>
+<li><strong>AI的边界</strong>：原文无相关论述，不作杜撰。</li>
+<li><strong>岗位演变信号</strong>：原文无相关信号。可提取的唯一通用启示（解读）：做硬件PM要像UP主那样把BOM拆成“每一环几家供应商、有无替代”，把单点依赖当成一级风险项。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「每一环都有一两家能做，而且几乎没有替代……它很高效，但每一环都很脆」（中段）——全片论点句，一句话概括整条链的结构性风险。</li>
+<li>「最大的买家也只能跟唯一的卖家讨价还价，没法换人」（中段）——用台积电买High-NA的例子把“独家议价”讲透，最具画面感。</li>
+<li>「美国能卡出口，中国能卡进口」（中后段）——双向闸门的对称结论，纠正“只有一方在卡”的直觉。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合想在三分钟内搞懂AI芯片供应链格局的普通观众，以及需要向他人解释“芯片为什么被卡、卡在哪一环”的产品、市场、供应链从业者——它提供的不是深度，而是一张能记住的四站地图和一套“数供应商”的分析习惯。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
