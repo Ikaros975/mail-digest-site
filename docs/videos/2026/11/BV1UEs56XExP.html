@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>做AI短剧，用Grok Bot</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>做AI短剧，用Grok Bot</h1>
+      <div class="reader-meta">黄益贺 · 2026-11-14</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>用Grok Bot当&rdquo;智能底座&rdquo;＋云电脑跑ComfyUI，把AI短剧从剧本到成片做成一条无人值守流水线。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与核心思路：把整条生产线外包给一个Agent</strong></p>
+<p>UP主黄益贺要解决的是AI短剧生产中的&rdquo;技术苦力&rdquo;问题——分镜、资产图、视频生成、拼接，每一步都要人盯着操作工具。他的解法是：以Grok Bot（字幕中亦作&rdquo;GROWBOARD&rdquo;&ldquo;GRAPBOARD&rdquo;，为转写差异）作为智能底座，它&rdquo;能规划能操作，还有自己的电脑&rdquo;，于是干脆把整套生产线都交给它，自己&rdquo;专注在内容本身&rdquo;。这套思路的源头是他在即梦平台做AI短剧的初体验，正是在那次闭门直播分享的实践中获得了启发，才决定把整条流程搬到Grok Bot上。</p>
+<p><strong>流程一：先低成本试跑，再上高精度——&ldquo;省钱是第一原则&rdquo;</strong></p>
+<p>他给Grok Bot一份分镜脚本，第一步不是直接出成片，而是先生成480P的初版视频。原话逻辑很明确：&rdquo;之所以先做480P的版本，是因为我需要先去测试一下我的分镜脚本放到这些模型里边去生成出来效果O不OK，如果可以的话，那么到了要生成中版的时候，我会再用CDance 2.5的模型去生成1080P的版本。一切都是为了省钱嘛。&rdquo;这是整条流水线的核心经济逻辑：先用便宜模型验证脚本可行性，跑通了再花钱出高清版。</p>
+<p><strong>流程二：从脚本到&rdquo;资产&rdquo;，再到视频——三步走</strong></p>
+<p>拿到分镜脚本后，Grok Bot会先&rdquo;根据内容去分析和提取里边都涉及到了哪些人物和场景，这个叫做资产&rdquo;；然后用图像生成模型做出人物不同角度的图片和场景图，作为后续视频生成的参考图；最后把&rdquo;参考图片＋分镜脚本&rdquo;一起喂给视频生成模型产出视频片段，再把各段落视频拼接成完整视频。生图用的是字节的Seedream 5.0 Pro（字幕作&rdquo;c dream5.0pro&rdquo;），生成2K分辨率、3:4尺寸；生视频调用Seedance 2.5（字幕作&rdquo;C大是2.5&rdquo;），480P、16:9。</p>
+<p><strong>案例：14秒测试片的完整账本</strong></p>
+<p>这是全片唯一一个完整跑通的案例，值得完整还原——
+- <strong>背景</strong>：UP主手上有一份分镜脚本，想验证流程可行性。
+- <strong>过程</strong>：把脚本交给Grok Bot，Bot在ComfyUI里先跑生图工作流做资产（人物多角度图＋场景图），再跑生视频工作流生成480P、16:9的片段，最后拼接。
+- <strong>成片内容</strong>：一段14秒的股市题材短剧，台词是&rdquo;满仓加杠杆，补仓再补仓，这波我亏过，这波我也亏过，这波我没亏过&rdquo;。
+- <strong>成本</strong>：14秒共花2.6美元，其中生图0.27美元、生视频2.37美元。
+- <strong>结果与弯路</strong>：作为&rdquo;简单的测试&rdquo;，UP主&rdquo;挺满意&rdquo;。如果要进一步优化，他的下一步是&rdquo;把人物和场景的图片重新做过，以及多加几个分镜&rdquo;——也就是说，当前版本的短板在资产图质量和分镜数量，而非流程本身。</p>
+<p><strong>技术底座：ComfyUI部署在Agent的云电脑上</strong></p>
+<p>Grok Bot之所以能搞定这一切，做法很朴素：&rdquo;我让他在自己的云电脑上安装了ComfyUI。&rdquo;UP主把它&rdquo;简单粗暴地看作图像生成领域的Coze&rdquo;——同为画布＋节点串联表达工作逻辑。他展示的两个工作流都是最简版：生图工作流第一个节点加载参考图，中间节点设模型参数（Seedream 5.0 Pro、2K、3:4），下边节点设尺寸分辨率；生视频工作流最左边用三个节点加载三张参考图，中间节点设模型参数（Seedance 2.5、480P、16:9）。他特别强调：&rdquo;这两个工作流都是最最简单的，因为我只是想测试一下能不能跑通。真到了实际生产当中，工作流会复杂得多。不管你是自己搭建还是下载现成的工作流，都需要自己非常非常懂，否则真的会举步维艰、焦头烂额。&rdquo;——这正是他决定让Grok Bot来代管工作流的原因，相当于&rdquo;找了一个技术外包&rdquo;。</p>
+<p><strong>算力账本：混合方案是最经济的路</strong></p>
+<p>因为云电脑跑不了本地模型，测试中全部走API，用的是ComfyUI官方通道（集成了各家模型）。UP主还专门和Grok Bot探讨过算力方案，Bot给出三条路：一是装在UP主的Mac上、由Bot远程操作本地ComfyUI生图生视频；二是租一台云服务器或带显卡的电脑，Bot通过加密端口操作；三是纯API。UP主的结论是&rdquo;这样一种混合的方式一定是目前最经济最便宜的方式&rdquo;——量大的生图生视频在本地完成，只有最后生成高精度视频时才走API调用Seedance 2.5这类较贵的模型。</p>
+<p><strong>关键结论与隐忧</strong></p>
+<p>结论：做AI短剧/AI视频，可以试试以Grok Bot作为智能底座的方法。UP主选择它的三个理由：网络和支付门槛低、&rdquo;没有那么多事儿&rdquo;；支持调用Claude模型、智能水平有明显提升；有一台性能不错的云电脑。隐忧也很实在：&rdquo;我现在最大的担心是云电脑的空间不够用，因为随着时间的推移，要布置的东西肯定会越来越多，希望之后官方能出付费的扩容吧。&rdquo;此外他计划把生图和生视频的工作流全部梳理出来放上去。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【试跑先穿&rdquo;草鞋&rdquo;】480P是草鞋，1080P是皮鞋——先穿草鞋跑一遍路，路通了再换皮鞋。对应&rdquo;先低价验证脚本、再高价出成片&rdquo;的省钱逻辑。</p>
+<p>【资产是演员的&rdquo;定妆照&rdquo;】先给人物拍多角度定妆照、搭好场景，视频模型才有参考可依。对应&rdquo;提取人物场景→生成参考图→再喂给视频模型&rdquo;的流程顺序。</p>
+<p>【Agent是包工头，ComfyUI是施工队】包工头（Grok Bot）带着施工队（ComfyUI）住进工地（云电脑），业主只递图纸（剧本）。对应&rdquo;技术外包、自己只管内容&rdquo;的分工。</p>
+<p>【大钱花在刀刃上】粗活本地干，细活（高精度视频）才掏钱调贵模型。对应&rdquo;混合算力最经济&rdquo;的方案。</p>
+<p>【工作流不懂就翻车】现成工作流下载得来，不懂照样&rdquo;举步维艰、焦头烂额&rdquo;。对应&rdquo;必须非常懂工作流&rdquo;的告诫。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>先低价试跑再出高清</strong></li>
+<li><strong>原文引用</strong>：「一切都是为了省钱嘛。」</li>
+<li><strong>案例还原</strong>：UP主拿到分镜脚本后，先让Grok Bot生成480P初版，目的是测试脚本放进模型后效果O不OK；确认可行后，才用Seedance 2.5生成1080P版本。测试片14秒仅花2.6美元（生图0.27、生视频2.37）。</li>
+<li>
+<p><strong>解读</strong>：给所有做AI视频的人一条成本纪律——验证阶段别烧贵模型。</p>
+</li>
+<li>
+<p><strong>资产提取是流程的枢纽</strong></p>
+</li>
+<li><strong>原文引用</strong>：「GROWBOARD会先根据内容去分析和提取里边都涉及到了哪些人物和场景，这个叫做资产。」</li>
+<li><strong>案例还原</strong>：Bot先分析分镜脚本，提取出人物与场景清单，再用Seedream 5.0 Pro生成人物不同角度图和场景图（2K、3:4），作为视频生成的参考图；UP主表示优化方向之一就是&rdquo;把人物和场景的图片重新做过&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：资产质量直接决定成片质量，返工优先级应放在这里。</p>
+</li>
+<li>
+<p><strong>Agent代管工具链，人只管内容</strong></p>
+</li>
+<li><strong>原文引用</strong>：「就相当于我找了一个技术外包，我就可以撒手不管，专注在内容上了。」</li>
+<li><strong>案例还原</strong>：UP主让Grok Bot在自己的云电脑上安装ComfyUI并由它专门操作维护，工作流只是最简测试版；他坦言实际生产的工作流复杂得多，不懂就会举步维艰，所以干脆整体外包给Bot。</li>
+<li>
+<p><strong>解读</strong>：AI短剧创作者的竞争力正从&rdquo;会用工具&rdquo;转向&rdquo;会派活&rdquo;。</p>
+</li>
+<li>
+<p><strong>算力走混合路线最省钱</strong></p>
+</li>
+<li><strong>原文引用</strong>：「那些量大的，不管你是生图还是生视频也好，都可以在本地完成……这个时候我们再去通过API调用c dance 2.5之类这样比较贵的模型去生成。」</li>
+<li><strong>案例还原</strong>：UP主与Grok Bot探讨三种算力方案（远程操作本地Mac上的ComfyUI／租云服务器带显卡／纯API），最终认定混合方式&rdquo;一定是目前最经济最便宜的方式&rdquo;，测试阶段则全走ComfyUI官方API通道。</li>
+<li>
+<p><strong>解读</strong>：成本结构设计应前置于生产流程设计。</p>
+</li>
+<li>
+<p><strong>云电脑空间是当前瓶颈</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我现在最大的担心是云电脑的空间不够用……希望之后官方能出付费的扩容吧。」</li>
+<li><strong>案例还原</strong>：UP主计划把生图和生视频工作流全部梳理后放上云电脑，随着部署内容增多，空间压力随之而来，只能寄望官方付费扩容。</li>
+<li><strong>解读</strong>：把生产线押在单一Agent平台上，要评估其容量与扩展性风险。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>可借鉴的方法论</strong>：UP主&rdquo;先480P试跑、再1080P正式出片&rdquo;的做法，本质是低成本MVP验证——调研与用研同样适用：先用便宜手段验证假设（脚本/概念）是否成立，再投入重资源做精细验证。</li>
+<li><strong>被揭示的坑</strong>：UP主明确指出&rdquo;不管你是自己搭建还是下载现成的工作流，都需要自己非常非常懂，否则真的会举步维艰、焦头烂额&rdquo;——工具再现成，不理解底层逻辑就会翻车。用研中同理：问卷模板、分析工具唾手可得，不懂方法论照样得出错误结论。</li>
+<li><strong>解读（推论）</strong>：调研设计可参考其&rdquo;资产先行&rdquo;思路——先确认关键变量（人物、场景），再开展主体工作。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>传播路径案例</strong>：UP主的内容分发是&rdquo;视频→星球推荐→闭门直播分享→社群（new type社群）&rdquo;的漏斗，视频结尾明确引导&rdquo;想了解AI、想夺回个体主权、想找到志同道合的人，就来我们new type社群&rdquo;——用价值观话术（&rdquo;夺回个体主权&rdquo;）做社群转化钩子。</li>
+<li><strong>营销思路</strong>：他把&rdquo;成本账&rdquo;（14秒2.6美元、生图0.27、生视频2.37）当作内容卖点公开——透明化的成本数据本身就是信任状和传播素材。</li>
+<li><strong>解读（推论）</strong>：对做AI内容营销的团队，公开&rdquo;账本&rdquo;比公开&rdquo;效果&rdquo;更能建立专业形象。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：&rdquo;量大的本地做、贵的API留给高精度环节&rdquo;是典型的分层成本运营思维，可直接迁移到电商的流量采买与内容生产预算分配——高频低价值环节用低成本产能，关键转化环节才投高价资源。</li>
+<li><strong>转化路径发现</strong>：视频→社群（new type）→星球（付费/推荐场景）的链路，是一个&rdquo;内容引流—社群沉淀—付费转化&rdquo;的完整用户旅程样本。</li>
+<li><strong>解读（推论）</strong>：先把跑通验证的成本压到最低，再放大投放，与电商测品逻辑同构。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>本视频不涉及智能硬件内容，仅从&rdquo;AI Agent代管工具链&rdquo;的角度做边界推演（以下为解读/推论，非视频原意）：
+- <strong>AI已能真正发挥作用的阶段</strong>：视频证明Agent可承担&rdquo;流程编排＋工具操作&rdquo;类工作——分析脚本提取资产清单、在ComfyUI里启动生图/生视频工作流、拼接视频。类比到硬件PM，这对应的是<strong>流程性、可脚本化、有明确输入输出的环节</strong>（如参数表整理、工作流搭建、资料归档）。
+- <strong>边界在哪里</strong>：UP主反复强调&rdquo;工作流都需要自己非常非常懂&rdquo;——AI能执行，但&rdquo;懂不懂&rdquo;仍是人的责任；脚本质量、资产返工判断（&rdquo;我会把人物和场景的图片重新做过&rdquo;）、算力方案取舍，都是UP主本人做的决策。推论：ID审美判断、MD堆叠的取舍、电子设计demo的可行性决策，仍属PM必须亲自把关的部分，AI目前在他描述的流程中扮演的是&rdquo;技术外包&rdquo;而非&rdquo;决策者&rdquo;。
+- <strong>岗位演变的信号</strong>：UP主把角色从&rdquo;操作工具的人&rdquo;变成&rdquo;给Agent派活、审结果的人&rdquo;，这正是AI时代PM职责演变的方向信号——从执行者转为&rdquo;智能底座的指挥官＋质量验收人&rdquo;。
+- <strong>风险提示</strong>：他坦言担心&rdquo;云电脑空间不够用&rdquo;——依赖单一Agent平台的生产线存在容量与扩展性风险，硬件PM选型时同样要评估平台依赖。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「一切都是为了省钱嘛。」（中段）——一句话点破整条流水线的经济设计原则，是全文最实用的方法论。</li>
+<li>「就相当于我找了一个技术外包，我就可以撒手不管，专注在内容上了。」（中段）——精准定义了AI Agent在创作流程中的角色定位。</li>
+<li>「不管你是自己搭建还是下载现成的工作流，都需要自己非常非常懂，否则真的会举步维艰、焦头烂额。」（中段）——对&rdquo;工具万能论&rdquo;最清醒的提醒，值得每个AI工具使用者记住。</li>
+<li>「那些量大的……都可以在本地完成……这个时候我们再去通过API调用c dance 2.5之类这样比较贵的模型去生成。」（结尾）——混合算力方案的完整表述，可直接抄作业。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>想做AI短剧/AI视频、但被ComfyUI等工具链的技术复杂度劝退的创作者；以及任何想了解&rdquo;如何用Agent把一条完整生产线外包出去、自己只负责内容&rdquo;的AI工具实践者。6分钟就能拿到一套可复制的流程框架和真实成本账本，性价比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
