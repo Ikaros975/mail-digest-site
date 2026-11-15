@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI时代，为什么全世界都在缺电?</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI时代，为什么全世界都在缺电?</h1>
+      <div class="reader-meta">AI转型迪迪 · 2026-11-15</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI芯片一年一代，电力三站排队六年——AI被电力的“排队时间”拖住了。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一个提问0.3瓦时，全国却要每年多三个上海的电</strong>
+UP主开场给出一个反差数字：向AI问一个问题大约消耗0.3瓦时电，相当于微波炉转一秒，几乎不要钱。但国家能源局的说法是，未来5年全国每年要新增6000亿度用电，相当于每年多出三个上海，而算力是最重要的推手之一。单次提问极省电与总量极缺电之间的落差，就是整条视频要解释的问题。</p>
+<p><strong>第一站·发电：燃气轮机订单排到6年后，有人开始收二手机组、拿退役飞机发动机当发电机</strong>
+电要先“发出来”。美国很多数据中心等不及电网，干脆自己烧天然气发电，核心设备是燃气轮机，全球大型燃气轮机主要靠三家：美国的GE、德国的西门子能源、日本的三菱重工。UP主给出的关键数字是：光GE一家手里的订单加预定就有122吉瓦，而它一年只能造20几吉瓦，结果在美国订一台新机平均要等6年。等不起的人开始满世界收二手机组，甚至把退役的飞机发动机当作发电机。这是全片第一个“卡时间”的案例：不是没钱买，是买不到产能。</p>
+<p><strong>第二站·变压器：交付周期160周，全球六成产自中国</strong>
+电发出来之后要升压进机房、降压使用，全靠变压器。UP主给出的数字是：一台大型变压器交付周期需要160周，也就是3年多；全球大约六成变压器产自中国，去年中国变压器出口646亿元，同比增长36%。这一站既是瓶颈，也是中国供应链的位置所在。</p>
+<p><strong>第三站·并网：挪威电多到能出口，却暂停给新数据中心预留容量</strong>
+UP主把镜头拉到挪威——一个电多到能够出口的国家，但就在上周（视频所称11月9号），挪威电网宣布暂停给新的数据中心预留容量。原因很具体：已经接上电网的数据中心是800兆瓦，排队拿到预留的却有4200兆瓦，是现在的五倍多。电是有的，但线路接不过来。</p>
+<p><strong>结论：三站的卡点其实是同一个——时间</strong>
+走完三站，UP主点出核心判断：AI的芯片一年出一代，但燃气轮机要等6年，变压器要等3年。钱可以快速去买芯片，但买不来排队的时间。AI的速度这一次被电力的速度拖住了。出路有两条：一是“自带电厂”，微软今年要投1170亿美元建算力，用电成本自己承担、不让其他用户买单，挪威也表示可能要求新数据中心自己建电厂；二是“电网先行”，中国电力装机已超过40亿千瓦，规划到2030年达到54亿千瓦，并要求用电最高峰时期还有10%的余量。国际能源署预计到2030年全球数据中心一年用电945太瓦时，差不多是今天一整个日本的用电量。收尾金句：芯片决定AI到底有多聪明，电才决定AI能开多少台。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【微波炉一秒 vs 三个上海】</strong> 一次提问只值微波炉转一秒，全国却要每年多出三个上海——单次极省、总量极缺，反差就是问题的入口。</li>
+<li><strong>【三站一堵】</strong> 发电、变压、并网三站走完，卡点全是同一个“时间”——芯片一年一代，轮机六年、变压器三年。</li>
+<li><strong>【钱买芯片，买不来排队】</strong> 钱能快速买芯片，却买不到产能和线路的排队顺序——AI被电力的“慢”拖住。</li>
+<li><strong>【电多不等于接得上】</strong> 挪威电多到能出口，却因800兆瓦已接、4200兆瓦排队而暂停新预留——有电，没路。</li>
+<li><strong>【聪明靠芯片，台数靠电】</strong> 芯片决定AI多聪明，电决定AI能开多少台——一句话记住算力的天花板在哪。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：AI缺电的本质是“缺时间”，不是缺钱</strong></li>
+<li><strong>原文引用</strong>：「钱可以快速的去买芯片，但是他买不来排队的时间」「AI的速度这一次是被电力的速度所给拖住了」</li>
+<li><strong>案例还原</strong>：UP主用三站串起一条时间链：美国数据中心等不及电网，自烧天然气发电，但GE的大型燃气轮机订单加预定有122吉瓦、一年只造20几吉瓦，订新机平均等6年；变压器交付要160周（3年多）；挪威已接800兆瓦、排队4200兆瓦，只能暂停新预留。三站卡点最后归为同一个词——时间。</li>
+<li>
+<p><strong>解读</strong>：判断算力扩张节奏时，先看电力设备的交付周期，而不是只看芯片产能。</p>
+</li>
+<li>
+<p><strong>要点二：发电端的瓶颈集中在少数燃气轮机巨头，等不起就“绕路”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「光机一一家呢，手里的订单加预定就有122级瓦，而它一年呢只能够造20几瓦」</li>
+<li><strong>案例还原</strong>：全球大型燃气轮机主要靠美国GE、德国西门子能源、日本三菱重工三家。GE订单加预定122吉瓦、年产能20几吉瓦，美国订新机平均等6年。等不起的人开始满世界收二手机组，甚至把退役的飞机发动机当发电机用。</li>
+<li>
+<p><strong>解读</strong>：产能高度集中的设备，交付周期就是行业扩张的真实上限。</p>
+</li>
+<li>
+<p><strong>要点三：变压器是隐形卡点，也是中国供应链的关键位置</strong></p>
+</li>
+<li><strong>原文引用</strong>：「一台大型的变压器，交付周期呢需要160周」「全球呢大约有六成的变压器它都产自于中国」</li>
+<li><strong>案例还原</strong>：电发出来要升压进机房、降压使用，都靠变压器；大型变压器交付周期160周（3年多）。UP主补充：全球约六成变压器产自中国，去年中国变压器出口646亿元、同比增长36%。</li>
+<li>
+<p><strong>解读</strong>：不起眼的电力设备环节，可能比芯片更能决定数据中心上线时间。</p>
+</li>
+<li>
+<p><strong>要点四：并网卡的是线路容量，不是发电量</strong></p>
+</li>
+<li><strong>原文引用</strong>：「电是有的，但是路线却接不过来」</li>
+<li><strong>案例还原</strong>：挪威是电多到能出口的国家，但11月9号其电网宣布暂停给新数据中心预留容量：已接电网的数据中心800兆瓦，排队等预留的却有4200兆瓦，是现有的五倍多。</li>
+<li>
+<p><strong>解读</strong>：评估一个地区能否承载算力，要问“线接不接得进来”，而不只是“电够不够”。</p>
+</li>
+<li>
+<p><strong>要点五：两条应对路径——自带电厂与电网先行</strong></p>
+</li>
+<li><strong>原文引用</strong>：「微软说他们今年要投1170亿美元，去建算力，用电的成本呢，他们自己承担，不让其他的用户买单」</li>
+<li><strong>案例还原</strong>：第一条路是自带电厂：微软今年投1170亿美元建算力，用电成本自己承担、不让其他用户买单；挪威表示可能要求新数据中心自己建电厂。第二条是电网先行：中国电力装机已超40亿千瓦，规划2030年达到54亿千瓦，并要求用电最高峰还有10%的余量。国际能源署预计2030年全球数据中心一年用电945太瓦时，约等于今天整个日本的用电量。</li>
+<li><strong>解读</strong>：谁承担电力成本与配套，正在成为数据中心选址与商业模式的决策变量。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>新洞察：UP主用“单次0.3瓦时 vs 每年新增三个上海”的反差开场，这是一种典型的“微观体验—宏观总量”双尺度叙事，适合用来做需求洞察的开场框架：先给用户能感知的小数字，再给行业级的大数字。</li>
+<li>可借鉴的调研方法：把产业链拆成“三站”（发电—变压—并网）逐站找卡点，本质是一条供应链走查法，可用于竞品与产业链瓶颈分析；UP主引用的是国家能源局、国际能源署、企业订单/产能、出口额与同比增速等多源数据交叉，这种“官方口径+企业口径”对照值得借鉴。</li>
+<li>被揭示的坑：只看单点成本（一次提问0.3瓦时“几乎不要钱”）会严重低估系统级约束——真正的瓶颈是交期、产能与并网排队，调研中要专门追问“时间维度”的数据，而不只是“钱”的数据。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>新营销思路：UP主把抽象电力问题包装成“一度电的AI电力环游记”，用“三站旅程”做内容结构，这是把硬核产业话题转为可传播叙事的样板；结尾金句“芯片决定AI多聪明，电决定AI能开多少台”是天然的口号化表达。</li>
+<li>值得研究的传播路径：用反差数字做钩子（0.3瓦时/微波炉一秒 vs 三个上海）、用具体排队数字制造记忆点（等6年、160周、4200兆瓦排队），适合品牌内容在短视频里做“数字锚定”式传播。</li>
+<li>解读（推论）：对企业传播而言，把成本叙事转成“时间叙事”（排队、交期），比讲电价更容易引发共鸣。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>可参考的策略：UP主提到的供应链数字——全球约六成变压器产自中国、去年出口646亿元、同比增长36%——提示跨境与工业品渠道中，“交期”本身可以成为卖点与定价要素；谁有现货/短交期，谁就握有谈判权。</li>
+<li>用户旅程新发现：挪威“已接800兆瓦、排队4200兆瓦”的案例说明，容量型产品的用户旅程里存在一个隐形的“排队等待期”，运营需要管理等待预期（进度透明、预留机制），否则用户会像美国数据中心那样“绕路自建”。</li>
+<li>解读（推论）：把“交付周期”当作转化路径上的关键节点来设计，而不只是物流时效。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>视频本身不涉及ID设计、MD堆叠或电子设计demo，因此不对AI在这些环节的作用做任何推断；能提取的是与硬件PM同构的“产能—交期”思维：GE燃气轮机年产能20几吉瓦对订单122吉瓦、变压器160周交期，说明关键器件的产能与交期必须前置到项目排期里。</li>
+<li>边界（基于视频信息的推论）：视频强调“钱买不来排队的时间”，映射到硬件项目上，意味着关键器件与基础设施的长交期项无法靠预算压缩，只能靠提前锁定与替代方案（如视频中“收二手机组、退役飞机发动机改发电机”的绕路做法）。</li>
+<li>信号：微软“今年投1170亿美元建算力、用电成本自己承担”以及“可能要求新数据中心自己建电厂”，提示大型算力项目的成本与配套责任正在向需求方内部化——这对负责资源规划的产品角色是一个排期与成本模型的变化信号，而非岗位职责的直接证据。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「钱可以快速的去买芯片，但是他买不来排队的时间」（中后段）——全片最锋利的对比，把“缺电”翻译成“缺时间”，一句话解释了三站卡点为何是同一个。</li>
+<li>「芯片决定了AI到底有多聪明，电才能够决定AI能够开多少台」（结尾）——用对仗句式收束全片，把电力从配角提升为决定算力规模的主角。</li>
+<li>「电是有的，但是路线却接不过来」（中段，挪威案例）——最短的一句纠正了“缺电=发电不够”的直觉误区。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合关注AI产业、算力与能源供应链的人，尤其是做产业研究、供应链与基础设施规划、以及想用3分钟快速建立“AI缺电”完整逻辑框架的从业者。视频信息密度高、结构清晰（三站+两条出路），性价比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
