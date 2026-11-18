@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>我是如何用 AI 做出手绘白板动画的</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>我是如何用 AI 做出手绘白板动画的</h1>
+      <div class="reader-meta">AI转型迪迪 · 2026-11-18</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>不用AE不碰剪映，靠Claude写代码+字幕当时间轴，卡点手绘动画跑通全流程。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与核心命题</strong>
+UP主上一条视频中的手绘白板动画引发评论区追问&rdquo;怎么做的&rdquo;，本视频给出完整拆解。核心结论是：整条链路没有打开AE，也没有打开剪映，动画是Claude写代码&rdquo;画&rdquo;出来的。UP主自述整片渲染约6-7分钟，合成又需6-7分钟。</p>
+<p><strong>原理拆解：AI做的是网页，不是视频</strong>
+UP主把原理讲得很清楚：Claude产出的不是一个视频，而是一个网页。具体由三块拼成——
+- 线条由 <strong>rough.js</strong> 这个库绘制，画出来自带&rdquo;手抖感&rdquo;；
+- 文字用手写字体：中文用&rdquo;小赖&rdquo;，英文用&rdquo;Excalifont&rdquo;（字幕音译，以原话为准）；
+- 每个元素何时出现，全部由一个时间变量 T 来计算，再用浏览器一帧一帧截图，最后用 <strong>ffmpeg</strong> 拼接成整体视频。</p>
+<p>所以整个过程不需要任何剪辑软件，只用代码控制画面——而写代码恰好是AI擅长的事。这是整个方法成立的前提。</p>
+<p><strong>关键机制：字幕就是时间轴</strong>
+UP主给Claude的输入只有两样：粗剪视频 + SRT字幕。真正的关键在字幕文件：每个元素出现的时间不写成&rdquo;第几秒&rdquo;，而是写成&rdquo;第几条字幕开始之后的百分之多少&rdquo;。效果是——讲到哪个词，对应元素就在那一刻跳出来。这也带来一个附带好处：重新剪粗剪后字幕会相应变化，动画自动跟着对齐。UP主把这个机制总结为&rdquo;字幕本身就是一个时间轴&rdquo;，这正是卡点能卡准的原因。</p>
+<p><strong>&ldquo;活人感&rdquo;来自一条死规则</strong>
+很多人说这不像AI剪的，有&rdquo;活人感&rdquo;。UP主归因于自己定的一条规则：必须用真实素材和手绘素材，不用科技风很足的示意图。规则里列举的具体素材包括：skill文件里的原句、脚本里真正起作用的那几行代码、这条视频自己的字幕、自己声音的波形——用手绘框框起来贴一条胶带、边稍微歪一点；关键数字必须上面带一个示例。颜色也写死：<strong>红色只表示出错，绿色表示正确和关键词，粉色是续写一个小批注</strong>。UP主强调：规则框得越死，画面越统一，每期看起来越有一致性，也越像人统一制作的。</p>
+<p><strong>两道自动检查与一个loop</strong>
+UP主不逐帧看，而是让agent反复查验，共两道关：
+- 第一道是<strong>静止检查</strong>：脚本逐条对照字幕，标出&rdquo;我在讲话、画面却没有新东西出现&rdquo;的段落，补一个元素、一条批注或一个下划线，改完重新渲染，反复查验直到&rdquo;零漂&rdquo;。UP主特别说明：镜头慢慢平移不算，那只是&rdquo;假装在动&rdquo;。
+- 第二道是<strong>抽帧检查</strong>：每个场景挑元素最满意的一帧截出来，检查字有没有压到字幕、有没有东西挡住下方自己的图形、文字之间有没有互相压住。</p>
+<p><strong>三个翻车案例（完整还原）</strong>
+UP主自述&rdquo;反复对话中翻车情况也不少&rdquo;，讲了三个：
+1. <strong>字体加载滞后</strong>：手写字体是用到才加载，导致后面场景的字渲染到一半才出来。解决办法是开头把所有用到的字预加载一遍。
+2. <strong>线条抖动不一致</strong>：手绘线条会随机抖一下，分段并行渲染时同一根线前后抖得不一样。解决办法是固定随机种子。
+3. <strong>内存爆掉</strong>：在一条ffmpeg命令里对视频切片，内存会爆。解决办法是分段编码再拼接。</p>
+<p>这些规则和坑，UP主都让Claude写进了一个skill文件。现在只要给粗剪和对应字幕，就能直接出成片。</p>
+<p><strong>关键结论</strong>
+UP主的收尾判断是：AI时代能做出来的东西并不难，难的是如何迭代和优化。方法是把每次踩的坑沉淀进skill，变成可复用的资产。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【字幕即时间轴】元素出场写&rdquo;第几条字幕的百分之几&rdquo;，讲到哪个词，哪个词就跳出来——卡点准不准，根本不在剪辑手感，在字幕结构。
+【两个字库一条线】中文小赖、英文Excalifont、线条rough.js自带手抖——手绘感是三个现成工具拼的，不是手画的。
+【颜色写死三色制】红=出错、绿=正确与关键词、粉=小批注——规则框得越死，画面越统一，越像人做的。
+【零漂检查】讲话了画面却没新东西=漂了，补个下划线也得补——AI自动查漏，人只定标准。
+【料进skill，坑不重踩】三个翻车（字体加载、随机种子、ffmpeg内存）全部写进skill文件，下次直接出片。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li>
+<p><strong>产出物是网页不是视频</strong>
+  <strong>原文引用</strong>：「cloud呢他做的不是一个视频，是一个网页」
+  <strong>案例还原</strong>：UP主拆解原理时说明，线条用rough.js画出自带手抖感，字用中文&rdquo;小赖&rdquo;、英文&rdquo;Excalifont&rdquo;手写字体，元素出现时间由变量T计算，再用浏览器一帧一帧截图、ffmpeg拼接成视频，全程不开任何剪辑软件。
+  <strong>解读</strong>：转念一想&rdquo;AI产出的中间形态&rdquo;，很多流程难题会自然消解——对做内容工具链的人尤其有启发。</p>
+</li>
+<li>
+<p><strong>字幕文件是真正的控制层</strong>
+  <strong>原文引用</strong>：「所以字幕本身它就是一个时间轴，这个就是卡点能够卡准多少的一个原因」
+  <strong>案例还原</strong>：UP主给Claude的输入只有粗剪视频和SRT字幕两样，元素时间不写秒数而写&rdquo;第几条字幕开始之后的百分之多少&rdquo;；重剪粗剪后字幕变化，动画自动对齐。
+  <strong>解读</strong>：把&rdquo;时间&rdquo;换成&rdquo;语义位置&rdquo;，是让AI输出可维护、可重跑的关键设计——任何用AI做多模态对齐的人都该抄这一手。</p>
+</li>
+<li>
+<p><strong>&ldquo;活人感&rdquo;是规则约束出来的，不是模型自带的</strong>
+  <strong>原文引用</strong>：「这个规则你是需要给他框的越死，那画面呢出来之后就会越统一」
+  <strong>案例还原</strong>：UP主定死一条规则：只用真实与手绘素材（skill原句、真正起作用的代码行、自己的字幕、自己声音的波形），手绘框加胶带、边稍微歪、数字上带示例；颜色三色制写死——红表出错、绿表正确与关键词、粉表小批注。
+  <strong>解读</strong>：AI内容的&rdquo;人味&rdquo;来自审美约束清单，不来自提示词玄学——做品牌内容的人可直接复制这套&rdquo;素材白名单+颜色语义&rdquo;。</p>
+</li>
+<li>
+<p><strong>两道自动质检：静止检查+抽帧检查</strong>
+  <strong>原文引用</strong>：「哪一段我在讲话，画面却没有新的东西出现，就能够标记出来」
+  <strong>案例还原</strong>：第一道静止检查逐条对照字幕找&rdquo;讲话但画面无新增&rdquo;的段落，补元素/批注/下划线后重渲染，反复直到零漂（镜头平移不算，那只是假装在动）；第二道每个场景抽最满意一帧，查字压字幕、遮挡下方图形、文字互压。
+  <strong>解读</strong>：把&rdquo;质量&rdquo;拆成可判定的两类规则，AI才查得动——这是内容工业化里最实用的一步。</p>
+</li>
+<li>
+<p><strong>三个翻车与对应修法</strong>
+  <strong>原文引用</strong>：「这些规则和坑呢，我让cloud是把它写进了一个skill里面」
+  <strong>案例还原</strong>：①手写字体用到才加载，后面场景字渲染一半才出来→开头预加载所有用到的字；②分段并行渲染时同一根线随机抖动前后不一致→固定随机种子；③一条ffmpeg命令切片视频内存爆→分段编码再拼接。三项全部沉淀进skill文件，现在给粗剪+字幕直接出成片。
+  <strong>解读</strong>：AI工作流的资产不是prompt，是踩坑清单——把错误固化成规则，才是&rdquo;迭代优化&rdquo;的实体。</p>
+</li>
+<li>
+<p><strong>结论：难的不是做出来，是迭代优化</strong>
+  <strong>原文引用</strong>：「AI时代能够做出来的东西其实并不难，难的是如何去迭代和优化」
+  <strong>案例还原</strong>：UP主在讲完三个翻车案例后给出这一判断，强调这些规则和坑都已让Claude写进skill，形成可复用链路，整片渲染6-7分钟、合成6-7分钟。
+  <strong>解读</strong>：AI把&rdquo;从0到1&rdquo;的成本压到很低，竞争力转移到&rdquo;从1到N&rdquo;的流程沉淀——对任何想把AI接入生产线的团队都是直接结论。</p>
+</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：UP主这条视频本身就是一次&rdquo;评论区驱动选题&rdquo;的样本——上条视频评论区问得最多的就是制作方法，本期直接拆解。做用户研究的人可以注意这个信号路径：评论区高频提问=最真实的需求排行，比问卷更直接。</li>
+<li><strong>可借鉴的方法</strong>：UP主的&rdquo;静止检查&rdquo;思路可迁移到内容/素材审计——逐条对照&rdquo;用户在讲什么&rdquo;与&rdquo;画面/内容给了什么新信息&rdquo;，标记出&rdquo;用户在讲、内容却没回应&rdquo;的漂移段落。这是把质性材料做结构化标记的一种轻量方法。</li>
+<li><strong>被揭示的坑</strong>：UP主明确说不会逐帧看，而要agent反复查验直到&rdquo;零漂&rdquo;——对应调研场景，人工全量复核不可行，必须先把&rdquo;什么算问题&rdquo;定义成可判定规则，否则检查流于形式。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：视频里最有营销价值的不是技术，是UP主对&rdquo;活人感&rdquo;的解释——刻意拒绝科技风示意图，改用真实素材（自己的字幕、自己声音的波形、真正起作用的代码行）加手绘框、胶带、歪边。这本质是一套&rdquo;反AI感&rdquo;的视觉语言设计。</li>
+<li><strong>值得研究的传播路径</strong>：上条视频靠动画效果收割评论区追问，本条视频以&rdquo;答疑&rdquo;承接流量并沉淀方法（skill文件），形成&rdquo;作品→追问→拆解→再作品&rdquo;的内容闭环。</li>
+<li><strong>可复用的规则</strong>：颜色语义写死（红=出错、绿=正确与关键词、粉=批注），这等于给视觉建立一套可读的&rdquo;品牌语法&rdquo;——观众看颜色就知道含义，一致性本身就是记忆资产。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：UP主的核心提效点是&rdquo;字幕变时间轴&rdquo;——重剪后动画自动对齐，无需返工。对应到电商，就是把内容生产的关键参数绑定到&rdquo;可变的上游数据&rdquo;（如字幕条序）而非固定数值，让上游改动自动向下传导，减少人工重配。</li>
+<li><strong>转化/用户旅程提示</strong>：UP主不在成片阶段救火，而是在源头用规则卡死（素材白名单+颜色语义），再靠两道自动检查兜底。这是&rdquo;前置约束+自动质检&rdquo;的思路，比事后人工审片更省成本。</li>
+<li><strong>可借鉴的资产化动作</strong>：三个翻车案例全部写进skill，形成&rdquo;给粗剪+字幕直接出片&rdquo;的流水线——运营侧同样可以把每次活动的坑固化为SOP模板，降低下一个活动的启动成本。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频未涉及硬件。按逐字稿可做的推论仅限于软件工具链层面：UP主的实践证明，AI能承担的是&rdquo;把确定性规则翻译成可执行代码&rdquo;（rough.js画线、字体加载、ffmpeg拼接、时间变量T），而&rdquo;审美规则、素材边界、颜色语义、什么是合格&rdquo;全部由PM式的人定死——这恰好对应AI在复杂流程中的真实位置：执行与自检可外包，标准与约束必须人定。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「字幕本身它就是一个时间轴，这个就是卡点能够卡准多少的一个原因」——<strong>中段</strong>。这句话是整个方法的技术支点，也是可迁移度最高的一句：把&rdquo;时间&rdquo;重新定义为&rdquo;内容位置&rdquo;，AI才对齐得准。</li>
+<li>「这个规则你是需要给他框的越死，那画面呢出来之后就会越统一」——<strong>中段</strong>。反直觉的一句：AI内容的稳定性来自约束的严格度，而不是模型的自由度，直接可用于任何AI生产线的设计原则。</li>
+<li>「镜头慢慢平移呢，它不算，那只是假装在动」——<strong>中段</strong>。一句很锋利的质检判据，揭示了&rdquo;画面在变&rdquo;与&rdquo;信息在增&rdquo;是两回事。</li>
+<li>「AI时代能够做出来的东西其实并不难，难的是如何去迭代和优化」——<strong>结尾</strong>。全片收束句，把价值锚点从&rdquo;做出来&rdquo;移到&rdquo;沉淀成skill&rdquo;，是方法论的落点。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合想用AI做视频但不想学AE/剪映的内容创作者、需要把AI接入生产线的运营与工具链负责人，以及任何对&rdquo;如何把踩过的坑固化成可复用规则&rdquo;感兴趣的人——4分多钟，信息密度高，重点是字幕时间轴与两道自动检查这两个可迁移机制。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
