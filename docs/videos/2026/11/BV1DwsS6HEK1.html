@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>用 AI 学东西，哪一步要留给自己？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>用 AI 学东西，哪一步要留给自己？</h1>
+      <div class="reader-meta">清华姜学长 · 2026-11-18</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI替你把题做完了，但那一步恰恰是你该练的。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一个“看得懂却做不出”的普遍困境。</strong> UP主开篇对比了两种学习状态：一种是听别人讲完一本书，知道大概说了什么；另一种是自己读进去，遇到具体问题能把书里的东西拿出来用。用AI学习时，这两种感觉极易混淆——AI把一道题一步步讲明白，你看得懂、也做出来了，但关掉答案、换一道相似的题，自己又不知道从哪开始。这个落差就是全片的问题起点。</p>
+<p><strong>研究证据：拿走AI后，帮过忙的人反而更弱。</strong> 2025年10月UP主看到一篇研究，测的就是这种落差——练习时有AI帮忙，拿走以后人还能不能自己做。研究者招募1222人，做三个短实验，题目包括分数运算和阅读理解。练习阶段一组可用AI、一组不能，十来分钟后两组都在没有AI的情况下做新题，既看正确率也看是否直接跳过。结果：练习时能用AI的那组表现更好，独立做新题时差距反转——分数实验中，之前可用AI组解题率57%，对照组74%；阅读理解中两组为76%和89%。跳题情况上，三个实验里有两个发现之前可用AI的人更容易选择跳过。UP主特意限定：这只是短时间练习后马上独立做题的落差，能持续多久研究没测，更不能说“用了10分钟AI人就变笨了”。</p>
+<p><strong>关键分叉：要答案 vs 要提示。</strong> 第二个实验后研究者询问可用AI组具体怎么用：61%说主要是直接要答案，这群人后来独立解题率65%；主要要提示的那组是76%；从头不能用AI的对照组是77%。UP主随即泼冷水：研究者随机决定的是“谁可以用AI”，没有随机决定“谁要答案谁要提示”，怎么用是参与者自选的，所以不能把分数差异全算在提问方式上。还有12%的人说虽然可以用AI但自己没用，他们的独立解题率是89%，比对照组还高——这提示使用方式和人的选择混在一起。</p>
+<p><strong>核心论点：AI替掉的，可能正是你想练的那一步。</strong> UP主用一个自己的例子说明：学写代码时把报错交给AI，它改好了、程序跑起来了，眼前问题解决；但如果你想学的正是“怎么从报错判断问题在哪”，最高点的那一步也被它一起做掉了。看懂它为什么这么改有收获，但“自己先猜原因、动手试一次、发现猜错再回头找”这些过程需要机会去练。关于“为什么更容易直接跳过”，作者提出一种可能：AI几秒钟给出答案，会让人慢慢习惯问题就该这么快解决，轮到自己想时，正常的思考过程反而显得特别慢、特别费劲。UP主明确说这只是解释、实验没有直接测这个心理过程。</p>
+<p><strong>延伸：这不只是提问技巧，也是AI产品的评价标准问题。</strong> UP主指出，论文作者提到现在的系统很重视“这次能不能给出完整满意的回答”，他们希望评价时也看一眼“接受过帮助的人以后能不能独立完成”。这比评价一次回答难得多：回答清不清楚、任务有没有做完，当场就能看；但三周以后换一道题还能不能做出来，就得持续跟踪，还得真让用户自己去试。如果产品只看眼前反馈，很容易把“替用户做完”当成全部目标，用户没学会反而没人检查。</p>
+<p><strong>落地方法：把要求说清楚，把最后一步留给自己。</strong> UP主给出的具体做法是：给AI说“先让我说自己的思路，卡住的时候给我下一步提示；等这道题弄明白了，再换一道类似的，让我独立做一次”。最后那次独立尝试尤其重要——做到哪一步、卡在哪里，自己才看得见。他的收尾是：“学习有的时候需要慢一点，想保留的就是自己判断、试错和修正的机会。”以及那句追问：“题目做完以后，我还想知道，刚才得到的帮助有多少真正留在了我自己的身上。”</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【57 vs 74】</strong> 练习时AI帮你考得更好，拿走AI后你考得更差——帮忙和学会是两笔账，别记混。</li>
+<li><strong>【报错改好了，判断力没长】</strong> AI修的是代码，你丢的是“从报错猜病因”的那块肌肉。</li>
+<li><strong>【秒答惯坏耐心】</strong> AI几秒出答案，自己思考就显得又慢又费劲，于是干脆跳过——跳过的是练习，不是题目。</li>
+<li><strong>【产品只看交卷，不看毕业】</strong> 评价AI只看“这次答得满不满意”，就像只看作业交没交，不看三周后还会不会。</li>
+<li><strong>【先说自己思路，再要提示】</strong> 一句提示词把练习顺序定死：我出思路→AI给台阶→换题单飞。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：练习期的表现提升，可能是独立能力的透支</strong></li>
+<li><strong>原文引用</strong>：「练习阶段可以用AI的那组呢表现更好了，到独立做新题的时候，差距却反了过来」</li>
+<li><strong>案例还原</strong>：1222人被分成可用AI组与对照组，练习分数运算和阅读理解；十来分钟后两组都在无AI条件下做新题。分数实验独立解题率57%对74%，阅读理解76%对89%，方向完全反转。背景是“练习时有帮手”，过程是“帮手被撤走”，结果是“帮手组落后”。</li>
+<li>
+<p><strong>解读</strong>：评估任何“AI提效”时，要问一句“撤掉AI还剩多少”，对学习类产品和培训场景尤其致命。</p>
+</li>
+<li>
+<p><strong>要点二：怎么用AI，比用不用AI更决定结果——但这个差别不能全算在提问方式上</strong></p>
+</li>
+<li><strong>原文引用</strong>：「61%的人会说自己主要是直接要答案……而主要要提示那组呢，独立的解题率是76%」</li>
+<li><strong>案例还原</strong>：要答案组独立解题率65%，要提示组76%，从不用AI的对照组77%。但UP主指出研究者只随机分配了“能否用AI”，没随机分配“要答案还是要提示”，是参与者自选的，爱自己试的人可能本来就更愿意要提示；另有12%的人可用但没用，独立解题率89%反超对照组。所以这是相关性信号，不是因果结论。</li>
+<li>
+<p><strong>解读</strong>：做用户研究时，自选行为与结果混杂是常见陷阱，别把用户自报的“使用方式”当成因果变量。</p>
+</li>
+<li>
+<p><strong>要点三：被AI替掉的那一步，要对照你的学习目标来检查</strong></p>
+</li>
+<li><strong>原文引用</strong>：「AI帮忙的时候替我们做掉的，是不是正好是我们想练的那内部啊」</li>
+<li><strong>案例还原</strong>：学写代码时把报错丢给AI，AI改好、程序跑通，眼前问题解决；但若学习目标是从报错判断问题所在，这个“最高点的一步”被AI做掉了。看懂它为什么改有收获，但“自己先猜原因、动手试、猜错再回头找”的过程失去了练习机会。</li>
+<li>
+<p><strong>解读</strong>：判断AI该不该介入，先明确“我这次要练的是哪块肌肉”，再决定让AI碰哪里。</p>
+</li>
+<li>
+<p><strong>要点四：AI的秒答速度会重塑人对“思考该多快”的预期</strong></p>
+</li>
+<li><strong>原文引用</strong>：「AI几秒钟就给出答案，可能会让人慢慢习惯了问题就该这么快解决」</li>
+<li><strong>案例还原</strong>：三个实验中两个发现之前可用AI的人更容易直接跳过题目。作者的解释是：习惯秒答后，自己思考显得特别慢、特别费劲，于是把“我还没想出来”误当成“这事没必要我自己想”。UP主强调这是解释、实验没有直接测该心理过程，并自问会不会越来越容易这样“敢交付”。</li>
+<li>
+<p><strong>解读</strong>：对做学习产品的人是警示：响应速度是卖点，也可能在训练用户的“放弃阈值”。</p>
+</li>
+<li>
+<p><strong>要点五：AI产品的评价标准，要从“这次答得好”扩展到“用户以后能不能独立做”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「现在的系统很重视这次能不能给出完整满意的回答，他们希望评价时也看一眼接受过帮助的人以后能不能独立完成」</li>
+<li><strong>案例还原</strong>：论文作者提出该评价方向。UP主拆解难点：回答清不清楚、任务做完没有，当场可测；但三周后换一道题还能不能做，需要持续跟踪、需要真的让用户自己去试。若产品只看即时反馈，就会把“替用户做完”当全部目标，用户没学会也没人检查。</li>
+<li>
+<p><strong>解读</strong>：这是给产品团队的一记提醒——即时满意度指标会系统性偏向“代办型AI”。</p>
+</li>
+<li>
+<p><strong>要点六：可操作的提问模板——先给思路、卡住给提示、最后换题单飞</strong></p>
+</li>
+<li><strong>原文引用</strong>：「先让我说自己的思路，卡住的时候给我下一步提示，等这道题弄明白了，再换一道类似的，让我独立做一次」</li>
+<li><strong>案例还原</strong>：UP主把自己的用法直接说给AI：先自述思路→卡住只给下一步提示→弄懂后换同类题独立做。他强调最后那次独立尝试尤其重要，因为“做到哪一步、卡在哪里，自己才看得见”。</li>
+<li><strong>解读</strong>：把学习流程写进提示词，比任何“AI学习技巧”都更可执行，适合直接抄用。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频揭示了一个经典研究陷阱——自选行为与结果混杂。要答案组65%、要提示组76%、从不用AI组89%，但研究者只随机了“能否用AI”，没随机“怎么用”，UP主明确说“不能把分数差异全部算在某一种提问方式上”。这对用户研究是直接的方法论提醒：用户自报的使用方式往往与用户本身的倾向（比如本来就更爱自己试）纠缠，不能当因果用。</li>
+<li><strong>可借鉴方法</strong>：视频里那套“练习—撤走工具—测独立表现”的延时测量设计值得借鉴。做竞品或需求洞察时，除了问“用户用起来爽不爽”，可以加一步“撤掉产品后用户还能不能完成任务”，这才是真实留存能力的代理指标。</li>
+<li><strong>被揭示的坑</strong>：只看即时反馈。即时满意度、当场完成率都是“当场就能看”的指标，容易掩盖“三周后换道题还会不会”的长期失效。UP主点明这类跟踪“得持续跟踪，还得真的让我自己去试”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路</strong>：视频提供了一个反差叙事模板：即时提效的数据（练习阶段AI组更好）与延时独立能力的数据（57%对74%）方向相反。做AI产品传播时，“帮你更快做完”和“帮你真正学会”是两种完全不同的品牌承诺，前者易传播但易反噬，后者难证明但更耐久。</li>
+<li><strong>可研究的传播路径</strong>：UP主用“1222人、三个实验、分数与阅读理解、57/74、76/89、65/76/77、89%”这一串具体数字搭起可信度，再主动自我限定“这不能说明用了10分钟AI人就变笨了”——这种“先给数据再划边界”的内容结构，是知识类内容建立专业信任的范本。</li>
+<li><strong>解读（推论）</strong>：面向学习场景的AI产品，若主打“效率”会在用户发现自己没学会时流失；主打“学会”则需拿出延时验证证据，营销素材可从“撤掉AI后的表现”切入。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考策略（推论，基于视频逻辑外推）</strong>：视频中“即时反馈指标会系统性偏向代办型AI”的逻辑，可类比到电商的即时转化指标——当场下单率好看，但复购和真实留存没人检查，类似“用户没学会反而没人检查”。运营上值得建立“工具撤走后用户还回不回来”的延时指标。</li>
+<li><strong>用户旅程发现</strong>：视频里“跳过题目”的行为是流失前兆——用户习惯秒答后，稍慢的路径显得费劲就跳过。对应到转化路径，任何需要用户自己动脑、等待、试错的环节，在习惯了秒级反馈的用户面前都更容易被跳过，这是旅程设计的现实约束。</li>
+<li><strong>解读</strong>：把“61%要答案 vs 要提示”的分层思路迁移到用户分群，按“愿意自己试/只想拿结果”区分运营策略，可能比一刀切的效率叙事更有效。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频不涉及ID设计、MD堆叠、电子设计demo等硬件流程，不能外推这些环节，仅就<strong>产品评价标准与需求定义</strong>层面提炼：
+- <strong>AI能在哪发挥作用（视频直接支持的部分）</strong>：论文作者提出，系统应把“接受帮助的人以后能不能独立完成”纳入评价。这对硬件PM的启示是：AI功能的验收标准不能只有“当场答得满不满意”，而应设计延时、换场景的复测——这在软件侧可测，硬件侧则意味着要多轮真实使用跟踪，而非一次性demo验收。
+- <strong>边界在哪（视频直接支持的部分）</strong>：回答清不清楚、任务有没有做完，“当场就能看”；但“三周以后换一道题还能不能做出来，就得持续跟踪，还得真的让我自己去试”。PM必须亲自定义“什么算帮到用户”，因为若产品只看眼前反馈，很容易把“替用户做完”当成全部目标——这是产品目标的判断权，AI替代不了。
+- <strong>岗位职责演变信号（推论）</strong>：视频提示，AI产品的需求文档里应新增一条“用户自主性保留条款”——明确哪些步骤允许AI代办、哪些必须留给用户自己练。对智能硬件PM（如学习类硬件）而言，这可能演化为与学习目标绑定的功能开关设计。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「AI帮忙的时候替我们做掉的，是不是正好是我们想练的内部啊」——中段。这句是全片的提问核心，把“AI好不好用”转成“AI替掉的是不是你该练的”，一句话重构了判断标准（“内部”疑为“那部分”的口误/转写误差，原意是“想练的那块”）。</li>
+<li>「学习有的时候需要慢一点，想保留的就是自己判断试错和修正的机会」——结尾。这是全片的行动纲领：慢不是缺陷，是刻意保留的练习空间。</li>
+<li>「题目做完以后，我还想知道刚才得到的帮助有多少真正留在了我自己的身上」——结尾。把“帮助”和“留存”分开计量，是整段研究最凝练的落点。</li>
+<li>「如果产品只看眼前的反馈，很容易把替用户做完当成全部目标，用户没有学会反而没有人检查」——中后段。对做产品的人最扎心的一句，把学习问题升级成产品评价体系问题。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>最适合正在用AI学习编程、数学、外语等需要“自己动手练”的技能的人，以及设计AI学习类产品的产品经理和做用户研究的同学。4分钟就能拿到一项1222人研究的核心数字、一个可抄的提示词模板，和一套判断“AI该不该帮这一步”的检查思路，性价比极高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
