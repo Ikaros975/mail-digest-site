@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI专业层：让AI超出通用水平</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI专业层：让AI超出通用水平</h1>
+      <div class="reader-meta">黄益贺 · 2026-11-17</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>三年折腾RAG、MCP、Skills，终于想明白：给AI装上「专业知识+经验+判断」的专业层，才能超出60分通用水平。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：三年工具折腾背后的迷茫</strong>
+UP主黄益贺开场就抛出一个自我追问：过去三年多，他先后搞过RAG、知识库（最早做的），短暂尝试过微调，后来搞扣子、DEFI、工作流，MCP出来搞MCP，Skills出来搞Skills，再加上后来的Agent，试过Codex、Claude等coding agent，还搞过Google的Bot、短暂试过dots（评价「确实挺烂的」），以及现在的perplexity teammates。工具换来换去三年，他一直在问自己：我到底想做一个什么东西？</p>
+<p><strong>核心答案：打造「AI专业层」</strong>
+直到跟Perplexity聊过之后，他发现答案一直藏在心里——他想做的就是打造一个「AI的专业层」，本质是<strong>让AI超过60分的水平</strong>。他的判断是：AI已经在飞速普及，会用AI工具本身已经不构成优势；想获得进一步优势，就必须让手里的AI产出结果超出平均水平，也就是超出60分。</p>
+<p><strong>核心方法论：专业层三件套——知识、经验、判断</strong>
+UP主自述前两年就提出要把「领域知识」和「领域经验」给到AI，这次Perplexity点醒了他第三块此前没重视的内容——「判断」。三者分工清晰：
+- <strong>领域知识</strong>：对应AI「知道什么」。比如你所在领域积累的东西、公司在领域内积累的操作手册等，这些都是外界获取不到的。载体是知识库、wiki、资料等。
+- <strong>领域经验</strong>：对应AI「怎么做这件事」。比如怎么写一篇很专业的文章，他有一套自己的处理方式，可以封装成Skills的形式。他评价Skills是「非常非常好的一个产品」，本质就是「经验包」——把人类经验封装成模型能读懂的方式。对应载体还有工作流。
+- <strong>判断</strong>：告诉AI「怎么取舍、怎么检查结果、怎么做质量把关」。即一件事情做到什么程度算完事、什么程度需要返工。UP主承认这和经验有一点重叠，但把它单独拎出来做限定。</p>
+<p><strong>载体与适用人群</strong>
+这套专业层如果载体化，其实并不复杂——不用很复杂的Skills或Python脚本的话，「它其实就是文件夹里面放的一些文档」。UP主认为这套东西非常适合他社群（new type社群）的小伙伴：通过network收集了成员背景，办过北京线下交流会，他观察到自己社群成员在背景、经验、身份（甚至世俗意义上的社会地位）上比其他社群的人更强，在各自领域已有不少积累。因此他们对AI的需求不只是「怎么使用」，而是<strong>怎么把AI跟自己过往的经验、积累组装起来，放大原有优势，而不是从零开始</strong>。大部分人希望在原来的方向上做精进、找新突破口。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（3-5条）</h2>
+        <ul>
+<li><strong>【三件套口诀】</strong> 知识管「知道啥」、经验管「怎么干」、判断管「何时停、咋验收」——专业层就是AI的&rdquo;老师傅三件套&rdquo;。对应论点：专业层=领域知识+领域经验+判断。</li>
+<li><strong>【60分线比喻】</strong> 会用AI工具只是&rdquo;及格线&rdquo;，人人都有就不叫优势；专业层才是把AI从60分拉到&rdquo;超纲&rdquo;的那把梯子。对应论点：工具普及后，优势来自产出超出平均水平。</li>
+<li><strong>【经验包比喻】</strong> Skills=把老师傅的手感打包成AI能读的&rdquo;经验包&rdquo;，封装的是人类怎么做成一件事。对应论点：领域经验可封装为Skills/工作流。</li>
+<li><strong>【文件夹真相】</strong> 听起来高大上的专业层，落地可能就是&rdquo;文件夹里放一堆文档&rdquo;。对应论点：专业层载体并不复杂，门槛在积累而非技术。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（3-6条）</h2>
+        <ul>
+<li><strong>要点标题：会用工具不再是优势，超出60分才是</strong></li>
+<li><strong>原文引用</strong>：「你用上AI工具已经不能成为一个所谓的优势了……你就必须让你手里的AI产品产出的结果超出平均水平」</li>
+<li><strong>案例还原</strong>：UP主用自己三年经历作证——RAG、知识库、微调、扣子、DEFI、工作流、MCP、Skills、各种coding agent、Google Bot、dots、perplexity teammates，工具换了一轮又一轮（期间还短暂试过dots并评价&rdquo;确实挺烂的&rdquo;）。背景是工具飞速普及，过程是不断换工具却没想清目标，结果是他意识到：换工具不产生差异化，差异在产出质量。</li>
+<li>
+<p><strong>解读</strong>：提醒任何&rdquo;我用了最新AI工具&rdquo;就自认领先的人——普及速度会抹平工具差。（30字内）</p>
+</li>
+<li>
+<p><strong>要点标题：领域知识是外界拿不到的公司资产</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你们公司在领域所积累的这些操作手册等等，这些都是外界获取不到的，这是领域知识」</li>
+<li><strong>案例还原</strong>：UP主没有展开具体手册案例，而是从自身领域举例：所在领域积累的东西、公司积累的操作手册，这些外部拿不到的资料即领域知识；载体是知识库、wiki、资料。结论：把它们喂给AI，AI在垂直领域才会更强。</li>
+<li>
+<p><strong>解读</strong>：对企业/个人意味着——你独有的资料库就是AI差异化的原料。（30字内）</p>
+</li>
+<li>
+<p><strong>要点标题：Skills是经验的封装器</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Skills本质上它就是一个经验包，是把人类的经验封装成模型能读懂的一个方式」</li>
+<li><strong>案例还原</strong>：UP主以&rdquo;怎么写一篇很专业的文章&rdquo;为例：他自己有一套处理方式，可以把它封装成Skill形式交给AI。背景是他长期做内容输出，过程是把个人方法论拆解封装，结论是这类经验包是专业层的核心组件之一。</li>
+<li>
+<p><strong>解读</strong>：把&rdquo;老师傅的手感&rdquo;产品化，是知识工作者的新技能。（30字内）</p>
+</li>
+<li>
+<p><strong>要点标题：判断是最容易被忽视的一环</strong></p>
+</li>
+<li><strong>原文引用</strong>：「判断呢是告诉AI怎么去做取舍，以及怎么去检查结果，怎么去做质量的把关」</li>
+<li><strong>案例还原</strong>：UP主坦言知识和经验他前两年就提出了，唯独&rdquo;判断&rdquo;没重视，是这次跟Perplexity交流被点醒的。判断解决的是：一件事做到什么程度算完事、什么程度需要返工，与经验略有重叠但单独限定。结论：判断补上了专业层的最后一角。</li>
+<li>
+<p><strong>解读</strong>：只教AI&rdquo;怎么做&rdquo;不够，还要教它&rdquo;何时算做完&rdquo;。（30字内）</p>
+</li>
+<li>
+<p><strong>要点标题：专业层的落地载体可能极其朴素</strong></p>
+</li>
+<li><strong>原文引用</strong>：「它其实就是文件夹里面放的一些文档」</li>
+<li><strong>案例还原</strong>：UP主说明，若非使用复杂Skills或Python脚本，整个AI专业层的载体就是文件夹里的文档集合。这意味着门槛不在工程技术，而在知识、经验、判断本身的积累质量。这也是他认为社群成员适合的原因——他们已有领域积累，只需组装而非从零。</li>
+<li><strong>解读</strong>：别被工具复杂度吓住，真正的投入在沉淀自己的经验。（30字内）</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：UP主对社群成员的观察方法值得借鉴——他通过&rdquo;network&rdquo;让成员自报背景、加微信拉群、办线下交流会（北京线下交流会），从而横向对比出自己社群成员背景强于其他社群。这是一套&rdquo;社群画像&rdquo;式的用户研究方法：收集自述背景→线下验证→横向对标。</li>
+<li><strong>可借鉴方法</strong>：把用户/成员的&rdquo;领域积累&rdquo;当作核心分层维度，而非只看使用行为。UP主判断需求层次的依据正是&rdquo;已有积累的人，需求从&rsquo;怎么用&rsquo;升级为&rsquo;怎么组装放大&rsquo;&rdquo;。</li>
+<li><strong>被揭示的坑</strong>：UP主自嘲三年换了无数工具（RAG→微调→扣子→工作流→MCP→Skills→各coding agent→dots→perplexity teammates），却一直没想清&rdquo;到底在输出什么&rdquo;——这是典型的&rdquo;方法先行、目标缺位&rdquo;陷阱，调研项目同样容易犯：工具/方法堆砌，却没回答核心问题。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：UP主的&rdquo;专业层&rdquo;本身就是一个内容定位范本——三年内容围绕同一主线（RAG、知识库、扣子、工作流、MCP、Skills、Agent），最终收敛成一个清晰概念「AI专业层」。这是&rdquo;长期内容资产最终品牌化&rdquo;的路径：先持续输出，再回头命名自己的方法论。</li>
+<li><strong>传播路径提示</strong>：他明确提到把社群文章&rdquo;加了精华、强烈建议看&rdquo;，并用社群+线下聚会做信任沉淀——私域社群+线下活动是知识型IP强化认同的组合拳。</li>
+<li><strong>值得研究的手段</strong>：给自己的方法论起一个有记忆点的名字（如&rdquo;AI专业层&rdquo;&ldquo;经验包&rdquo;），比零散讲工具更容易被传播和记住。（解读）</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考策略</strong>：UP主把需求分层——&ldquo;用上AI工具&rdquo;是普及层（人人都有，不构成优势），&rdquo;超出60分产出&rdquo;是差异化层。这对应电商的通用逻辑：基础功能/低价是及格线，差异化体验才是溢价来源。</li>
+<li><strong>转化路径发现</strong>：他描述社群成员的转化逻辑是&rdquo;先有领域积累→需求从&rsquo;怎么用&rsquo;升级为&rsquo;怎么放大优势&rsquo;&rdquo;，类似高价值用户的运营思路——不是教育零基础用户，而是服务已有积累者做精进。</li>
+<li><strong>用户旅程提示</strong>：UP主通过&rdquo;文章加精华→社群讨论→线下聚会&rdquo;形成认知-认同-连接的漏斗，可作为内容型转化的参考模型。（解读）</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>逐字稿未涉及硬件ID/MD/电子设计内容，但从PM视角可提炼信号：
+- <strong>AI真正发挥作用的阶段</strong>：按UP主的框架，AI在&rdquo;执行&rdquo;层面（怎么做）靠Skills/工作流，在&rdquo;知识&rdquo;层面靠知识库，但&rdquo;判断&rdquo;（做到什么程度算完、何时返工、质量把关）是AI最薄弱、最需要人注入经验的一环——对应到硬件PM，需求定义、取舍决策、验收标准这类工作仍需PM主导封装。
+- <strong>边界所在</strong>：UP主强调专业层的价值恰恰是&rdquo;外界获取不到&rdquo;的领域知识和经验，这意味着PM的核心壁垒是把团队独有的流程、手册、决策逻辑沉淀给AI，而非依赖通用模型。
+- <strong>流程/职责演变信号</strong>：UP主预言&rdquo;会用AI工具不再是优势&rdquo;，对应的PM岗位信号是——会用AI画图/写文档将成基本功，PM的新价值在于构建团队的专业层（知识+经验+判断的封装）。（以上为基于逐字稿的推论，非视频原意）</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（2-5条）</h2>
+        <ul>
+<li>「你用上AI工具已经不能成为一个所谓的优势了」（中段）——点破当下竞争本质：工具平权后，优势只剩产出质量。</li>
+<li>「Skills本质上它就是一个经验包，是把人类的经验封装成模型能读懂的一个方式」（中段）——给Skills下了一个极简且可操作的定性。</li>
+<li>「判断呢是告诉AI怎么去做取舍，以及怎么去检查结果，怎么去做质量的把关」（中段）——补上专业层最容易被忽视的一角，值得反复咀嚼。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>已经在各自领域有积累、用AI却停留在&rdquo;会用工具&rdquo;阶段的职场人和知识工作者，尤其是想放大原有经验而非从零转型的人。视频只有6分钟，但它给出了一个把个人经验资产化的清晰框架，投入产出比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
