@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>我是如何用 AI 剪完一条口播的</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>我是如何用 AI 剪完一条口播的</h1>
+      <div class="reader-meta">AI转型迪迪 · 2026-11-17</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>剪映会员到期逼出的一场“AI全流程剪辑”实验：把经验写成规则，把规则交给Agent。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这条视频只有5分半，但信息密度不低，核心是一个完整的实操工作流：UP主迪迪的剪映会员到期后没有续费，于是用Codex + Claude两个Agent，把一条口播视频从录制到封面全流程做完，全程没打开剪映。整个流程被拆成三步。</p>
+<p><strong>背景与动机</strong>：UP主自己说得很直白——以前不是没想过让AI剪视频，而是“我压根没有把这个权限给到他”。剪映这种第三方工具“还OK，也不会占用我太多时间”，所以一直没动力换。真正触发改变的是“一条到期的提醒”：要额外付费才能继续用。这个细节很关键，它说明很多AI转型不是能力问题，而是触发点问题。</p>
+<p><strong>第一步：录制——只做AI代替不了的事</strong>。UP主只保留两件事给自己：真人出镜（“活人感”）和用自己的声音。说错了、或者觉得某段不合适，不停机，停下来重讲一遍即可，后面交给粗剪skill处理。这是整个工作流的分工原则：真人负责“不可替代的存在感”，其余全部交给AI。</p>
+<p><strong>第二步：粗剪——机械活和判断活分开处理</strong>。UP主喊一句“调用我的DD粗剪skill”，Codex开始干活，里面做了几件事：
+- <strong>剪空白（机械活）</strong>：让本地跑语音检测模型，找出所有超过0.7~0.8秒的空档，每句话前保留100ms、后保留80ms。这个参数设置是有讲究的——UP主明确提到剪映的“智能剪口播”经常“吃掉你的字”，导致剪辑师还得手动补救，所以自己设定的留白缓冲就是为了避免吃字。
+- <strong>“剪虫”（判断活）</strong>：这里UP主给了一个很精准的区分——“基因检测不等于重说检测”。AI需要把逐字稿拉出来，自己反复检查有没有重复文字，如果有，就剪掉对应片段、选出连贯的那一段。这是把“判断”交给AI，而不是简单阈值判断。
+- <strong>同一指令里顺带完成</strong>：提速、降噪、统一音量、跟踪人脸——这些本来都是剪映里的开关式操作，现在用自然语言描述给Codex执行。
+- <strong>最后一步是验收</strong>：重新验证一遍，如果发现还有需要重做的部分就修正。UP主强调“检验在整个过程中非常的重要”。</p>
+<p><strong>第三步：动画——写网页渲染，而不是用剪辑软件</strong>。做法是写一个网页，里面放一些函数，给定一个时间就画出这一秒该有的画面，让浏览器一帧一帧截图（一秒30张），再拼接成视频，这样每个元素都能卡在对应字幕上，误差控制在0.3秒以内。UP主还给了一份SRT字幕文件，帮助校对文字和画面的一一对应。这里设了两条验收规则：一是“我说话的时候，画面不能超过两秒不动”，渲染完用脚本反复查验；二是“粗剪体验”——做动画之前先拿字幕和定稿对一遍。UP主特别说明，这些规则都是“之前不断的翻车”积累的经验，一次一次迭代形成的，而且这个skill会持续更新。</p>
+<p><strong>封面</strong>：同样是AI出的。方法是先给一个样例，说明希望得到什么样式，让它根据样式和UP主自己的风格融合，最后形成封面——这个也可以固化成一个skill。</p>
+<p><strong>核心观点收尾</strong>：UP主引用了一句 “If you believe in deep learning, deep learning will believe in you”，翻译过来就是“如果你深信深度学习，深度学习就会相信你”。她的结论是：AI能回报你什么，取决于你有多信任它、有多少东西你愿意交付给它。但她同时强调，“相信并不等于我不检查”——验收标准必须规范，每一条规则背后都是一次次失败和交流得到的教训。最后她提出，AI时代如何管理好自己的agent“一定是一门很深的学问”。（解读：这句话是整条视频的价值观浓缩——信任是前提，规则是护栏，两者缺一不可。）</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【权限开关】</strong> “不是AI不行，是我没给权限”——剪映会员到期才触发转型，AI转型的瓶颈往往不是能力而是授权。</li>
+<li><strong>【100/80缓冲】</strong> 前留100ms后留80ms，防止“吃掉你的字”——自动化不是越狠越好，边界留白才是专业度。</li>
+<li><strong>【基因≠重说】</strong> “基因检测不等于重说检测”——机械阈值活与语义判断活必须分开交给AI。</li>
+<li><strong>【0.3秒卡点】</strong> 网页逐帧截图拼视频，误差0.3秒内——把剪辑问题转化成工程问题，是绕过工具限制的巧劲。</li>
+<li><strong>【翻车变规则】</strong> 每一条验收规则都是翻车换来的——skill不是写出来的，是迭代出来的；相信AI≠不检查。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：真人只保留不可替代的部分</strong></li>
+<li><strong>原文引用</strong>：「我只做一件AI代替不了的事情，是让我的声音和真人能够出现在镜头里面」</li>
+<li><strong>案例还原</strong>：UP主录制时不追求一遍过，说错就停下来重讲一遍，把“剪掉重说部分”完全交给后面的粗剪skill处理。整个过程她只负责出镜和发声，其余环节不打开剪映。</li>
+<li>
+<p><strong>解读</strong>：给内容创作者的分工原则——人的价值在“活人感”，重复劳动全部外包。</p>
+</li>
+<li>
+<p><strong>要点二：机械活与判断活要分开设计</strong></p>
+</li>
+<li><strong>原文引用</strong>：「基因检测不等于说是重说检测」</li>
+<li><strong>案例还原</strong>：剪空白靠语音检测模型+固定参数（0.7~0.8秒阈值、前100ms后80ms），是纯机械活；而识别“重复说的话并选出连贯段落”需要AI拉逐字稿反复比对，是判断活。UP主把两者写进同一条指令，但逻辑上明确区分。</li>
+<li>
+<p><strong>解读</strong>：设计AI工作流时，先分清哪些是阈值判断、哪些是语义判断，否则规则一定翻车。</p>
+</li>
+<li>
+<p><strong>要点三：验收规则是工作流的核心资产</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这一些规则其实都是我之前不断的翻车，做到的一些经验」</li>
+<li><strong>案例还原</strong>：动画环节设了两条硬规则——说话时画面不能超过两秒不动（渲染后用脚本反复查验）、做动画前先拿字幕和定稿对一遍（“粗剪体验”）。UP主明说这些规则来自一次次失败，并且会持续写进skill里更新迭代。</li>
+<li>
+<p><strong>解读</strong>：对任何想把AI工作流产品化的人，规则库比提示词更重要。</p>
+</li>
+<li>
+<p><strong>要点四：相信AI，但不放弃检查</strong></p>
+</li>
+<li><strong>原文引用</strong>：「但相信其实并不等于我不检查这个事情」</li>
+<li><strong>案例还原</strong>：粗剪流程最后专门设了一步“重新验证”，发现需重做的部分就修正；动画环节同样用脚本二次查验。UP主把这套“信任+验收”的关系总结为：AI回报你多少，取决于你交付多少，但交付的前提是规范好验收标准。</li>
+<li><strong>解读</strong>：给所有AI工具使用者的提醒——放权与验收是一体两面。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <p>UP主的“翻车→写规则→迭代skill”流程，本质就是一套用户研究式的持续迭代方法：每次出错都是一次“用户反馈”，把反馈沉淀成可复用的规则。对调研角色的启发是：调研结论不应停在报告里，而应固化成可执行的检查清单。另一个可借鉴的点是她对“边界参数”的敏感——100ms/80ms、0.8秒阈值、0.3秒误差，这些具体数字都是通过观察“哪里出问题”反推出来的，和用户研究中定义阈值（如流失临界点）的思路一致。她揭示的“坑”也很典型：通用工具（剪映智能剪口播）的默认规则会“吃掉你的字”，说明标准化产品常常不匹配个体场景，需要自定义。</p>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <p>这条视频本身就是一个营销样本：以“会员到期没续费”这个真实小事件作为钩子，讲一个完整可复现的工作流，最后落到一句价值观金句（“你信深度学习，深度学习就信你”）。内容结构是“反常识开头→三步拆解→金句升华”，传播路径依赖“可复现的实操”而非概念宣讲。对品牌和内容运营的启发：把“翻车经验”公开出来，是建立专业信任的高效方式；把流程固化成“skill”并持续更新，本身就是一种可积累的内容资产。</p>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <p>视频里没有直接涉及电商，但有一个可迁移的运营逻辑（解读）：UP主的转型触发点是“到期提醒+额外付费”，这是一个典型的转化/流失临界点设计——付费墙既是阻碍也是触发用户重新评估工具价值的契机。另外，她把整个流程拆成“机械步骤（可自动化）”与“判断步骤（需人/AI语义判断）”，对应到电商运营，就是把可标准化的环节（如固定话术、常规跟单）自动化，把需要判断的环节（如异常订单处理）留给人或交给带规则的AI，同时每个自动化环节都配“验收规则”。</p>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <p>视频不涉及硬件，但其“AI能做什么、边界在哪”的框架对硬件PM有类比价值（解读/推论，非视频原意）：UP主的实践显示，AI真正发挥作用的地方是<strong>可被规则化、可被验收的环节</strong>（剪空白、渲染卡点、比对字幕），而<strong>不可替代的是人的“在场感”和最终判断</strong>。映射到硬件PM——ID图、MD堆叠、电子demo这类工作，AI目前能承担的是“把每个元素卡进约束”的工程化部分（类似她写网页函数按时间出画面），但需求取舍、体验判断和验收标准制定仍必须由PM亲自完成。视频给出的最强信号是“skill会不断更新迭代”：岗位职责的演变方向不是“PM被替代”，而是“PM变成规则与验收标准的设计者”。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ol>
+<li>「我压根没有把这个权限给到他」（中段）——点破AI转型的真实瓶颈：不是能力不够，是授权不够。值得记住，因为它把“技术问题”重新定义为“决策问题”。</li>
+<li>「相信其实并不等于我不检查这个事情」（结尾）——对整个AI工作流最清醒的一句话，放权与验收并行，是所有自动化实践的安全底线。</li>
+</ol>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合想用AI重构内容生产流程的创作者、剪辑师和内容运营：5分半内给出了一条可复现的完整路径（录制→粗剪→动画→封面），并附带大量参数与验收规则细节。也适合任何想把重复工作交给Agent、但不确定“该放多少权”的人——它对“信任与检查”的边界讲得非常实在。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
