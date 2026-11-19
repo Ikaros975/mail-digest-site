@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DeepMind Just Did Something Extraordinary For Humanity</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>DeepMind Just Did Something Extraordinary For Humanity</h1>
+      <div class="reader-meta">Two Minute Papers · 2026-11-19</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>DNA 的“开关”被 AI 读懂了：同一突变在不同细胞里后果不同，Alpha Genome 2 连没见过的细胞类型都能预测。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：读得懂字母，读不懂“开关”。</strong> 你的 DNA 大约有 30 亿个字母，但读出这些字母并不能说明你的一切。字母之间藏着数百万个“分子开关”，控制基因在何时、何处被激活。很多疾病正是从这些开关出错的地方开始的。DeepMind 的新 AI 技术 Alpha Genome 2 终于能预测这些小开关做什么——而且带了个“转折”。</p>
+<p><strong>上一代做到了什么，卡在哪里。</strong> Alpha Genome 1 的工作方式是：给一段 DNA，改掉一个字母，然后预测“会不会什么也不发生？或者这个微小突变会不会打开一个驱动白血病这类可怕疾病的基因？又或者改变与危险的高胆固醇相关的基因？”视频作者感叹这本身已经“疯狂到不可置信”，同时自嘲“我的蓝牙耳机还是连不上”。但问题在于：同一个突变，会因为它所在的位置、所在的细胞不同而产生完全不同的效果——你的大脑和皮肤含有一模一样的 DNA，却完全以不同方式使用它。Alpha Genome 1 难以预测这些更细的差异。这在组合层面几乎是不可能完成的任务：数十亿个单字母突变 × 数百种细胞类型 = 数万亿种可能组合，在实验室里全部测一遍完全没有希望。所以，怎么可能仅凭一串 DNA 字母就预测这一切？</p>
+<p><strong>为什么这个问题特别适合现代 AI。</strong> 因为可以构造“输入—输出”对来学习：输入是一段来自胰腺的 DNA 加上“胰腺 beta 细胞”这个细胞类型，输出是它的基因有多活跃。而科学家已经在数量惊人的细胞中测量过这一点——也就是说，有海量训练数据。于是剩下两个大问题：一、AI 是否强大到能学会这些交互；二、即使能，它能否对没见过的细胞类型也奏效，即能否泛化、能否超越训练数据？</p>
+<p><strong>案例一：胰岛素过多与 HK1。</strong> 研究者测试了已知会导致胰岛素分泌危险过剩的突变。Alpha Genome 2 预测出：这些突变在产生胰岛素的 beta 细胞中打开了 HK1 基因，而在其他胰腺细胞中几乎毫无影响。这个案例的意义在于，它同时抓住了“哪个基因”和“哪种细胞”两层信息——正是上一代做不到的细粒度差异。（解读：这说明模型学到的不只是字母与活性的映射，而是“细胞语境 × 序列”的联合规律，但视频本身只给出了这一预测结果，未交代实验验证细节。）</p>
+<p><strong>案例二：翻倍且高精度的识别。</strong> 在一项测试中，Alpha Genome 2 识别出的“已知影响基因活性的突变”数量是原来的两倍，且精度达 90%——它标记的每 10 个突变里，大约 9 个很可能真的影响基因活性。</p>
+<p><strong>案例三：帕金森病研究上的“越界”胜利。</strong> 这是全片最震撼的一段。在一项帕金森病研究中，一个此前的专家型 AI 能正确预测已知遗传效应中基因活性上升还是下降的比例是 17%。而 Alpha Genome 2 从未在该研究上训练过——它能预测多少？41%，超过两倍，且保持了同样高的准确度。也就是说，这个 AI 在全新信息上的表现，胜过了专门针对这些信息训练的专家 AI。作者称之为“科幻级别的美好”“绝对疯狂的工作”。</p>
+<p><strong>限制与结论：别误读。</strong> 它远非完美：即使最好的预测仍会漏掉许多与疾病相关的突变，对稀有细胞类型也还不行。所以千万别看完就以为遗传病被解决了——差得远。但作者回忆 AlphaFold 刚出现时他就觉得“具备拿诺贝尔奖的一切条件”，而看这项工作，DeepMind 再拿一个诺奖他也不会惊讶。他向 Demis Hassabis、Pushmeet Kohli 及整个团队致意：有时健康与生病之间只差一个字母，而理解这个字母能改变千千万万人的生命。最好的部分是：Alpha Genome 2 已通过 API 对研究者免费开放，DeepMind 还计划公开代码与模型权重。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li>【同一份乐谱，不同的演奏】大脑和皮肤 DNA 相同，用法完全不同——模型必须懂“谁在演奏”，不能只读乐谱。对应论点：细胞类型语境决定突变后果。</li>
+<li>【数十亿×数百=数万亿，实验室测不完】组合爆炸让穷举不可行，只能靠 AI 从数据里学规律。对应论点：为何必须建模而非实验穷举。</li>
+<li>【10 个里中 9 个】90% 精度、检出量翻倍，是“准”与“多”同时成立的硬指标。对应论点：识别能力的量化突破。</li>
+<li>【17% → 41%，还没预习过】没在该研究上训练，却把专家 AI 的成绩翻倍多。对应论点：泛化能力是真突破。</li>
+<li>【别把“能预测”当“已治愈”】漏检仍在、稀有细胞仍弱，诺奖级潜力不等于问题解决。对应论点：限制与理性边界。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：预测要带“细胞语境”</strong></li>
+<li><strong>原文引用</strong>：「同一个突变基于它所在的位置、所在的细胞，可能产生完全不同的效果」</li>
+<li><strong>案例还原</strong>：背景是 Alpha Genome 1 只能判断单字母突变是否影响基因；问题在于大脑与皮肤 DNA 相同却用法不同，旧模型抓不住细粒度差异。过程是 Alpha Genome 2 把“细胞类型”作为输入的一部分。结果是在胰岛素过多相关突变上，它预测这些突变在 beta 细胞中打开 HK1、在其他胰腺细胞中几乎无影响。</li>
+<li>
+<p><strong>解读</strong>：任何“序列→结果”的预测，都必须绑定环境变量，否则结论会张冠李戴。</p>
+</li>
+<li>
+<p><strong>要点：有海量输入输出对，问题就变成可学习问题</strong></p>
+</li>
+<li><strong>原文引用</strong>：「输入可以是一段来自胰腺的 DNA 和作为细胞类型的胰腺 beta 细胞……输出是它的基因有多活跃」</li>
+<li><strong>案例还原</strong>：视频解释该问题“格外适合强大的现代 AI”，原因是科学家已在数量惊人的细胞中测过基因活性，训练数据充足；随后提出两个必答题——AI 是否够强、能否泛化到没见过的细胞类型。</li>
+<li>
+<p><strong>解读</strong>：判断一个 AI 机会，先问“有没有现成的大规模标注对”，这比模型选型更前置。</p>
+</li>
+<li>
+<p><strong>要点：精度与召回可以同时赢</strong></p>
+</li>
+<li><strong>原文引用</strong>：「识别出的影响基因活性的已知突变数量翻倍，精度 90%」</li>
+<li><strong>案例还原</strong>：在测试中，模型标记的每 10 个突变约 9 个很可能真的影响基因活性，同时检出量是原来的两倍。作者称“不可思议”。</li>
+<li>
+<p><strong>解读</strong>：评估任何识别类系统，别只看精度，要看“同精度下多捞回多少”。</p>
+</li>
+<li>
+<p><strong>要点：泛化才是分水岭</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这个 AI 在全新信息上的表现，胜过了专门针对这些信息训练的专家 AI」</li>
+<li><strong>案例还原</strong>：帕金森病研究里，专家型 AI 对已知遗传效应的方向（升/降）预测正确率 17%；从未在该研究上训练的 Alpha Genome 2 达到 41%，超过两倍，且保持同样高准确度。</li>
+<li>
+<p><strong>解读</strong>：真正的能力信号是“没预习也考得好”，这对所有做模型选型的人都是金标准。</p>
+</li>
+<li>
+<p><strong>要点：清醒看待边界</strong></p>
+</li>
+<li><strong>原文引用</strong>：「请不要看完这个视频就以为他们解决了遗传疾病。差得远。」</li>
+<li><strong>案例还原</strong>：视频明确列出限制——最好的预测仍漏掉许多疾病相关突变，对稀有细胞类型表现仍不佳，因此不能宣称问题已解决；但作者同时给出诺奖级评价，并强调 API 免费开放、代码与权重计划公开。</li>
+<li><strong>解读</strong>：把“潜力”和“可用性”分开说，是评估前沿技术时最该养成的习惯。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频反复强调“同一突变在不同细胞里效果完全不同”，这就是用户研究里的经典陷阱——脱离场景谈需求等于没谈。同一个功能点，在不同用户群、不同使用场景下价值可能相反，正如大脑和皮肤用同一份 DNA 却用法迥异。（解读）</li>
+<li><strong>可借鉴的方法</strong>：把“细胞类型”类比为“用户分群变量”，在设计任何洞察模型时，把“人群/场景标签”作为必备输入而非事后交叉分析；用“输入=素材+场景标签、输出=行为结果”的方式组织既有数据资产，先盘点“我们是否已有海量已测量的输入输出对”。</li>
+<li><strong>被揭示的坑</strong>：组合爆炸——数十亿突变 × 数百细胞类型 = 数万亿组合，“实验室全测完完全没希望”。对应到调研上：不要试图穷举所有人群×场景组合，要找到能泛化的规律；同时警惕“专家模型只在自己训练过的研究里灵”（17% 的那位专家 AI），即专项调研结论未必能迁移到新品类。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新洞察</strong>：这条视频本身就是极佳的科技传播样本——用“我的蓝牙耳机还连不上”这种自嘲消解硬核内容的门槛，用“17% → 41%”一个数字对比制造记忆爆点，用“诺奖级”给出情绪高点，最后用“免费 API + 将开源”给出行动理由。（解读）</li>
+<li><strong>值得研究的传播路径</strong>：可信度构建三段式——先讲上一代做到了什么（建立基线），再坦白限制（“差得远”），最后给惊喜（泛化翻倍）。先自曝短板再放大招，比一路吹捧更可信；结尾把“免费开放”作为传播钩子，天然带转发属性。</li>
+<li><strong>案例参考</strong>：帕金森 17% vs 41% 的对比是整片最强的“一句话卖点”，营销上可学习这种“同精度下、未见过的数据上翻倍”的对比结构。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频里“数十亿突变 × 数百细胞类型 = 数万亿组合，无法全部实验”是运营侧的经典困境——SKU × 人群 × 渠道的组合无穷，不可能全量 A/B。（解读）</li>
+<li><strong>可参考的策略</strong>：学 Alpha Genome 2 的“泛化”思路——不要为每个新品类从零训练一个专家模型（那位 17% 的专家 AI），而要养一个能在没见过的品类上仍有 41% 表现的通用的用户-商品匹配模型；同时承认边界：稀有细胞类型（≈ 小众人群/长尾 SKU）表现仍差，长尾仍需人工兜底。</li>
+<li><strong>转化路径发现</strong>：将“细胞类型”类比为“渠道/场景标签”，同一商品在不同场景下的转化效果可能完全相反，因此转化模型必须把场景作为输入，而不是只看商品与用户。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <ul>
+<li><strong>AI 真正发挥作用的阶段</strong>：本视频未涉及 ID 设计、MD 堆叠或电子设计 demo，因此不能据此推断 AI 在这些环节的能力（事实约束）。视频实际展示的是“预测型 AI”的成熟范式：海量已测量的输入输出对 + 把环境变量（细胞类型）纳入输入 + 在未见数据上泛化。这对硬件 PM 的可迁移信号是：凡是有大规模历史测量数据、且结果强烈依赖使用场景的环节，才是 AI 能真正接手的环节；反之，缺乏数据对、依赖多目标权衡与创造性取舍的环节（如 ID 与堆叠中的取舍），视频没有给出任何证据支持 AI 可代劳。（解读）</li>
+<li><strong>边界在哪里</strong>：视频明确说模型“仍会漏掉许多疾病相关突变”“对稀有细胞类型仍不佳”，且作者强调“别以为问题被解决了”。推论：AI 输出应作为候选集与优先级排序，最终决策与稀有/异常场景的判断仍需人来做。（解读）</li>
+<li><strong>岗位与流程演变的信号</strong>：Alpha Genome 2 通过 API 免费开放、计划开源代码与权重——意味着“专用专家模型”的价值会被“通用基础模型 + 少量场景适配”挤压（17% 专家 AI 被零训练的通用模型翻倍超越）。对硬件 PM 的启示是：与其为单个品类自建小模型，不如评估接入通用模型并定义好场景输入字段。（解读）</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「同一突变基于它所在的位置、所在的细胞，可能产生完全不同的效果」（中段）——一句话点明全片核心难点，也是所有预测类工作的通用戒律。</li>
+<li>「这个 AI 在全新信息上的表现，胜过了专门针对这些信息训练的专家 AI」（中段）——泛化能力的定义式表达，值得任何做模型评估的人记住。</li>
+<li>「请不要看完这个视频就以为他们解决了遗传疾病。差得远。」（后段）——在最高亢处踩刹车的理性，是这条视频可信度的来源。</li>
+<li>「有时健康与生病之间只差一个字母，而理解这个字母能改变千千万万人的生命」（结尾）——把技术意义压缩成一句人道主义表达，是全片情绪落点。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合对 AI for Science 感兴趣的开发者、研究者与产品/战略人员，尤其是想理解“什么叫真正的泛化”以及“如何理性评估一项突破性 AI 成果”的人。视频仅约几分钟，信息密度高、案例具体，性价比极高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
