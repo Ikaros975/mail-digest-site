@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI Schema for Google Is Selling You Air</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI Schema for Google Is Selling You Air</h1>
+      <div class="reader-meta">Neil Patel · 2026-11-21</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>谷歌说：AI schema 和 LLM.txt 都是空气，能独立存活的段落才是真功夫。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>这条短视频围绕一个核心主张展开：<strong>别再为“AI 优化”花冤枉钱，真正该做的是把内容写成“能被单独复制走还成立”的段落。</strong></p>
+<p>视频开头就抛出一个反常识的结论：谷歌明确表示有两样东西你不需要——第一，不需要把内容切成碎片；第二，不需要专门的 AI 标记（AI markup）或 LLM.txt 文件，因为谷歌搜索会直接忽略它们。由此得出全片最锋利的一句判断：<strong>任何卖给你“面向谷歌的 AI schema”的人，都是在卖空气。</strong>（解读：这是对市面上大量“AI SEO 服务”的直接否定，属于观点表达而非数据论证。）</p>
+<p>那真正需要的是什么？视频给出的答案是：<strong>一个经得起被复制的段落。</strong> 也就是说，衡量内容质量的标准不再是“有没有特殊标记”，而是“这段文字被单独摘出来时，还说不说得清”。</p>
+<p>为了说明这个标准，视频给了一组正反对比案例，这是全片唯一但完整的案例：</p>
+<p><strong>弱版本</strong>：“It also comes with these features which makes it perfect for cafes like yours.”（它还有这些功能，非常适合像你这样的咖啡馆。）
+视频逐句拆解它的失效点：复制进 AI 回答后，“它”指谁？“这些功能”是哪些？对谁“完美”？三个问题全部无解。</p>
+<p><strong>强版本</strong>：“The Nurero Duo is a dual broiler espresso machine that holds temperature across back-to-back shots. It&rsquo;s built for cafes doing 150 to 300 drinks a day. And it needs a dedicated 20 amp circuit.”（Nurero Duo 是一台双锅炉意式咖啡机，能在连续出杯时保持温度稳定。它为每天出 150 到 300 杯的咖啡馆而设计。并且需要专用的 20 安培电路。）
+视频点出这台机器的写法做到了三件事：<strong>点名产品、说明给谁用、把限制条件紧贴在卖点旁边。</strong> 结论是：这段文字即使被粘贴进与另外三台机器的对比中，依然成立。</p>
+<p>最后给出可执行的落地方法：<strong>审计 20 个段落，对应你最关键的 20 个购买问题。</strong> 把每一段单独复制进一个空白文档，如果它独立看仍然准确、清晰、有用，就过关；如果它需要上面还有一段话才能看懂，就重写。</p>
+<p>关键结论可以压缩成一句：<strong>AI 时代的内容门槛不是“加标记”，而是“去上下文后仍然自洽”。</strong>（解读：这意味着内容写作的评价标准从“页面整体体验”转向“段落的可搬运性”，因为 AI 回答是以段落为单位摘取的。）</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【卖空气】</strong> 卖你 AI schema 的人，卖的是空气——因为谷歌自己说忽略它。对应论点：AI markup / LLM.txt 对谷歌搜索无效。</li>
+<li><strong>【三连问】</strong> 哪个机器？哪些功能？对谁完美？——弱段落复制走后必被这三问击穿。对应论点：含糊指代是内容失效的根源。</li>
+<li><strong>【三件套】</strong> 点名产品、说清人群、限制贴着卖点——强段落的三件套。对应论点：具体化是段落存活的前提。</li>
+<li><strong>【白文档测试】</strong> 复制进空白文档还能读，才算过关；要上文才能懂，就重写。对应论点：20 段审计法。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：谷歌不需要 AI 专用标记</strong></li>
+<li><strong>原文引用</strong>：「You don&rsquo;t need special AI markup or LLM.txt file because Google search ignores them.」</li>
+<li><strong>案例还原</strong>：视频没有展开案例，而是直接引用谷歌的说法作为前提，并据此把售卖 AI schema 的行为定性为“卖空气”。</li>
+<li>
+<p><strong>解读</strong>：给正在采购“AI SEO 工具”的营销负责人一个刹车信号（解读）。</p>
+</li>
+<li>
+<p><strong>要点二：内容不必切成碎片</strong></p>
+</li>
+<li><strong>原文引用</strong>：「You don&rsquo;t need to chop your content into tiny chunks.」</li>
+<li><strong>案例还原</strong>：视频将此与“段落可复制”并列提出，但未给案例，属于结论性陈述。</li>
+<li>
+<p><strong>解读</strong>：不要为了“喂 AI”而牺牲页面可读性，重心应放在段落自洽（解读）。</p>
+</li>
+<li>
+<p><strong>要点三：段落必须脱离上下文仍成立</strong></p>
+</li>
+<li><strong>原文引用</strong>：「What you need is a paragraph that survives being copied.」</li>
+<li><strong>案例还原</strong>：弱版本“它还有这些功能，非常适合像你这样的咖啡馆”被复制进 AI 回答后彻底失义；强版本明确写出 Nurero Duo 是双锅炉咖啡机、面向日出 150–300 杯的咖啡馆、需 20 安培专线，即使混入三机对比仍成立。</li>
+<li>
+<p><strong>解读</strong>：写作者要假设每一段都可能被单独摘走（解读）。</p>
+</li>
+<li>
+<p><strong>要点四：限制条件要紧挨着卖点</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Put the limit right next to the claim.」</li>
+<li><strong>案例还原</strong>：强版本把“需要专用 20 安培电路”这一限制，直接写在“为高杯量咖啡馆设计”的卖点之后，而非藏在页面别处。视频未说明隐藏限制的后果，此为解读：限制与卖点分离时，被摘取的段落会变成误导。</li>
+<li>
+<p><strong>解读</strong>：诚实且就近的限制说明，反而是段落可信度的一部分（解读）。</p>
+</li>
+<li>
+<p><strong>要点五：20 段审计法</strong></p>
+</li>
+<li><strong>原文引用</strong>：「Audit the 20 paragraphs to answer your 20 most important buying questions.」</li>
+<li><strong>案例还原</strong>：操作流程是逐段复制进空白文档，独立检验是否准确、清晰、有用；需依赖上文才能理解的段落一律重写。</li>
+<li><strong>解读</strong>：这是一套低成本、可当天执行的内容自查清单（解读）。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li>视频提出的“20 个最重要的购买问题”，本质上是一份<strong>购买决策问题清单</strong>——这正是用户研究中“购买旅程/决策阻力”的调研产出物。可借鉴的做法是：把用户最常问的 20 个问题作为内容审计的对照表，让调研结论直接变成写作标准（解读）。</li>
+<li>视频揭示的“坑”是：含糊的指代（“它”“这些功能”“像你这样的”）在真实用户阅读中同样失效——用户和 AI 一样，无法从孤立的句子里判断适配性。这提示研究者在整理用户语言时，要保留具体场景与限制条件（解读）。</li>
+<li>说明：视频本身未涉及任何调研方法论，以上为基于其标准的延伸推论。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li>视频提供了一个清晰的反向营销判断：<strong>不要采购“AI schema / LLM.txt”类服务</strong>，因为按视频引述的谷歌说法，这些会被忽略。这可以作为营销预算审核的一条红线（解读）。</li>
+<li>正向思路是“把卖点写成可被引用的句子”：点名产品、锁定人群、附上限制。视频中的 Nurero Duo 段落就是范本——它的写法天然适合被第三方对比、评测、AI 回答引用，相当于为品牌预置了“可搬运的传播单元”（解读）。</li>
+<li>传播路径上的启示：内容被 AI 摘取的最小单位是段落而非页面，因此品牌应把“段落级可引用性”当作新的内容 KPI（解读）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li>电商详情页与 FAQ 天然对应视频所说的“20 个购买问题”。可直接落地为：为每个关键购买问题写一段自洽答案，用于详情页、问答区与站外内容（解读）。</li>
+<li>“限制贴着卖点”对电商尤其重要：把“需 20 安培专线”这类使用条件写在卖点旁，能前置过滤不匹配买家，减少退货与差评——这是视频逻辑的直接推论，视频本身未提及退货数据。</li>
+<li>转化路径上的新发现：用户可能通过 AI 回答首次接触产品段落，因此段落必须能在“无上下文”状态下完成自我说明（解读）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <p>视频未涉及智能硬件研发流程，<strong>不能据此推断 AI 在 ID 设计、MD 堆叠或电子设计 demo 中的作用与边界</strong>。唯一可迁移的是产品定义层面的启发：视频强版本段落的写法（产品名 + 核心能力 + 目标用户 + 使用限制）本身就是一个微型产品定义模板，PM 可用它检验卖点是否具体到可被独立理解（解读）。其余关于 AI 工具链与 PM 职责演变的内容，本视频没有提供任何信息。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「Anyone selling you AI schema for Google is selling you air.」（开头）——全片论点最浓缩的一句，直接给出“买不买”的判断。</li>
+<li>「What you need is a paragraph that survives being copied.」（开头/中段过渡）——把抽象的内容质量转化为一个可测试的具体标准。</li>
+<li>「Put the limit right next to the claim.」（中段）——一条可立即执行、且反直觉的写作规则：限制不是减分项，是可信度。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合正在为“AI SEO / GEO”付费或犹豫的营销负责人、内容运营与独立站/电商运营者。视频只有几十秒，但给出的“白文档测试”和“20 段审计法”当天就能执行，投入产出比高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
