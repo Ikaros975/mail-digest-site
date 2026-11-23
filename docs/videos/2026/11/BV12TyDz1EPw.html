@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI 更强了，为什么工作反而更累？</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI 更强了，为什么工作反而更累？</h1>
+      <div class="reader-meta">清华姜学长 · 2026-11-23</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI把活干快了，却把“拿主意”挤成了全天候的紧箍咒。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频围绕一个反直觉的现象展开：<strong>AI提效之后，人的工作反而更费脑子了</strong>。UP主用三个层次递进的案例来论证这个观点。</p>
+<p><strong>第一层：DATASET作者SIMON WILSON的自我追问。</strong> 这是全片的核心案例。SIMON WILSON是DATASET的作者，11月在旧金山的AI Engineer Code大会上回顾了过去一年大模型的变化。他讲了一个具体对比：以前他可以花一个小时，慢慢把测试代码理一遍，那会儿他很熟，说起来还能放松一会；现在叫个AI，按他的说法，半分钟就能改好。到快讲完时他问了自己一句——AI能帮我干这么多活了，为什么我今年的工作反倒更费脑子了？他自己的解释很具体：以前一天里会穿插做一些熟悉的活，知道从哪下手，也知道做到什么程度就收；现在这些活可以交出去，需要他自己想清楚的问题就“挨得更紧了”，比如这个项目该往哪走、AI交上这一版能不能用。他还给自己加了个“火”：往年的新年计划是少开几个项目、把手头的事做完，今年他想既然AI能帮忙，那就多做几件事——到11月，他同时在忙的项目已经“多的吓人”。他用环法冠军GREG LEONA的话形容这种感觉：速度上去了，骑起来还是那么费劲。</p>
+<p><strong>第二层：编程工具公司的一线观察。</strong> 同一场会上，做编程工具的某人举了个例子：以前做一个产品原型要花不少时间，现在可以很快做几版、挨个去试一遍，但接下来要选哪一版、它好在哪，还得团队自己想清楚。他给那场演讲起的名字就叫“判断是最后的工作”。</p>
+<p><strong>第三层：伯克利的八个月跟踪观察。</strong> 伯克利的两位研究者在一家大约200人的科技公司里观察了八个月，看到有些员工已经开始接原来不会做的活了：有人午饭的时候顺手给AI派个活，开会的时候又让一个任务在后台跑。但每一次都只是“顺手多做一点”，放到一整天里，同时在推进的事情就更多了，原来能停一会的时间也就更少了。</p>
+<p><strong>UP主自己的内容工作案例。</strong> 他用自己做内容来印证：录音转文字、理顺格式、起版初稿都能和AI交流，而且快不少；但稿子到手后，他得想这句研究表明能不能追到原始出处、这一段写得挺通顺但值不值得观众花半分钟去听。如果今天原本只打算写一条，一看起稿这么快，顺手可能又开了两个选题——省下来的时间很可能变成连着审三条稿和三组资料，下班时间一模一样，但一天里要停下来拿主意的次数就多了。他强调这种账“光看公式真的看不出来的”。</p>
+<p><strong>反例与收尾：省下来的时间去哪了？</strong> UP主也承认有工作用上AI后时间确实省下来了：一项覆盖66家公司的随机实验发现，实验后半段实际使用办公AI的员工，花在邮件上的时间更少了，正常工时以外的工作也少了。所以他现在看工作提效会多问一句：省下来的时间最后会用到哪里？他给出的个人做法是：如果一天要审十篇稿，就分开去审，中间做一点整理发布之类结果明确的事情；一条稿子什么时候算改完提前定下来——观点讲清楚了、关键数据核过了就可以收稿；省下的时间留给一个值得多问两句的采访。下班前除了数今天做完了多少，也想想有几次你得停下来把事情想明白、再自己拿主意；如果这种决定一天比一天多，就先看明天能不能少开一个任务，把那点时间留给手上最值得想透的事情。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【半分钟改代码，一小时没了】</strong> AI把“动手”压缩成半分钟，却把“动脑”挤满了全天——省下的是执行时间，增加的是决策频次。</li>
+<li><strong>【骑得更快，蹬得更累】</strong> 环法冠军那句话就是全片缩影：速度上去了，骑起来还是那么费劲，这就是AI时代的体感。</li>
+<li><strong>【判断是最后的工作】</strong> 原型可以做几版，但选哪版、好在哪，团队必须自己想清楚——这是留给人的最后一道工序。</li>
+<li><strong>【顺手多做一点，全天少停一会】</strong> 午饭顺手派个活、开会后台跑一个任务，单次只是“顺手”，累加起来就是“停不下来”。</li>
+<li><strong>【省下来的时间会去哪】</strong> 提效不是终点，是一笔必须主动安排用途的预算——不安排，它就会被新的审稿和决策吃掉。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：AI吃掉的是“熟悉的活”，留下的是“要拿主意的事”</strong></li>
+<li><strong>原文引用</strong>：「以前的一天里面会穿插做着一些熟悉的货，知道从哪下手，也知道做到什么程度就收……现在需要他自己想清楚的问题就挨得更紧了」</li>
+<li><strong>案例还原</strong>：SIMON WILSON以前花一小时慢慢理测试代码，熟悉、知道边界、还能放松；现在AI半分钟改好，他反而要面对“项目该往哪走”“AI这版能不能用”这类没有明确收工线的问题，于是全年更费脑子。</li>
+<li>
+<p><strong>解读</strong>：可外包的是执行，不可外包的是判断；对任何用AI的人，都要预判“脑力被挤到哪”。</p>
+</li>
+<li>
+<p><strong>要点：提效会诱发“加项目”的自我加码</strong></p>
+</li>
+<li><strong>原文引用</strong>：「今年他想既然AI能帮忙，那就多做几件事情……自己同时在忙的项目已经多的吓人了」</li>
+<li><strong>案例还原</strong>：SIMON往年新年计划是少开项目、把手头事做完；今年因为AI能帮忙，反过来多接项目，到11月同时推进的项目多到吓人，体感就是“速度快了、骑起来还是费劲”。</li>
+<li>
+<p><strong>解读</strong>：省下的产能默认会被新任务填满，不主动设上限，提效等于加量。</p>
+</li>
+<li>
+<p><strong>要点：AI让人“顺手多做”，同时推进的事变多、停顿变少</strong></p>
+</li>
+<li><strong>原文引用</strong>：「每一次都只是顺手去多做一点，放到一整天里，同时在推进的事情就更多了，原来能停一会的时间也就更少了」</li>
+<li><strong>案例还原</strong>：伯克利两位研究者在一家约200人的科技公司跟踪八个月，看到员工午饭时顺手给AI派活、开会时让任务在后台跑，单次都只是顺手，累积起来就是并行任务变多、可喘息的时间变少。</li>
+<li>
+<p><strong>解读</strong>：这是对“AI让我更闲”最直接的反驳——碎片化的并行才是疲惫来源。</p>
+</li>
+<li>
+<p><strong>要点：原型变便宜后，瓶颈转移到“选择与判断”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「现在可以很快做几版，挨个去试一遍，那接下来要选哪一版呢？它好在哪呢？这些还得团队自己想清楚」</li>
+<li><strong>案例还原</strong>：做编程工具的人在会上举例，原型制作成本下降后可以快速做多版试错，但选版、评估优劣仍要团队自己完成，他把演讲命名为“判断是最后的工作”。</li>
+<li>
+<p><strong>解读</strong>：产出越容易，筛选越贵；团队要提前建立“好在哪”的评判标准。</p>
+</li>
+<li>
+<p><strong>要点：提效的真实收益取决于“省下的时间用在哪”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「我现在看一下工作提效就会多问一句，省下来的时间最后会用到哪里」</li>
+<li><strong>案例还原</strong>：UP主引用一项覆盖66家公司的随机实验：实验后半段实际使用办公AI的员工花在邮件上的时间更少、正常工时外的工作也更少——证明省时间是真的；但他自己的做法是分开审稿、中间穿插整理发布这类结果明确的事，提前定好“观点讲清楚、关键数据核过就收稿”，把省下的时间留给值得多问两句的采访。</li>
+<li><strong>解读</strong>：提效不是自动的好事，要有意识地给省下的时间指定用途。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频揭示了“效率提升≠体验改善”的调研陷阱——SIMON和伯克利观察到的都是员工“体感更累”，而不是工时更长。做用户研究时，只测任务耗时和产出量会得出错误结论，必须把“一天中需要停下来做决定的次数”“并行任务数”作为独立指标来测。</li>
+<li><strong>可借鉴的方法</strong>：伯克利式的时间段跟踪（八个月、200人公司、观察午饭和开会时的顺手行为）提示：研究AI工具的真实影响，要看“碎片时间被怎么用”，而不是看单任务耗时。</li>
+<li><strong>被揭示的坑</strong>：“光看公式真的看不出来”——UP主原话点明，提效账面上算不出来的是决策频次和认知切换成本，研究者如果把工时当唯一因变量，会系统性高估AI的价值。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频本身就是一个极好的传播母题——“AI更强了，为什么工作反而更累”是反直觉钩子，比“AI提效XX%”更有讨论度。品牌若讲AI故事，讲“判断是最后的工作”这类分工叙事，比单纯堆效率数字更能建立可信度。</li>
+<li><strong>可借鉴的路径</strong>：UP主的论证结构是“名人案例（SIMON）→行业案例（编程工具）→学术观察（伯克利）→自身案例（写稿）→反例（66家公司实验）→给出做法”，这套“先共鸣、再佐证、最后给解药”的内容结构可直接复用到品牌内容营销中。</li>
+<li><strong>值得研究的点</strong>：把“省下来的时间会用到哪”做成品牌与用户的互动问题，比单向输出更容易引发UGC讨论。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>新洞察</strong>：AI让“多开几条线”变得顺手，对应到电商就是同时铺更多SKU、更多渠道、更多活动——伯克利的观察提示，这种“顺手多做一点”会让运营陷入并行任务过多、缺少停顿复盘的疲惫状态。</li>
+<li><strong>可参考的策略</strong>：UP主的解药可直接迁移——把重复动作（整理、发布这类结果明确的事）和需要拿主意的动作（选品、定价、活动取舍）分开排期，并给“一条稿子什么时候算改完”设定明确的收工标准，对应电商就是给每个活动设定“数据核过即收”的判定线。</li>
+<li><strong>转化路径发现</strong>：视频指出省下的时间若不主动分配，会被新任务吃掉——运营侧应把AI省下的工时显式预算化，投向“值得多问两句”的用户访谈或爆款复盘，而非默认加投活动。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>AI真正发挥作用的阶段</strong>：视频中明确出现的证据是原型阶段——编程工具的例子说明“以前做一个产品原型要花不少时间，现在可以很快做几版，挨个去试一遍”，即AI能加速“做出来”的环节；SIMON的测试代码案例也说明AI能替代熟手型的执行工作。按此推论（非原片明确涉及），ID图、MD堆叠、电子demo这类“出方案、出变体”的环节属于同一类“可以多出几版”的工作。</li>
+<li><strong>边界在哪</strong>：视频给出了清晰的边界——“选哪一版、它好在哪，还得团队自己想清楚”，以及“这个项目该往哪走、AI交上这一版能不能用”必须由人判断。映射到硬件PM，就是AI可以生成多套ID/多版堆叠，但方案取舍、可行性背书、产品方向决策仍必须PM亲自做。</li>
+<li><strong>岗位演变信号</strong>：“判断是最后的工作”这句演讲名，以及SIMON“同时忙的项目多到吓人”的处境，提示PM岗位的重心会从“推动执行”转向“高频决策与筛选”，PM需要为自己设定决策收工线（观点清楚、关键数据核过即收），否则AI带来的多方案会直接变成多倍的评审负担。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「AI能帮我干这么多活了，为什么我今年的工作反倒更费脑子了」（中段，SIMON的自我追问）——这是全片的题眼，一句话概括了所有AI使用者的困惑。</li>
+<li>「判断是最后的工作」（中段，编程工具演讲的标题）——把AI时代人机分工的边界压缩成六个字，最值得记住。</li>
+<li>「速度上去了，骑起来还是那么费劲」（中段，引用环法冠军的话）——用身体感描述提效悖论，比任何数据都直观。</li>
+<li>「省下来的时间最后会用到哪里」（结尾，UP主的追问）——把“提效”从结果变成需要主动管理的问题。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>所有已经在日常工作中使用AI、却感觉“没变轻松反而更累”的知识工作者，尤其是内容创作者、程序员和产品经理；也适合正在给团队推AI工具的管理者——花三分钟就能明白，提效的收益不取决于工具多快，而取决于省下的时间被安排到哪里。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
