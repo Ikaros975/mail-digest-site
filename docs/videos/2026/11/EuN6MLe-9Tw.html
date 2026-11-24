@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI Agents Are Your New Customers (And They Don't Care About You)</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>AI Agents Are Your New Customers (And They Don't Care About You)</h1>
+      <div class="reader-meta">Marketing School · 2026-11-23</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>AI代理成了你的新顾客，而它们根本不在乎你——除非你无处不在。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：一波&rdquo;代理营销&rdquo;的焦虑式咨询潮</strong>
+本期节目开场，主持人提到最近一周接到大量公司的电话，诉求几乎一致：&rdquo;我们需要为AI代理做优化。&rdquo;他把这种现象称为&rdquo;agent-based marketing（代理式营销）&rdquo;的升温。他的回应很直接：如果你已经在做搜索优化、在做LLM优化，那本身就是&rdquo;为代理优化&rdquo;的一个版本，你不需要推倒重来，只需要把每件事都继续做一点，本质上叫&rdquo;无处不在（be everywhere）&rdquo;。原因很简单：代理在爬整个网络——它们看Google、看社交资料、看评论。如果你只出现在一个地方，而竞争对手无处不在，代理就更可能选他们。</p>
+<p><strong>论点一：Google不再是黄页，而是货架</strong>
+第二个大主题是&rdquo;对Google的恐惧&rdquo;。主持人们指出，过去12个月里，他们认识的大多数公司都经历了Google自然流量的下滑。老逻辑是&rdquo;Google增长你就增长、排名越高流量越好&rdquo;，但这条规律已经失效——你可以排名更高却拿到更少流量，因为AI概览（AI overviews）出现在品牌词或其他关键词上时，点击率大约只剩下过去的一半（原话：&rdquo;the click rates are roughly by half of what they used to be&rdquo;）。他们还提到Google财报电话会的逻辑：先在产品上赢得竞赛，再考虑变现；Google过去五年搜索查询量和搜索量增长是最快的。</p>
+<p>关键在于心智模型的重构。两位主持人反复强调：不要再把Google想成黄页（那个扔在你家门口、翻开查电话号码再打电话雇公司的厚书），而要想成一个<strong>货架（shelf）</strong>。就像你去沃尔玛，看到宝洁、Reebok、Nike、乐高，你不会跑去品牌官网下单，你当场就买了。你优化的是&rdquo;零售货架空间&rdquo;——占据最好的位置、最显眼的位置，而交易发生在哪里都无所谓，用户不需要来你的网站，只需要在当下选择你这个品牌。</p>
+<p><strong>论点二：怎么让代理推荐你——API/MCP、插件、以及&rdquo;送基础版&rdquo;的漏斗</strong>
+另一位主持人给出了可操作路径。第一，SEO和AEO的基础依然重要。第二，把你做的应用和工作流开放成API、MCP，让代理能够发现它；也可以做ChatGPT市场或Claude市场的插件，目的都是&rdquo;被代理发现&rdquo;。第三，也是他现在的核心打法：<strong>把工作流的最基础版本免费送出去</strong>——比如一个招聘工作流、一个SEO/AEO工作流、一个广告素材规模化的工作流。送出v1之后，它会要求用户连接某几个工具，并问&rdquo;你要不要用我们的single brain gateway？&rdquo;一旦用户进入这个网关，就进了他们的生态，他们会推送更多工作流，并询问是否要付费买进阶版、或要不要他们帮你做。换句话说，每一个工作流都是一个&rdquo;lead magnet（引流磁铁）&rdquo;，而代理能发现这些磁铁。</p>
+<p>他还强调内容不能停：Marketing School、YouTube、各自频道持续产出，评论和评价这些&rdquo;引用（citations）&rdquo;很重要，因为LLM会看一个人的相关性和&rdquo;速度分（velocity score）&rdquo;——你是否持续上升、是否维持相关性、是否持续获得评价。</p>
+<p><strong>论点三：代理与人类的流量比可能达到万级；机器人爬取已超人类</strong>
+原话判断：&rdquo;不会只是10比1，不会100比1，不会1000比1，我认为会是10000+比1。&rdquo;此外两人一致认为互联网流量的绝大多数已经是代理，并且&rdquo;不到一年就已经超过人类&rdquo;。所以别再说&rdquo;没人读我的博客、Google来的访客变少了&rdquo;——LLM在爬。原话建议：&rdquo;你应该从机器人拿到的流量比从人类拿到的更多。&rdquo;红迪（Reddit）、博客内容这些看似&rdquo;低回报&rdquo;的阵地，正因为被爬取而变得有价值。</p>
+<p><strong>案例一：AI公司新CMO的增量测试（完整讲完）</strong>
+两人共同认识的一位朋友（曾分别为两人工作过），现在在一家AI公司做广告，自称&rdquo;我干得特别好，正在给公司带来大量收入&rdquo;。公司来了新CMO，新CMO开始质疑&rdquo;广告到底驱动了多少收入&rdquo;，想做测试。这位朋友认为新CMO搞错了、犯了大错。主持人的判断是：&rdquo;不，这是正常的，这叫增量测试（incrementality testing）。&rdquo;</p>
+<p>他把测试逻辑讲得很清楚：假设你每月有2000个注册，同时跑Google和Meta广告。看起来1000来自自然、1000来自广告渠道。但你真正想知道的是：这2000里，是不是有50%（1000个）真的是广告驱动的？把广告关掉，如果注册只掉到1800，那就说明广告只贡献了200个注册，另外1800本来就是自然的，广告只是在&rdquo;蚕食&rdquo;（cannibalizing）一部分自然流量数据。这个结论极其重要——它告诉你该在哪里多花钱、哪里少花钱、以及如何真正规模化。但那位朋友因为&rdquo;AI让我很强&rdquo;而坚信自己在主导业绩，主持人的态度是&rdquo;我不多说，时间会证明（time will tell）&rdquo;。</p>
+<p><strong>案例二：富士康、台积电与&rdquo;先聚焦，再在能力圈内分散&rdquo;</strong>
+主持人用他的台湾见闻讲&rdquo;聚焦&rdquo;。富士康承担约46%的制造代工，做iPhone、PS5，看起来&rdquo;非常不聚焦&rdquo;——但他指出：富士康是先聚焦，之后才在制造领域变得&rdquo;不聚焦&rdquo;，正是这样它成为一家3.11万亿美元的公司。台积电同样：它有很多客户，但不与客户竞争，NVIDIA出蓝图、台积电专注把芯片造出来。他去参观时，那感觉像一整座城市，全是晶圆厂（fab），要穿防护服、进门前被风吹，精度做到纳米级。台湾人的说法是：有人宣称要去美国或其他地方建晶圆厂，&rdquo;祝你好运&rdquo;——因为韩国人擅长做内存，而&rdquo;我们已经试着复制韩国人25年了，没成功&rdquo;。他的结论：多年复合积累的聚焦几乎不可逾越（&rdquo;the compounding focus that you&rsquo;ve had over the years is almost insurmountable&rdquo;）。</p>
+<p><strong>案例三：泰森纪录片——三样东西毁掉专注</strong>
+他讲了Netflix的四集泰森纪录片：泰森在通往冠军的路上非常专注，后来被&rdquo;ladies, liquor, and leverage（女人、酒、杠杆）&rdquo;分散了注意力——这里借用了查理·芒格的表述。第一次准备打霍利菲尔德时，他是当时的冠军，但赛前一天出去派对；霍利菲尔德则精干、状态极佳。而那还是泰森坐牢两年回来之后的事。结论：锁定目标时他赢冠军，开始被别的东西牵扯时他就没赢。同时他补充：台湾公司看似不聚焦，其实非常聚焦，是聚焦让他们能在自己的能力圈（circle of competence）内&rdquo;变得不聚焦&rdquo;——就像乔丹、奥尼尔先在单一领域极度聚焦，赚到资本后才做一堆不同的事，如今更像资本配置者。</p>
+<p><strong>论点四：AI是智力放大器，多数人把它当&rdquo;笨蛋放大器&rdquo;</strong>
+主持人提出核心比喻：AI是一个&rdquo;intelligence amplifier（智力放大器）&rdquo;。他在Global AI Summit演讲中提到，只有0.2%的人用它产出真实结果，其余人只是拿它当聊天工具。他引述一位台湾CEO的观点：人类应该想得更大——我们总在想&rdquo;用AI解决已知问题&rdquo;，而应该把这份火力用在&rdquo;未知问题（unknowns）&rdquo;上。</p>
+<p>另一位主持人更进一步：&rdquo;人们说AI让你变平均，我觉得一些笨的人用AI其实会变得更糟，因为他们变得更妄想、以为自己什么都懂。&rdquo;AI会喂养你原本就相信的东西，于是他们&rdquo;做得更多，但做的都是对业务增长毫无影响的事&rdquo;。他还问：&rdquo;你觉得笨的人知道自己笨吗？&rdquo;回答：&rdquo;不知道。我见过太多不认为自己笨的笨人；如果一个人能意识到自己的弱项，我就不认为他笨了，我反而觉得他聪明、有智慧。&rdquo;由此推出：过去不聪明的人比较容易藏起来，现在你做的任何事都被放大了，同伴、老板、所有人都能更快看到，绩效管理因此变得透明得多。他预判会有一段&rdquo;短的痛苦期&rdquo;，但多数人最终会找到自己注定要做的事。</p>
+<p><strong>论点五：最高杠杆的事优先</strong>
+主持人坦言自己也不想录短视频，&rdquo;我不喜欢做这个，我坐着聊更开心&rdquo;，但必须做，&rdquo;你只能玩这个游戏&rdquo;。同时他提醒：要始终问自己&rdquo;今天我能做的最高杠杆的事情是什么&rdquo;。如果你有其他杠杆——并购、招人、谈合作、见客户——那都比录一条让自己看起来像个傻瓜、还被孩子笑话的内容杠杆更高。</p>
+<p><strong>插播与尾声：YPO、经销商生意</strong>
+中段插播了Neil的机构NP Digital及SEO工具Ubersuggest、Answer the Public。后半段闲聊了YPO（青年总裁组织）：加入有营收门槛（节目里说&rdquo;可能是6000万，也可能是5000万或1亿，我可能记错&rdquo;），Neil正在洛杉矶分会做第二轮面试；他们讨论不同分会的差异，有人说苏黎世分会最疯狂，&rdquo;像交换卡牌一样交易公司&rdquo;。主持人强调自己加入的诉求是&rdquo;和规模相近企业的同频的人待在一起&rdquo;，并提到洛杉矶有营收数十亿的公司，他想向那些人学习。还聊到很多NFL四分卫（布雷特·法弗、约翰·埃尔韦）和阿尼·奥尼尔都持有大量汽车经销商，有人靠汽车经销商一年赚九位数利润（是利润不是营收），以及汽车洗车控股公司的IRR回报非常惊人。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【货架论】</strong> &ldquo;Google不是黄页，是沃尔玛的货架&rdquo;——优化目标从&rdquo;把人带回官网&rdquo;变成&rdquo;占据最显眼货架并当场成交&rdquo;，交易在哪儿发生不重要。</li>
+<li><strong>【万比一】</strong> &ldquo;不是10比1，不是1000比1，是10000比1&rdquo;——未来代理与人类的流量比极端悬殊，所以必须&rdquo;无处不在&rdquo;而非单点押注。</li>
+<li><strong>【送v1钓网关】</strong> &ldquo;免费送基础版工作流，是给代理准备的鱼饵&rdquo;——每个工作流都是lead magnet，代理发现它，人就进你的生态。</li>
+<li><strong>【笨蛋放大器】</strong> &ldquo;AI是智力放大器，对笨蛋就是笨蛋放大器&rdquo;——它放大你原有的判断，让你做得更多，但不代表做得更对。</li>
+<li><strong>【三件套毁专注】</strong> &ldquo;女人、酒、杠杆&rdquo;——泰森在冠军路上被这三样分心，专注一散冠军就没了。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点：为代理优化=无处不在，不是新工程</strong></li>
+<li><strong>原文引用</strong>：「如果你优化搜索、优化LLM，它就是为代理优化的一个版本，你只要每样都持续做一点，本质上叫无处不在。」</li>
+<li><strong>案例还原</strong>：背景是大量公司打电话要求&rdquo;为代理优化&rdquo;。过程：主持人指出代理在爬Google、社交资料、评论。结果判断：你只在一个地方、对手无处不在，代理更可能选对手。延伸事实：他认为机器人爬取已经超过人类流量，且不到一年就发生了。</li>
+<li>
+<p><strong>解读</strong>：对所有做SEO/内容的人——别找新魔法，先把触点在每个被爬的角落铺满。</p>
+</li>
+<li>
+<p><strong>要点：排名更高≠流量更多，点击率可能砍半</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你可以排名更高却实际拿到更少流量，因为AI概览出现时点击率大约是过去的一半。」</li>
+<li><strong>案例还原</strong>：背景是过去12个月多数公司Google流量下滑。过程：AI概览出现在品牌词或其他关键词上。结果量化：点击率约减半。并解释Google财报逻辑是&rdquo;先赢产品、后想变现&rdquo;，其搜索查询量五年增长最快——平台在长，你的流量在掉，两者不矛盾。</li>
+<li>
+<p><strong>解读</strong>：做增长和投放的人要停止用&rdquo;排名&rdquo;当KPI，改用&rdquo;被选择&rdquo;当KPI。</p>
+</li>
+<li>
+<p><strong>要点：增量测试是把钱花对的前提，别把它当成质疑</strong></p>
+</li>
+<li><strong>原文引用</strong>：「关掉广告如果注册只掉到1800，说明广告只贡献200个注册，另外1800本来就是自然的，广告只是在蚕食数据。」</li>
+<li><strong>案例还原</strong>：一位在AI公司做广告的朋友自称业绩爆棚，新CMO要测广告真实贡献，他认为CMO犯大错。主持人还原算账：2000注册中看似1000来自广告，但关停后只剩1800，广告真实增量仅200。结论是这决定&rdquo;哪里多花、哪里少花、怎么规模化&rdquo;；那位朋友则因&rdquo;AI让我很强&rdquo;而不服，主持人选择&rdquo;时间会证明&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：投放和增长负责人——增量测试不是政治，是分配预算的唯一理性依据。</p>
+</li>
+<li>
+<p><strong>要点：先聚焦到不可复制，再在能力圈里分散</strong></p>
+</li>
+<li><strong>原文引用</strong>：「多年的复合聚焦几乎不可逾越。」</li>
+<li><strong>案例还原</strong>：富士康承担约46%代工、做iPhone和PS5，看似不聚焦，实为先聚焦后分散，终成3.11万亿美元公司；台积电不与客户竞争、专注代工，厂区像一座城市、纳米级精度、穿防护服进厂；台湾人认为复制韩国人的内存做了25年也没成功，去别处建晶圆厂&rdquo;祝你好运&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：创业者别急着多元化，先把一件事做到别人抄不动，再谈扩张。</p>
+</li>
+<li>
+<p><strong>要点：AI只放大判断，不替你判断</strong></p>
+</li>
+<li><strong>原文引用</strong>：「它是智力放大器……只有0.2%的人用它驱动真实结果，其余只是拿它当聊天。」</li>
+<li><strong>案例还原</strong>：主持人引台湾CEO观点：人们总用AI解决&rdquo;已知&rdquo;，应把火力用于&rdquo;未知&rdquo;。推论链条：过去能力不足容易藏，现在行为被放大、同伴和老板都看得见，绩效管理更透明；会有一段痛苦期，但多数人会找到自己该做的事。作者明确这是他的解读与预判。</li>
+<li>
+<p><strong>解读</strong>：所有用AI提效的人——先问&rdquo;这件事值不值得做&rdquo;，再问&rdquo;AI能不能更快做&rdquo;。</p>
+</li>
+<li>
+<p><strong>要点：最高杠杆优先，不喜欢也要玩这个游戏</strong></p>
+</li>
+<li><strong>原文引用</strong>：「要始终问自己，今天我能做的最高杠杆的事是什么？」</li>
+<li><strong>案例还原</strong>：主持人承认不想录短视频（&rdquo;我更愿意这样坐着聊&rdquo;），但仍要做，&rdquo;你只能玩这个游戏&rdquo;；同时指出并购、招人、谈合作、见客户都是比录内容更高杠杆的动作。</li>
+<li><strong>解读</strong>：内容创作者和一把手——把时间按杠杆率排序，而不是按惯性排序。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>&ldquo;新顾客&rdquo;意味着新的研究对象</strong>：视频明确提出你的用户群体里出现了AI代理，它们&rdquo;爬Google、社交资料、评论&rdquo;，看的是<strong>相关性与速度分（velocity score）</strong>，也就是你是否持续产出、是否持续获得评价。对研究者而言，这是一类需要单独建模的&rdquo;用户&rdquo;——它们的&rdquo;决策依据&rdquo;是可被引用的第三方信号，而不是你的品牌故事。</li>
+<li><strong>可借鉴的方法</strong>：①&rdquo;站点被爬取审计&rdquo;——统计机器人流量与人类流量的比例（原话：你应该从机器人拿到的流量比人类更多），把它当成新的&rdquo;用户触达仪表盘&rdquo;；②&rdquo;引用面覆盖盘点&rdquo;——把Google、社交资料、评论、Reddit、博客这些代理会读的地方列成矩阵，逐一检查你的&rdquo;可被引用度&rdquo;；③用增量测试验证归因，避免把自然流量误当成广告功劳（2000→1800的算法可直接迁移到渠道效果研究）。</li>
+<li><strong>被揭示的坑</strong>：把&rdquo;排名&rdquo;当作用户注意力的代理指标已经失效；把&rdquo;自我感觉良好&rdquo;当作效果证据（那位AI公司广告负责人就是典型）；用AI获得&rdquo;更多产出&rdquo;却掩盖了&rdquo;零业务影响&rdquo;。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>营销思路的范式转换：从&rdquo;把人拉回官网&rdquo;到&rdquo;占据货架&rdquo;</strong>。品牌要优化的不是&rdquo;访客数&rdquo;，而是&rdquo;在用户当场做选择的那一刻，是否是最显眼、最被信任的那个选项&rdquo;——哪怕成交发生在别人的场地。</li>
+<li><strong>值得研究的具体打法</strong>：①<strong>API/MCP+市场插件</strong>，让代理能&rdquo;发现&rdquo;你；②<strong>工作流v1免费送</strong>作为lead magnet，靠连接工具的网关把用户卷入生态，再推进阶版或服务（这是一条清晰的漏斗设计）；③<strong>内容与评价的持续性</strong>当成资产来经营，因为LLM会读&rdquo;速度分&rdquo;；④<strong>在看似低回报的阵地（Reddit、博客）保持存在</strong>，因为它们在替你做被引用。</li>
+<li><strong>传播路径新发现</strong>：默认分发者从&rdquo;人&rdquo;部分切换成&rdquo;代理&rdquo;，意味着品牌的&rdquo;被推荐概率&rdquo;取决于你在多少个可爬取的位置留下可引用、可验证、持续更新的痕迹。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>&ldquo;货架&rdquo;这个词本身就是电商的语言</strong>：视频里的沃尔玛/乐高/耐克案例说明——消费者不一定去品牌站，很多时候就在零售场当场下单。所以运营的重心是<strong>货架位置与曝光位</strong>，而不是把流量强行导回自营阵地。</li>
+<li><strong>可参考的操作</strong>：①按&rdquo;被代理选中&rdquo;来重新设计商品页与结构化信息（让机器能读懂、能引用）；②把交易发生地视为可多元化的（平台内、代理侧、官网都接受），核心指标改为&rdquo;是否被选中&rdquo;而不是&rdquo;是否到站&rdquo;；③用增量测试校准渠道预算，2000→1800的案例可以直接迁移到站内广告、联盟、信息流的真实增量测算。</li>
+<li><strong>用户旅程变化</strong>：旅程从&rdquo;搜索→点击→浏览→下单&rdquo;变成&rdquo;代理代理检索→比对引用信号→在你不在场的货架上完成决策&rdquo;，你的可控点在&rdquo;信号供给&rdquo;，不在&rdquo;页面引导&rdquo;。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <p>视频没有直接讲硬件PM流程，唯一与硬件相关的是富士康/台积电案例，因此以下为<strong>基于视频逻辑的推论，需标注为解读</strong>：
+- <strong>AI能真正发挥作用的阶段（推论）</strong>：从&rdquo;工作流v1送出去、让代理发现&rdquo;的打法看，AI最适合承担<strong>可结构化、可模板化的前期探索与外围工作</strong>——如需求/竞品资料的结构化整理、供应商与工艺信息的检索比对、把一款产品的配置与卖点拆成&rdquo;可被代理引用&rdquo;的结构化页面。台积电案例的启示是：<strong>越靠近纳米级工艺与产线协同的环节，越依赖长期复合积累的隐性知识</strong>，不是靠调用模型能补上的。
+- <strong>边界在哪里（推论）</strong>：富士康&rdquo;先聚焦后分散&rdquo;、台积电&rdquo;25年复制不了&rdquo;的论证，指向AI难以替代的是<strong>跨团队取舍、工艺与成本的权衡判断、以及长期信任关系</strong>。ID图→MD堆叠→电子设计前期demo这条链上，AI可以加速信息流转和草案生成，但&rdquo;在能力圈内做减法&rdquo;的决定权，视频明确认为属于长期聚焦的人。视频另一条强论点也适用：AI是智力放大器，它放大的是PM原有的判断质量——判断错了，只是更快地做错。
+- <strong>职责演变的信号（推论）</strong>：视频说&rdquo;最高杠杆的事优先&rdquo;，并购、招人、谈合作、见客户高于录内容——映射到硬件PM，意味着日常重复性输出会被压缩，PM的价值更多体现在定义问题（&rdquo;未知&rdquo;而非&rdquo;已知&rdquo;）、选择做什么与不做什么；同时&rdquo;无处不在&rdquo;的要求也意味着PM要主动让产品信息在多处可被机器发现，而不只是写给人看的PRD。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「不要再把Google想成黄页，要开始把它想成一个货架。」（中段）——一句话完成了整个流量世界观的重构，是本期最可迁移的思维模型。</li>
+<li>「我认为会是10000+比1。」（中段，谈代理与人类流量比）——用极端数字强迫你放弃单点押注、接受&rdquo;无处不在&rdquo;。</li>
+<li>「AI是一个智力放大器……只有0.2%的人用它驱动真实结果。」（中段）——既给了乐观框架，也给了冷水数据，是判断自己是否在&rdquo;假装用AI&rdquo;的标尺。</li>
+<li>「关掉广告如果只剩1800，说明广告只贡献了200个。」（中段）——把归因问题变成一道可复算的算术题，值得每个人抄下来。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>适合做SEO/内容营销、增长投放、品牌与电商运营的人，以及正在被&rdquo;要不要为AI代理做优化&rdquo;困扰的创业者与市场负责人；也适合那些用AI后自我感觉良好、但业绩说不清的人——这期节目会给你一面不太舒服但很有用的镜子。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
