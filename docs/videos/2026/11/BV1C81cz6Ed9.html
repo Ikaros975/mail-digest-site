@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>🚀T3 Code完整使用教程！比Orca更好用的开源AI IDE？手机下发任务！1条指令拉起多个AI线程并行改代码！统一调度Claude Code、Codex</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>🚀T3 Code完整使用教程！比Orca更好用的开源AI IDE？手机下发任务！1条指令拉起多个AI线程并行改代码！统一调度Claude Code、Codex</h1>
+      <div class="reader-meta">AI超元域 · 2026-11-24</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>T3 Code：把多个AI编程助手装进一个统一工作台，一条指令拉起多线程并行改代码。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与定位：为什么要造一个“AI编程统一工作台”</strong></p>
+<p>视频开篇即点明T3 Code的官方定位——<strong>coding agents的开源控制平面</strong>。用日常开发语言理解，就是把不同编程agent的项目对话、工具执行、权限审批、Git改动和远程连接全部放进同一个界面。UP主强调它“最具价值的地方”是把Claude Code、Codex、Antigravity等工具组成统一开发工作台，让多模型测评、多agent协作、远程开发和GitHub交付衔接起来。其直接收益有两条：集中使用已有的AI订阅，降低多工具切换成本。</p>
+<p><strong>核心功能演示：从基础配置到跨模型接力</strong></p>
+<p>UP主完整走了一遍上手流程：官网下载安装包（手机版从App Store安装）→进入设置→在Providers里配置已持有的AI编程助手（他配了Codex、Claude Code、Grok、Antigravity、PAGENT，并可继续添加Muse Code、Open Code、Cursor等）→在模型列表里关闭不常用模型、按需启用（他在PAGENT只启用三个模型，Claude Code只启用Claude Opus 5.5和Claude Sonnet 5.5，Codex只启用GPT 6.1与GPT 6 Astra）→左侧侧边栏添加项目（支持本地与远程机器项目，远程项目带专门图标）→对话框选择模型与推理级别（如Antigravity的Gemini 4选medium，可用快捷键切换）。</p>
+<p><strong>第一个完整案例：Antigravity修代码 → Codex交叉审查</strong></p>
+<p>这是视频里最能体现“同一会话跨模型接力”的案例，前前后后完整走通：</p>
+<ul>
+<li><strong>起因</strong>：UP主在一个项目中输入提示词，让AI分析项目的代码质量与性能，选择的是Antigravity里的Gemini 4（推理级别medium）。</li>
+<li><strong>过程</strong>：执行时界面显示执行状态与运行时间。他发现T3 Code的UI比Orca美观——因为Orca直接把各CLI的TUI展示在界面中，不同CLI风格不一，挤在一起非常混乱；而T3 Code不复用CLI的TUI，改用GUI显示CLI内容，易读且易于复制。他演示了选中文本→点击“set”→在对话框输入“重点修复”→发送，让Antigravity重点修复刚才指出的代码问题。同一对话框还能用斜杠命令调出Antigravity常用命令、用特定符号调出skill、用@符号引用项目文件、点击上传指定文件。</li>
+<li><strong>结果与接力</strong>：Antigravity完成修复后，他在<strong>同一个会话</strong>下切换到Codex，选GPT 6.1（带推理级别），输入“审查刚才Antigravity改动的代码”，Codex的GPT 6.1成功获取到Antigravity此前输出的对话上下文，输出了审查结果，实现同会话内跨工具交叉审查。UP主评价“这个功能还是非常实用的”。</li>
+</ul>
+<p><strong>第二个完整案例：一条指令拉起四个线程并行跑同一任务</strong></p>
+<p>UP主选择一个项目，点“new work tree”，然后按住Shift键逐个点选要接收指令的编程助手与模型——Grok（Grok 4.7）、Antigravity（Gemini 4）、PAGENT（MiniMax）加上原本的Codex，界面下方显示已选多个助手及各自模型。输入“分析并优化这个项目性能”发送后，系统提示<strong>启动了四个线程</strong>，左侧边栏可见四个线程接收同一提示词并行执行。关键机制：四个后台线程用work tree隔离，所以各助手修改的代码不会互相冲突。UP主称这是T3 Code“非常强大而且非常有用”的功能。</p>
+<p><strong>第三个案例：手机下发任务 + 跨设备远程派发</strong></p>
+<p>电脑端点击开启网络访问→创建链接→手机T3 Code扫描生成的二维码即连接成功。UP主在手机上选项目、选Antigravity的Gemini模型、输入“对项目代码进行review”，电脑端立刻收到该任务并开始运行，手机端同步显示运行状态。他还演示了连接另一台Mac mini：通过tie skill连上远程Mac mini，左侧侧边栏出现带图标的远程项目，选中后只能选择远程设备上已装的助手（该机只装了Open Code），让Open Code分析项目用了哪些技术栈并很快输出；远程Mac mini上的T3 Code显示内容与本机一致，实现跨设备派发任务。</p>
+<p><strong>第四个案例：Workflows脚本编排“构建者+双审查员”流水线</strong></p>
+<p>开启workflows功能后，UP主展示了一个针对代码review编排的脚本：Codex的GPT 6 Astra担任构建者，在独立work tree开分支、实现、跑测试、提交；Claude Code与Antigravity作为两位审查员，以只读plan模式审查；两者都通过后，把结果交回询问是否合并——同意则由Codex合并完成工作流，不同意则保留分支并结束。他用命令查看运行状态，并说明脚本会放在GitHub、链接见评论区，点赞破千将出更高级用法。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【总控台】</strong> 像机场塔台统一调度各家航班——T3 Code把多个CLI agent收进一个控制平面，集中用订阅、少切工具。</li>
+<li><strong>【换人不换桌】</strong> 同一会话里Claude改完Codex审——跨模型接力靠共享对话上下文，交叉审查不用重开一局。</li>
+<li><strong>【四车道施工】</strong> 一条指令四线程，work tree是隔离带——同一任务派给多个agent并行跑，代码互不冲突。</li>
+<li><strong>【远程遥控器】</strong> 手机扫码，电脑干活——桌面、网页、手机多端同步，人不在电脑前也能派活。</li>
+<li><strong>【包工头+双监理】</strong> 构建者开分支干活，两个只读审查员签字才准合并——workflow把流程固化成可复用脚本。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点标题：统一控制平面，降低多工具切换成本</strong></li>
+<li><strong>原文引用</strong>：「把不同编程agent它的项目对话工具、执行权限审批、git改动和远程连接放在同一个界面中……集中使用已有的这一些AI订阅，从而降低多工具切换的成本」</li>
+<li><strong>案例还原</strong>：UP主在Providers里一次性接入Codex、Claude Code、Grok、Antigravity、PAGENT五家助手，再按项目在对话框下拉选模型和推理级别，全程不离开一个界面；他还用快捷键切换模型。</li>
+<li>
+<p><strong>解读</strong>：对同时订阅多家AI编程工具的个人开发者，这是最直接的效率账。</p>
+</li>
+<li>
+<p><strong>要点标题：GUI化CLI，解决多工具界面混乱</strong></p>
+</li>
+<li><strong>原文引用</strong>：「ORA是直接将这些CLI展示在界面中……看上去就非常混乱，而T3 Code……直接用GUI来显示CLI里的这一些内容」</li>
+<li><strong>案例还原</strong>：UP主让Antigravity分析代码质量后，在输出中选中文本、点“set”、输入“重点修复”即可引用并发送；对比Orca把风格各异的CLI TUI堆在一起。</li>
+<li>
+<p><strong>解读</strong>：界面收敛是“多agent共存”能否真正可用的前提。</p>
+</li>
+<li>
+<p><strong>要点标题：跨模型接力实现交叉审查</strong></p>
+</li>
+<li><strong>原文引用</strong>：「codex中的GPT6.1……就能够获取到刚才ANTIGRAVITY输出的这些对话上下文，从而让我们在同一个会话中就可以直接切换编程工具以及模型」</li>
+<li><strong>案例还原</strong>：Antigravity的Gemini 4先分析并修复代码，切到Codex的GPT 6.1输入“审查刚才Antigravity改动的代码”，后者读取前序上下文并输出审查结果。</li>
+<li>
+<p><strong>解读</strong>：让“写的人”和“审的人”不是同一个模型，是低成本的质量兜底手段。</p>
+</li>
+<li>
+<p><strong>要点标题：一条指令多线程并行，work tree隔离防冲突</strong></p>
+</li>
+<li><strong>原文引用</strong>：「这里会提示启动了四个线程……他们是使用了work tree进行隔离，所以这几个AI编程助手他们修改的代码并不会互相冲突」</li>
+<li><strong>案例还原</strong>：UP主按住Shift多选Grok 4.7、Gemini 4、MiniMax等四个助手，发送“分析并优化这个项目性能”，侧边栏出现四个接收同一提示词的线程并行执行。</li>
+<li>
+<p><strong>解读</strong>：多模型测评从“手动开四遍”变成“一次派发、横向比结果”。</p>
+</li>
+<li>
+<p><strong>要点标题：多端同步与远程设备派发</strong></p>
+</li>
+<li><strong>原文引用</strong>：「当我们不在电脑前的时候，就可以使用手机向电脑发送指令」</li>
+<li><strong>案例还原</strong>：电脑端开启网络访问、创建链接，手机扫码连上后下发“review项目代码”，电脑端即时接收运行；另通过tie skill连远程Mac mini，在侧边栏选中带图标的远程项目，用该机已装的Open Code分析技术栈，远程端界面与本机一致。</li>
+<li>
+<p><strong>解读</strong>：碎片时间派活成为可能，但远程端只能用其本机已装的助手。</p>
+</li>
+<li>
+<p><strong>要点标题：Workflow把流程固化为可复用脚本</strong></p>
+</li>
+<li><strong>原文引用</strong>：「将我们的工作流固化成可复用可共享的脚本」</li>
+<li><strong>案例还原</strong>：review工作流中GPT 6 Astra当构建者（独立work tree开分支、实现、跑测试、提交），Claude Code与Antigravity以只读plan模式双审，都通过后询问是否合并，同意由Codex合并、不同意保留分支结束。</li>
+<li><strong>解读</strong>：把“谁来写、谁来审、合并谁签字”写进脚本，团队协作可复制。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频本身就是一次“多模型横评”的样板——同一提示词（“分析并优化这个项目性能”）派发给Grok 4.7、Gemini 4、MiniMax等四个模型并行跑，work tree隔离保证互不污染。这提示竞品分析/方案对比可以用“同题多跑、结果并置”的方式做，而不是逐个体验凭印象打分。（解读/推论）</li>
+<li><strong>可借鉴方法</strong>：UP主对Orca与T3 Code的对比维度值得抄作业——不看功能清单，看“界面是否混乱”“是否易复制”“是否要反复切换工具”这类真实使用摩擦点。</li>
+<li><strong>被揭示的坑</strong>：UP主对Orca的评价是“不同CLI风格不一样，挤在一起非常混乱”，说明多工具堆叠若不收敛界面，用户认知负荷会成为采用障碍；另外远程设备“只装了Open Code就只能选Open Code”，提示调研远程/多端场景时必须先摸清各端实际安装环境。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路</strong>：视频结尾“点赞破千就出更高级用法”、workflow代码放GitHub且链接在评论区——用进阶内容做钩子、用可运行资产做留存，是开源工具传播的标准打法。</li>
+<li><strong>传播路径</strong>：从官网安装包+App Store双端分发，到“手机扫码连接电脑”这种可视化极强的演示画面，天然适合短视频切片传播（解读/推论）。</li>
+<li><strong>可研究点</strong>：UP主反复用“比Orca更好用”做对标锚定，借已有认知降低理解成本，这是新工具建立心智位次的常用手段。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：多端同步（桌面/网页/手机）本质是“跨设备用户旅程”的打通，手机扫码即连的极简链路值得借鉴为转化路径设计原则——连接步骤越少，激活率越高（解读/推论）。</li>
+<li><strong>转化路径发现</strong>：Providers里“先接入已有订阅、再按需启用模型”的配置逻辑，类似“先绑定账户、后按场景开通”，可映射到会员/工具的按需启用式运营。</li>
+<li><strong>注意边界</strong>：视频未涉及任何电商场景与数据，以上为跨领域类比推论，不可当作实证。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）（选填）</h3>
+          <p>视频未涉及ID设计、MD堆叠或电子设计demo内容，但其中一条架构信息对硬件PM有直接参照价值：T3 Code是<strong>双向架构</strong>——“不仅能向下调用这些AI coding CLI，它还能向上暴露为MCP”，即可以被Claude Code、Codex等通过MCP反向调用。这提示AI时代的产品定义要同时考虑“作为调度方”和“作为被调度方”两种角色（解读/推论）。边界方面，视频展示的自动化止步于“构建者干活+双审查员签字+人工确认合并”的workflow，最终合并权仍在人手里——可类比硬件流程中AI能跑分支验证，但关键节点审批仍须PM拍板。此段为跨领域推论，视频本身无硬件案例支撑。</p>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「T3 Code官方使用的定位就是coding agents的开源控制平面」（开头）——一句话定义产品，是理解全部功能的主线。</li>
+<li>「它是直接用GUI来显示CLI里的这一些内容，像这样的话，我们看上去就非常美观，而且非常易于复制」（中段）——点出多agent工具真正的体验胜负手不在模型而在界面层。</li>
+<li>「这几个AI编程助手他们修改的代码并不会互相冲突」（中段）——work tree隔离是多线程并行的技术前提，一句话解释“为什么能四线程同跑”。</li>
+<li>「当Claude Code与Antigravity他们的审查都通过之后，就会将结果交给我们，问我们是否合并」（结尾）——揭示自动化边界：审查可自动，合并决策留给人。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>已订阅多个AI编程助手（Claude Code、Codex、Antigravity等）、苦于来回切换工具或想让多模型交叉审查代码的开发者；以及需要远程/手机派发编程任务、想用脚本固化review流程的个人与团队。视频仅11分钟、全程实操演示，上手成本低。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
