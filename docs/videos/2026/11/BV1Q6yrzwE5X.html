@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Agent没那么神秘，核心就是一个循环</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>Agent没那么神秘，核心就是一个循环</h1>
+      <div class="reader-meta">清华姜学长 · 2026-11-25</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>Agent不神秘：问模型→执行工具→带回结果→再问，一个循环跑到底。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容（3分钟视频，信息量有限，按原片结构如实展开）</h2>
+        <p><strong>背景痛点（开头）</strong>：UP主以 Claude Code、Codex 这类编程 Agent 的实际使用场景切入，指出两个典型故障：一是“刚交代过的要求，它过一会就漏了”；二是“对同一个报错试了好几遍，最后卡在那”，而且用户“想帮它往下走，都不知道从哪一步开始看起”。这两个痛点构成了整个视频要解决的问题——<strong>Agent 的不透明性</strong>。</p>
+<p><strong>核心观点：Agent 的本质就是一个循环</strong>。视频用一个叫“NAGENT”（字幕原文如此）的中文开源教程所带的本地网页演示来说明。演示任务是“写个 hello 点 Python 并且运行”，全过程被拆成三步：</p>
+<ul>
+<li><strong>第一步·写文件</strong>：模型先“看一眼工作区的目录”，然后左边显示一段演示用的思考文字，接着弹出工具请求页面，“问你允不允许写入”；用户点了允许，程序才真正写文件；写完左边多出一条工具结果，“告诉模型文件已经写好了”。</li>
+<li><strong>第二步·运行文件</strong>：模型收到刚才那条结果后，请求运行命令；用户再点一次允许；命令跑完，脚本打印什么，左边就显示什么。</li>
+<li><strong>第三步·汇报结果</strong>：模型看到脚本跑完，直接告诉用户“文件写好了，输出是什么”，这一次没有再请求工具，<strong>循环就停掉了</strong>。</li>
+</ul>
+<p>UP主由此归纳出循环本身：“问模型下一步怎么去做，程序执行他请求的工具，把结果带过来，再问一次模型。”他强调：你“在输入框里只说了一句话，后台已经来回跑了好几轮”。</p>
+<p><strong>网页设计的巧思（记忆抓手所在）</strong>：页面左边是 Agent 的动作流水，右边是“每次调用模型的时候发过去的消息”——哪部分是系统提示、哪部分是你说的的话、哪部分是工具返回的结果，“都有标记”，旁边还估算各自占用的 token。UP主认为这个页面“最好懂的地方是，左右两边能对得上”：左边刚显示文件已写入，下一次调用模型时就能在右边找到这条消息，“模型知道文件已经写好了，靠的就是它”。</p>
+<p><strong>Token 与“遗忘”的因果链（关键结论）</strong>：这解释了为什么一句很短的需求可能用掉不少 token——每次调用都会带上当时保留的全部消息、读进来的文件、命令打出来的日志，“可能比你那句话要长得多”。而任务跑久后，有些 Agent 会“清理旧输出，或者把前面的对话压成摘要”，于是“之前交代过的细节，就有可能在这一步给他漏掉了”。这正是开头“要求过一会就漏了”的机理。</p>
+<p><strong>三种上手方式</strong>：①跑仓库自带的本地演示，用预写脚本模拟模型回复，API key 可留空，Mac 装 Python 3.10+，双击 web 下的 start.command，提示输入 API key 时直接回车进入演示模式；②看作者做的在线图解，浏览器打开即可，可点播放或一格一格翻，观察每次调用后上下文多了什么；③自己写，从第一课开始，“先用大约 100 行的 Python 写出最小循环”，之后再加工具、加权限，接着看 skills、MCP、子 agent、计划和记忆，前 11 课有可运行代码和图文版。UP主建议先跑演示，<strong>重点看一个地方</strong>：左边的工具结果怎么出现在右边下一次发给模型的消息里，“看懂这一步再决定要不要跟着写”。</p>
+<p><strong>实用建议（结尾）</strong>：项目是拿去学原理的，跟着写需要一点 Python 基础，接真实模型要准备 API key，项目默认可用 DeepSeek。日常排障口诀：卡住时“先看最后一步——他在等你确认，还是已经拿到了一个报错，又在重复同样的操作”；聊久了漏要求时，“先把关键限制和当前进度重新交代一遍”。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点（4条）</h2>
+        <p>【三拍循环】问—做—回：问模型、跑工具、带结果回来，再问一次 —— 对应“Agent 本质是循环”这一核心定义。
+【左右对账】左边是动作流水，右边是消息账本，两边对得上，模型才“知道” —— 对应网页演示中最关键的可视化设计。
+【上下文雪球】你一句话，它背一包：文件、日志全塞进每次调用，token 就是这么烧的 —— 对应“短需求耗不少 token”的解释。
+【压缩即遗忘】摘要一压，细节就漏 —— 对应开头“刚交代的要求过会就漏”的根因。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点（4条）</h2>
+        <ul>
+<li><strong>要点标题：Agent = 循环，不是魔法</strong></li>
+<li><strong>原文引用</strong>：「这就是agent最基本的循环问模型，下一步怎么去做程序，执行他请求的工具，把结果带过来，再问一次模型」</li>
+<li><strong>案例还原</strong>：演示任务“写 hello.py 并运行”——模型先看工作区目录、输出思考文字、请求写文件；用户点允许后文件写入，工具结果回传模型；模型据此请求运行命令，用户再允许，脚本输出回显；模型看到跑完，直接汇报，不再请求工具，循环终止。</li>
+<li>
+<p><strong>解读</strong>：把 Agent 祛魅成四步流程，任何卡顿都能定位到循环的某一拍（30字内适用对象：所有 Agent 使用者）。</p>
+</li>
+<li>
+<p><strong>要点标题：每次调用都背着全部历史，token 花在你看不见的地方</strong></p>
+</li>
+<li><strong>原文引用</strong>：「每次调用AH的都会带上当时保留的消息，读进来的文件，命令打出来的日志可能比你那句话要长得」</li>
+<li><strong>案例还原</strong>：UP主用演示页右侧的 token 估算标记说明：你只说了一句“写 hello 并运行”，但每次发给模型的消息里包含系统提示、你的话、工具返回结果三块内容，各占 token；多轮之后总量远超用户原话。</li>
+<li>
+<p><strong>解读</strong>：想省成本、控延迟，必须理解上下文是被“背着走”的（适用对象：成本敏感的开发者与团队）。</p>
+</li>
+<li>
+<p><strong>要点标题：上下文压缩是“漏要求”的头号嫌疑</strong></p>
+</li>
+<li><strong>原文引用</strong>：「有些AG卷的会清理旧输出，或者把前面的对话压成摘要，之前交代过的细节，就有可能在这一步给他漏掉了」</li>
+<li><strong>案例还原</strong>：对应开头现象——用户刚交代的要求过一会就漏。UP主的解释链条是：任务跑久→Agent 清理旧输出/把前面对话压成摘要→细节在这一步丢失→表现为“漏要求”。他给出的对策是“把关键限制和当前进度重新交代一遍”。</li>
+<li>
+<p><strong>解读</strong>：长任务中要主动“重述约束”，而不是指望 Agent 记住（适用对象：长时间跑 Agent 任务的人）。</p>
+</li>
+<li>
+<p><strong>要点标题：卡住时先看“最后一步”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「你可以先看最后一步，他在等你确认还是已经拿到了一个报错，又在重复同样的操作」</li>
+<li><strong>案例还原</strong>：开头提到的“对同一个报错试了好几遍，最后卡在那”，UP主没有给复杂调试法，而是给了一个分诊动作：检查最后一步处于“等用户确认权限”还是“拿到报错并在重复操作”——前者点允许，后者需介入。演示中每次写文件、运行命令都需用户点“允许”，说明权限确认本身就是常见的“假卡住”。</li>
+<li><strong>解读</strong>：排障先分诊再深挖，避免盲目翻全流程（适用对象：所有被 Agent 卡住的用户）。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频开头的两个痛点（要求被遗漏、同一报错反复试、不知从哪看起）本质是<strong>用户对 AI 产品“过程不可见”的抱怨</strong>——这是 AI 工具类产品用户研究中可直接复用的访谈切口。</li>
+<li><strong>可借鉴方法</strong>：NAGENT 的“左右对账”页面是一种<strong>把内部状态外化为用户可读界面</strong>的范例，做可用性测试时可观察用户是否第一眼能看懂“左边动作↔右边消息”的对应关系；UP主自己就把“重点看一个地方”作为引导，这提示研究脚本应聚焦单点而非全流程。</li>
+<li><strong>被揭示的坑</strong>：token 估算、系统提示/用户话/工具结果的标记，是用户理解成本的关键；研究中若不区分这三类消息，就容易误判用户“不懂 Agent”的真实原因。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新营销思路</strong>：这是一个典型的<strong>开源教程型内容营销</strong>样本——用本地可跑的演示（API key 可留空）降低体验门槛，用在线图解降低理解门槛，用 11 课体系课程做留存，形成“演示→图解→跟写”的漏斗。</li>
+<li><strong>传播路径</strong>：UP主把抽象概念（Agent 循环）转化为一个可点击的三步演示和一个“左右对账”的视觉记忆点，这种<strong>单点可视化</strong>天然适合截图传播与口口相传；结尾的排障口诀（看最后一步、重述约束）是可被转述的“金句资产”。</li>
+<li><strong>解读</strong>：推广 AI 工具时，“让用户先看懂一步”比讲全貌更有效（推论）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考策略</strong>：演示中的<strong>权限确认弹窗</strong>（“你点了允许程序才会去写文件”）是转化路径上的关键节点——每一次工具请求都是一次“用户确认”机会，类似下单前的二次确认；若确认过多会造成流失（视频中写文件、运行命令各需一次允许）。</li>
+<li><strong>用户旅程新发现</strong>：UP主把“卡住”分为“等你确认”和“重复报错”两类，这正是用户旅程中的两类流失点——前者是流程摩擦，后者是价值未兑现。运营侧可借鉴：先判断用户停在哪一类节点，再决定是简化确认还是提供帮助。</li>
+<li><strong>解读</strong>：把 Agent 循环映射为“请求—确认—反馈”的旅程模型，对设计引导式转化有启发（推论）。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li>逐字稿只涉及软件编程 Agent（Claude Code、Codex、DeepSeek API），<strong>未涉及 ID 设计、MD 堆叠、电子设计 demo 等硬件环节</strong>，故不对硬件 PM 流程作任何延伸推断。</li>
+<li>可迁移的一条原则（明确为推论）：视频揭示的“循环四拍 + 工具结果回传”说明 AI 的能力边界在于<strong>每次动作都需工具执行与结果验证</strong>；对应到任何 PM 工作，AI 能加速的是“问—试—看结果”的迭代节奏，而“确认是否允许执行”的判断权仍在人手里——视频中每个写文件、运行命令的动作都必须由用户点“允许”，这就是边界的具象化。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录（3条）</h2>
+        <ul>
+<li>「你在输入框里只说了一句话，后台呢已经来回跑了好几轮」（中段）——一句话点破 Agent 的“冰山结构”，是理解 token 消耗与延迟的钥匙。</li>
+<li>「左边刚显示文件已经写入，下一次调用模型的时候，你就能在右边找到这条消息，模型知道文件已经写好了，靠的就是它」（中段）——把“上下文”这个抽象概念落到一次可观察的对应关系上，是全片最好懂的一句。</li>
+<li>「先把关键限制和当前进度重新的交代一遍」（结尾）——最朴素也最实用的长任务自救口诀，可直接照做。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>刚开始用 Claude Code、Codex 等编程 Agent，遇到“要求被漏、同一报错反复卡、不知从哪排查”的开发者；以及想用约 100 行代码亲手写一个最小 Agent 循环、理解 skills/MCP/子 agent 之前先打地基的学习者。3 分钟即可建立“循环+上下文”的正确心智模型，性价比很高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
