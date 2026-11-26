@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>gpu-unlock 让显卡性能翻倍！</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>gpu-unlock 让显卡性能翻倍！</h1>
+      <div class="reader-meta">隔壁的程序员老王 · 2026-11-26</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>同一块芯片，英伟达用寄存器让它“干一拍歇一拍”，黑客用溢出漏洞把速度偷回来。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景：四倍价的“同芯兄弟”与不动声色的阉割</strong></p>
+<p>视频开篇摆出一组对比：RTX 4090 首发价 1599 美元，同代专业卡 RTX 6000A 首发价 6800 美元，是前者四倍多，而两张卡用的都是 AD102 核心。出厂屏蔽后，4090 保留 512 个 Tensor Core，RTX 6000 保留 568 个。按核心数推算，4090 的算力应是 RTX 6000 的 90% 左右——玩游戏确实差不多是这个水平。但用 4090 跑 AI 模型，只能发挥出大约一半的算力。差价四倍、硬件规模接近，为什么 AI 性能差一倍？UP 主把答案落在了一个非常具体的地方：累加精度模式。</p>
+<p><strong>原理层：FP16 负责乘、FP32 负责加，限制就卡在“加”上</strong></p>
+<p>大模型最繁重的计算是矩阵乘法：几千对数字两两相乘，再把乘积加到一起。Tensor Core 专门干这件事。相乘一般用 16 位浮点 FP16，快且省显存，缺点是最大只能表示到 65504；而几千几万项累加在 AI 计算中非常常见，结果很容易接近甚至超过 65504，即便不溢出也会带来很大精度损失，所以累加这一步要用 FP32（最大可表示到 3.4×10³⁸，比 FP16 大三十多个数量级）。英伟达的限制正设在这里：4090 的 Tensor Core 只有用 FP16 累加才全速运行，一旦切到 FP32 累加，硬件就主动降低指令发送速度，让 Tensor Core <strong>干一拍歇一拍</strong>，速度直接减半。</p>
+<p>关键是这个限制“精准避开了玩家”：游戏画面渲染用的是 CUDA Core，大部分游戏根本不用 Tensor Core，更不用它做 FP32 累加，所以臭打游戏的基本无感。数字上，白皮书口径是 4090 的 FP16 累加算力 330 TFLOPS，FP32 累加只剩 165 TFLOPS；而 RTX 6000 两种模式都是 364 TFLOPS。</p>
+<p><strong>破解层：四道锁，一道一道撬</strong></p>
+<p>第一道锁是“改寄存器”。显卡核心中有一个软件开关叫<strong>速度选择寄存器</strong>，每次通电初始化为固定值，让 32 位累加跑半速；但为调试方便，它允许被写入新值。想自己写程序改？不行——GPU 内部有 level 0 到 level 3 四级硬件权限，CPU、主板在 GPU 眼里都是外部设备，只有最低的 level 0；速度选择寄存器锁在 level 3，CPU 发来的修改指令会被忽略。唯一持有 level 3 的是 <strong>SEC2 安全核心</strong>。</p>
+<p>第二道锁是“改驱动喂假程序”。安全核心上跑的程序并不固化在芯片里，而是进系统加载驱动时由 CPU 传过去的，看似可以 root 后塞个假程序让它改寄存器——但安全核心会验证数字签名，只认英伟达自己写的程序，塞假的直接黑屏。</p>
+<p>第三道锁被 2026 年 6 月的研究人员撬开：安全核心对外接口中，有一个在把 CPU 传来的参数拷进堆栈缓冲区时<strong>没有检查长度</strong>，传入超长参数即造成缓冲区溢出。UP 主用一段伪代码讲清了原理：mailbox 函数接收 CPU 数据（data 指针 + data_size），交给 handle 方法，handle 在堆栈上申请固定 128 字节 buffer，然后把用户数据整段拷进去。buffer 是固定 128 字节，data_size 却由 CPU 控制——超过 128 字节，拷贝就会一路往后覆盖，最终<strong>覆盖到返回地址</strong>。返回地址记录 handle 执行完该从哪里继续；而 data 内容同样由 CPU 控制，于是攻击者既能改返回地址、又能决定改成什么，把返回地址指向一段修改速度选择寄存器的代码，安全核心就会“帮”着把寄存器改好。UP 主明确说明这是简化版原理，真实利用还涉及 stack cookie、ROP 技术等，并留了“可以单独做一期”的口子。</p>
+<p>第四道锁是“改完怎么不退化成死机”。这类 ACE（任意代码执行）漏洞英伟达自然会补，最新驱动已无此漏洞。GPU Unlock 的做法是：打包<strong>老版安全固件</strong>，在真正的驱动加载之前先把它传给安全核心，触发漏洞把 32 位累加改成全速；此时不能直接退出，否则操作系统再加载新驱动会因显卡已被初始化而冲突死机。于是它向 PCIe 插槽发送<strong>软复位</strong>指令，命令显卡复位——不切断电源的前提下让 GPU 和安全核心状态归零，新驱动得以正常加载。而“不知英伟达硬件工程师出于什么考虑”，软复位并不改变速度选择寄存器的状态：复位后官方驱动正常加载，把新版引导固件传给安全核心初始化，因为通电默认就是半速、英伟达写新固件时也没去碰这个寄存器，<strong>全速档位就这样被保留了下来</strong>。</p>
+<p><strong>结果层：纸面翻倍，实测 15%–35%</strong></p>
+<p>白皮书口径下，解锁后 4090 的 FP32 累加算力从 165.6 TFLOPS 涨到 331.6 TFLOPS，正好翻倍。但实测跑真实 AI 任务（ComfyUI 生图、模型微调）一般只快 15%–35%，原因有二：一是 4090 默认 450 瓦功耗上限，显存和其他电路都在耗电，Tensor Core 速度翻倍后很容易撞<strong>功耗墙</strong>自动降频——同样存在漏洞的 30 系因核心少、耗电低、离功耗上限余量大，能快 25%–55%；二是 AI 计算不止矩阵乘加，大量时间花在数据于显存与计算核心之间搬运，瓶颈在<strong>显存带宽</strong>，Tensor Core 翻倍解决不了。但无论如何，4090 上算是白捡了 20% 上下。</p>
+<p>覆盖面：目前支持 RTX 20/30/40 三代游戏卡；原版跑在 Linux，社区很快做了 Windows U 盘引导工具，进系统前完成解锁。50 系同样 32 位累加减半，但首发固件没有这个漏洞、硬件也不兼容老卡旧固件，用不了这套办法。</p>
+<p><strong>收尾层：封堵的两条路与一个哲学尾巴</strong></p>
+<p>封堵方案一：改新版驱动里的引导固件，让安全核心初始化时顺手把寄存器改回半速——但只拦得住用新驱动的人，退回旧驱动照样全速，治标不治本。治本方案是<strong>一次性物理熔丝（OTP Fuse）</strong>：一个物理上只能增大的计数器，用来记录固件最低版本，加载固件时比对当前版本与熔丝记录，即可发现是否加载了老版固件；装过一次新驱动、调高版本后，老固件就再也用不了。UP 主指出手机、游戏机等可升级电子设备普遍用这招防降级，但那些是整体设备、正常使用本就没有降级机会；显卡作为一个部件这么做“很容易引发争议”——我用的老系统不支持你的新驱动，装老驱动怎么就不行了？把显卡卖了别人没新驱动还用不了了？他明确说这“不属于技术范畴，这里就不讨论了”。</p>
+<p>最后是一段带情绪的自嘲式总结：台积电一群人绞尽脑汁让芯片快一点点，英伟达想方设法让同一块芯片慢下来，又不知从哪儿冒出一群黑客顺着漏洞把速度改回去——<strong>三波绝顶聪明的人折腾一圈，回到原点</strong>；而且熬那么多日夜只换来 20% 提速，算不上划算买卖。到了 5nm，门越关越严、接口越藏越深，藏在后面的东西却越来越少，他称之为“所有电子产品的宿命”，并以“锁还在那里，而锁芯弹开的清响，足以让人感到最纯粹的快乐”收束全片。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【干一拍歇一拍】Tensor Core 被指令成“干一拍歇一拍”，FP32 累加就只剩半速——限制不是砍核心，是抽走节奏。
+【四道门】寄存器锁在 level 3、安全核心只认签名、接口不查长度、软复位不清寄存器——四道门依次被撬，最后一道竟是工程师“没碰”。
+【128 字节的杯子】buffer 是固定 128 字节的杯子，data_size 却是 CPU 说了算的水量，水多了就漫到“返回地址”这层地板上。
+【治标与治本】改驱动是换一把临时锁，OTP 熔丝是只增不减的计数器——一个能退回旧驱动，一个装过新版就再也回不去。
+【纸面翻倍，到手两成】白皮书上 165.6→331.6 TFLOPS，实测只快 15%–35%，因为功耗墙和显存带宽在两头设卡。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>限制的位置极其精准：只打 AI 累加，不打游戏</strong></li>
+<li><strong>原文引用</strong>：「4090 的 Tensor Core 只有用 FP16 进行累加才是全速运行，而一旦切换到 FP32 累加模式，4090 就会主动降低硬件指令的发送速度，让 Tensor Core 干一拍歇一拍，速度直接减半。」</li>
+<li><strong>案例还原</strong>：AI 计算是“FP16 相乘 + FP32 累加”的组合，累加项动辄几千几万，结果易超 FP16 上限 65504，所以累加必须用 FP32；英伟达就把半速模式绑在 FP32 累加上。对比数字：4090 FP16 累加 330 TFLOPS、FP32 累加 165 TFLOPS，RTX 6000 两种都是 364 TFLOPS。而游戏用 CUDA Core 渲染、基本不碰 Tensor Core，因此“臭打游戏的”完全不受影响。</li>
+<li>
+<p><strong>解读</strong>：硬件规格表上的“算力”是模式相关的，看 benchmark 前先问跑在哪种精度下。</p>
+</li>
+<li>
+<p><strong>权限墙：CPU 在 GPU 眼里只是 level 0 外部设备</strong></p>
+</li>
+<li><strong>原文引用</strong>：「在 GPU 看来，CPU 也好，主板也好，都算外部设备，只有最低的 level 0 权限……而速度选择寄存器被锁在 level 3 权限下。」</li>
+<li><strong>案例还原</strong>：UP 主先设想“自己写程序改寄存器”，被权限体系挡回；再设想“root 系统、用 CPU 塞个假程序给安全核心”，被数字签名验证挡回——发假程序显卡直接黑屏。能拿到 level 3 的只有 SEC2 安全核心，而它运行的程序是进系统加载驱动时由 CPU 传过去的，这个“传递”环节就成了攻击面。</li>
+<li>
+<p><strong>解读</strong>：芯片内的权限分层 + 签名验证，是把“硬件后门”变成“不可改”的标准配方。</p>
+</li>
+<li>
+<p><strong>缓冲区溢出：可控的 data + 可控的 size = 可控的执行流</strong></p>
+</li>
+<li><strong>原文引用</strong>：「如果 data size 超过 128 个字节，那么这个拷贝操作就会超过 buffer 的上限，一路往后覆盖，最终覆盖到所谓的返回地址。」</li>
+<li><strong>案例还原</strong>：2026 年 6 月研究人员发现安全核心某个接口拷贝 CPU 参数进堆栈缓冲区时不检查长度。UP 主用伪代码还原：mailbox 收到 data 指针与 data_size → 传给 handle → handle 在堆栈申请 128 字节 buffer → 整段拷贝；data_size 由 CPU 控制，超过 128 即溢出到返回地址，而 data 内容也由 CPU 控制，于是返回地址可被改写成“修改速度选择寄存器的代码”，安全核心便替攻击者改好了寄存器。UP 主注明真实利用还涉及 stack cookie、ROP 等技术，此处只讲最基本原理。</li>
+<li>
+<p><strong>解读</strong>：漏洞不神秘，本质是“长度没校验”+“内容和长度都听外部人的”。</p>
+</li>
+<li>
+<p><strong>软复位不清寄存器：一次“没碰”留下的全速档</strong></p>
+</li>
+<li><strong>原文引用</strong>：「不知英伟达的硬件工程师出于什么样的考虑，这个软复位并不会改变速度选择寄存器的状态，它还是我们之前利用漏洞改过的值。」</li>
+<li><strong>案例还原</strong>：改完速度后不能直接退出，否则新驱动加载会与已初始化的显卡冲突死机；GPU Unlock 向 PCIe 插槽发软复位，让 GPU 与安全核心状态归零而不切断电源，官方驱动正常加载、把新版引导固件传给安全核心初始化；由于通电默认半速、新固件也没去碰速度选择寄存器，之前改出的全速档位被完整保留。整个链条完整闭环：老固件触发漏洞 → 改寄存器 → 软复位 → 新驱动正常跑在全速上。</li>
+<li>
+<p><strong>解读</strong>：安全设计里“默认值假设”是最容易被利用的缝隙——默认半速，于是没人去显式设半速。</p>
+</li>
+<li>
+<p><strong>纸面翻倍 ≠ 到手翻倍：功耗墙与显存带宽两道闸</strong></p>
+</li>
+<li><strong>原文引用</strong>：「实测跑真实的 AI 任务，比如用 ComfyUI 生图或者做模型微调，4090 一般只会快 15% 到 35%。」</li>
+<li><strong>案例还原</strong>：两个原因——4090 默认 450 瓦功耗上限，Tensor Core 翻倍后极易撞功耗墙降频；同漏洞的 30 系因核心少、耗电低、余量大，能快 25%–55%。另一原因是数据在显存与计算核心间搬运的时间瓶颈在显存带宽，Tensor Core 再快也解决不了。白皮书理论值则是 165.6 → 331.6 TFLOPS。</li>
+<li>
+<p><strong>解读</strong>：任何“算力翻倍”宣传，都要追问供电与带宽是否同步跟上。</p>
+</li>
+<li>
+<p><strong>封堵：治标改固件，治本熔丝，但熔丝有争议</strong></p>
+</li>
+<li><strong>原文引用</strong>：「真正治本的方法是使用一次性物理熔丝……由于 OTP Fuse 只能增大，所以只要装过一次新版驱动，调高版本之后，老版驱动里的固件就再也用不了了，漏洞自然也就堵上了。」</li>
+<li><strong>案例还原</strong>：改新版驱动里的引导固件、初始化时顺手改回半速，只能拦住新驱动用户，退回旧驱动仍可全速，治标不治本。OTP Fuse 记录固件最低版本，加载时比对，版本只增不减，装过新版即封死老固件。UP 主指出手机、游戏机等可升级设备普遍用此法，但它们是整体设备、正常使用无降级机会；显卡作为部件这么做“很容易引发争议”——老系统不兼容新驱动怎么办、二手卡买家没有新驱动怎么办，并声明这已不属于技术范畴。</li>
+<li><strong>解读</strong>：防降级机制在“整机”里是安全，在“部件”里就变成对用户处置权的侵犯。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察：同一颗芯片被切成两个市场，“规格表不等于真实能力”。</strong> 视频揭示 4090 与 RTX 6000 同核不同价（1599 美元 vs 6800 美元，Tensor Core 512 vs 568），名义算力差 10%，AI 实跑差约一倍。做竞品分析时，只看参数表会得出“4090 性价比碾压”的错误结论，必须回到“在什么精度模式下跑什么任务”这一层。</li>
+<li><strong>可借鉴的方法：把“限制”当作研究对象，而不是背景噪音。</strong> UP 主的路径是：先看官方白皮书数字（330/165 TFLOPS vs 364/364），再用真实任务实测（15%–35%），最后解释差距来源（450 瓦功耗墙、显存带宽）。这套“纸面→实测→归因”的三段式，正是用户研究中“宣称行为 vs 实际行为”差距分析的模板。</li>
+<li><strong>被揭示的坑：用户自述的“性能不够”往往是错的归因。</strong> 真实瓶颈可能不在算力，而在显存带宽或功耗墙；30 系能快 25%–55%、40 系只快 15%–35%，恰恰因为两者余量不同。做深访时若只问“快不快”，会错过真正的约束条件。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新思路：官方“阉割”与民间“解锁”的对抗本身，就是持续免费的话题素材。</strong> 一个开源项目让 20–40 系跑 AI 翻倍，天然具备“黑科技、反权威、白捡性能”三重传播钩子；视频结尾“三波聪明人折腾一圈回到原点”的叙事，把技术事件升维成行业寓言，这是内容营销中典型的“把参数故事讲成人话”。</li>
+<li><strong>值得研究的传播路径：社区接力。</strong> 原版项目跑在 Linux，社区很快做出 Windows 的 U 盘引导工具——开源项目 → 社区适配 → 降到普通用户可操作门槛，这条链路值得复盘：谁在传播、在哪一步降低使用门槛、什么节点形成话题峰值。</li>
+<li><strong>风险启示：厂商封堵会引发争议，品牌沟通要预判“部件 vs 整机”的认知差。</strong> OTP 熔丝方案在手机、游戏机上被普遍接受，但用到显卡这种“部件”上，UP 主直接点出“老系统不兼容新驱动怎么办、二手卡怎么办”的争议。任何以“防降级”为名的策略，一旦剥夺用户回退权，就会把技术问题变成公关问题。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>可参考的策略：把“可解锁/可回退”做成 SKU 卖点分层。</strong> 视频给出的硬信息是：20/30/40 系可解锁，30 系实测收益最高（快 25%–55%），40 系 15%–35%，50 系因首发固件无漏洞且硬件不兼容旧固件而完全用不了。对二手卡与整机渠道，这意味着不同代际的实际价值差异远大于参数表，定价与推荐逻辑应据此重排。</li>
+<li><strong>转化路径发现：门槛即漏斗。</strong> 原版 Linux 方案 → 社区 Windows U 盘引导工具，使用门槛的每一次下降都会放大潜在用户池；同理，驱动版本会成为新的转化变量（装新驱动降速、退旧驱动恢复全速），售后与客服必须准备“驱动版本—性能表现”的对应话术。</li>
+<li><strong>用户旅程新发现：复位与回退是信任节点。</strong> 软复位保留全速档位的细节说明，用户最在意的不是“怎么破解”，而是“改完会不会死机、能不能退回”。任何提供“增强/解锁”类服务的运营，都要把可逆性写进承诺，否则一次死机就足以摧毁信任。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI 时代新定义）</h3>
+          <ul>
+<li><strong>AI 能在哪一步真正发挥作用的信号：本视频没有讨论 AI 辅助 ID 设计、MD 堆叠或电子设计 demo，不能据此下结论。</strong> 逐字稿唯一提供的是“AI 负载”这一侧的硬事实：真实 AI 任务中，矩阵乘加之外还有大量时间花在数据于显存和计算核心之间搬运，瓶颈在显存带宽；同时 4090 默认 450 瓦功耗上限，算力翻倍后很容易撞功耗墙降频。这两条对 PM 的启示是：<strong>做 AI 硬件规格定义时，算力、带宽、功耗三者必须同框评估</strong>，单点翻倍的纸面收益会被另外两项吃掉，实测只剩 15%–35%。</li>
+<li><strong>AI 的边界（推论，非视频原话）</strong>：视频展示的整条链路——权限分层、签名验证、长度校验、软复位语义、OTP 熔丝版本策略——全是“人做的决策”：把寄存器锁在 level 3 是人定的，只认自家签名是人定的，复位不清寄存器也是人定的。这些安全与产品边界的取舍，恰恰是 PM 最难外包的部分；AI 可以帮忙查资料、写验证脚本，但“要不要给用户回退权”“要不要用一次性熔丝”这类涉及用户处置权与争议风险的判断，仍然是 PM 的活。</li>
+<li><strong>岗位职责演变的信号</strong>：UP 主一句“我把显卡卖了，别人没有新驱动还用不了了”，把技术方案直接翻译成用户权利问题。这提示智能硬件 PM 在 AI 时代的新定义里，必须同时握住两根线——硬件安全策略（签名、权限、熔丝）与用户可逆性（降级、二手流通、兼容老系统）；只懂前者会做出“技术正确、用户愤怒”的产品。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「台积电一群人绞尽脑汁，好不容易让芯片又快乐那么一点点，英伟达则想方设法让同一块芯片慢下来。最后呢，又不知道从哪儿冒出来一群黑客，顺着漏洞硬是把速度又改了回去。」（结尾）——一句话概括了整条产业链的利益错位，是全片最好的“记忆钩子”。</li>
+<li>「三波绝顶聪明的人折腾了一圈，结果回到了原点。」（结尾）——把技术攻防升维成对行业效率的冷幽默判断，适合作为任何“内卷式研发”讨论的引子。</li>
+<li>「因为锁还在那里，而锁芯弹开的清响，足以让人感到最纯粹的快乐。」（结尾）——解释了为什么这类“不划算”的破解仍有人做：动机不是收益，是破解本身。</li>
+<li>「治标不治本。」（中后段，谈改固件封堵时）——四个字给出了任何“补丁式封堵”的通用判据：能否被退回旧版本绕过。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>对 GPU 硬件、AI 算力与信息安全攻防感兴趣的开发者和技术爱好者，以及需要判断“纸面算力 vs 实际性能”的 AI 应用从业者。13 分钟里既有 FP16/FP32 累加、权限分级、缓冲区溢出、OTP 熔丝这样的硬核概念，也有“实测只快 15%–35%”的清醒数字，值得为建立“不被参数表忽悠”的判断力花这十几分钟。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
