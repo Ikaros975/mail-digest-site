@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>像高手一样做自己的Skill！【小白教程】</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>像高手一样做自己的Skill！【小白教程】</h1>
+      <div class="reader-meta">秋芝2046 · 2026-11-24</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>做Skill就像带实习生：挑对事、给底子、喂语料、反复纠正，越用越顺手。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p><strong>背景与核心观点（Skill是什么、为什么别人的不好用）</strong></p>
+<p>UP主开篇点出一个普遍痛点：很多人下载了一堆别人的Skill，装上一用总觉得不够顺手。原因很直接——网上直接下载的Skill是照着别人的习惯做的，最顺手的还得自己做。UP主给Skill下了个精准定义：本质就是一个文件夹，核心是一个 <code>skill.md</code> 文件，上面写&rdquo;什么时候用&rdquo;，下面写&rdquo;整体要怎么干&rdquo;，更细的每一步则作为附件放在其他文件里。说白了，<strong>整个就是一个给Agent的任务说明书</strong>。安装和使用Agent自己都会，真正难的是&rdquo;做&rdquo;。</p>
+<p><strong>七步流程中的关键论证：挑对事、找底子、测底子</strong></p>
+<p>第一步是挑对事，原则只有两条：这事你真的会反复做，而且你直接让AI做他做得不好。UP主以&rdquo;去AI味&rdquo;作为练手案例——每次写东西都要用，绝对高频。</p>
+<p>第二步找底子。UP主现场演示了一个完整的&rdquo;翻车→改进&rdquo;链路：先让AI裸跑一次&rdquo;帮我把文章改得没有AI味&rdquo;，结果AI直接换了一套新AI腔，验证了&rdquo;直接让AI做是做不好的&rdquo;。随后让Agent去搜现成Skill，搜到了国外最火的去AI味Skill「humanizer」，将近7万星，几天前还在更新，下载后翻译发现它已经抽象出六种AI腔规律，很成熟，可以当底子。UP主特意提醒：下载的现成Skill要留心眼，看更新时间，因为很多是给老模型写的，模型一升级换代，写死的规矩反而会束缚新模型；自己换了新模型也要记得先关掉Skill裸跑一下，如果发现不如不用，就可以直接删掉。</p>
+<p><strong>核心案例：用「humanizer」当底子改稿，为什么还是&rdquo;不像你&rdquo;</strong></p>
+<p>UP主用humanizer的Skill直接改了一篇稿子，结果AI味确实少了一点，但还是不像自己。这就是全片最重要的洞察：<strong>就算找好了底子，还得加入你自己的味道</strong>。UP主引用了一组研究数据（skills bench的测试）：只让AI凭空写的Skill，用了比不用还差8~12个点；网上热门的Skill也有一大半装了跟没装一样；但结合自己真实任务打磨出来的Skill，平均能涨16.6个点。原因在于AI不懂你的目标和任务的细节标准。这个案例完整走完了&rdquo;直接让AI做→失败→找现成底子→有效但不完全→暴露问题&rdquo;的全过程，是整期视频的论证骨架。</p>
+<p><strong>方法论主体：喂语料→提炼味道清单→实战打磨→存档→砍与拆→盲评</strong></p>
+<p>既然要&rdquo;像自己&rdquo;，就得给AI准备自己的语料：找十篇以上自己写过的、最好没用AI写过的东西，聊天记录、朋友圈、微博都可以。UP主用自己十篇视频文稿做原料，让Agent统计语料里&rdquo;可数的数据&rdquo;——句子多长、标点怎么用、高频口头禅，这些是个人标签；把&rdquo;不好数的特征&rdquo;（怎么开头、怎么转折）总结成规律，并附上原文当证据。</p>
+<p>这里有一个非常好的自省案例：UP主拿到结果后要自己仔细过一遍，分成&rdquo;要留的、要改的、想加的&rdquo;。她发现自己一期稿子60段里有十时段以&rdquo;那&rdquo;开头——虽然是她的味道，但这并不好，属于&rdquo;想改的味儿&rdquo;。<strong>这说明语料提炼不是照单全收，而是先诊断自己。</strong> 随后拿真的稿子带底子Skill改一遍，读一遍，哪句不像就标出来打评论，最好还告诉AI&rdquo;如果是你会怎么写&rdquo;，反复几轮直到读起来像自己，再调用skill creator把风格清单和整套做法存成新Skill并起名字——注意在别人基础上改，要保留原作者署名和MIT协议。</p>
+<p><strong>收尾功夫：砍内容、拆文件、三路盲评、持续迭代</strong></p>
+<p>UP主点出AI的毛病：在原本底子上只增不删，但Skill文件越短越精简效果越好。所以要手动删掉AI本来就会的东西、删掉跟目标关系不大的情况（比如humanizer里跟英文相关的习惯），可以让Agent自检，也可以边看文件边评论。然后拆文件：<code>skill.md</code>只留主流程和目录，样本、统计、检测脚本放到reference文件夹和scripts里。测试方法是同一个提示词、同一件活让三个子Agent跑——不装Skill裸跑、装底子Skill、装改好的版本，然后盲评哪个最好，仔细看哪些指令真正影响了结果。</p>
+<p>迭代阶段有两个实战雷点和技巧：<strong>雷点</strong>是不能不停往Skill里加&rdquo;不要这样不要那样&rdquo;的禁令，禁令越攒越多，AI反倒不知道正确的该怎么做；正确做法是抓到错误先问AI&rdquo;为什么你要这样做&rdquo;，一起找到背后的规律和模式，写一条规律拦住同类各种问题。<strong>技巧</strong>是在Skill末尾加一句：每当我纠正你或夸某个结果好时，请主动跟我复盘，问我要不要更新进Skill。参考资料也要常换常新，模型更新后记得关掉Skill裸跑，会发现有些规矩可以删了。</p>
+<p><strong>记忆抓手式总结</strong></p>
+<p>UP主最后给出全片最形象的比喻：做Skill没有技术，反而像带实习生一样——挑一件值得教的事，找一些现成方法当底子，把做得好的效果拿给他看，带他亲自做一遍，然后考考他，之后每纠正一次他就长进一次。视频中还顺带解释了为什么不必自己做所有Skill：网站上云、Agent云端部署这类专业活，官方一般都有（如亚马逊云科技的Agent云服务工作包内置官方部署Skill），属于&rdquo;我们永远不必操心&rdquo;的部分。</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <p>【带实习生】做Skill像带实习生：挑事、给底子、看样、陪练、考试、纠错一次长进一次 + 对应&rdquo;Skill没有技术，核心是个人标准+反复打磨&rdquo;的整套方法论。</p>
+<p>【AI腔换AI腔】直接让AI去AI味，他会给你换一套新AI腔 + 对应&rdquo;直接让AI做做不好，所以这事才值得做成Skill&rdquo;的选题原则。</p>
+<p>【别人的鞋不合脚】下载的Skill是照别人的习惯做的，穿上总不顺手 + 对应&rdquo;必须加入自己的味道，网上下载的装上跟没装一样&rdquo;。</p>
+<p>【禁令越攒越糊涂】别往Skill里堆&rdquo;不要这样不要那样&rdquo;，AI会忘了什么才是对的 + 对应&rdquo;抓错误要找背后规律，一条规律拦一类问题&rdquo;。</p>
+<p>【只增不删是通病】Skill文件越短越精简效果越好，AI却只会往上加 + 对应&rdquo;砍内容和拆文件&rdquo;这两步收尾功夫。</p>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点标题：值得做成Skill的事只有两条标准</strong></li>
+<li><strong>原文引用</strong>：「这事你真的会反复做，而且你直接让AI做他做的不好」</li>
+<li><strong>案例还原</strong>：UP主选&rdquo;去AI味&rdquo;练手，因为每次写东西都要用、绝对高频；而让AI裸跑一次改稿，AI直接换了一套新AI腔，证明&rdquo;直接让AI做不好&rdquo;——两个条件同时满足，才值得动手做成Skill。</li>
+<li>
+<p><strong>解读</strong>：避免把一次性杂活也Skill化，先做减法再动手。</p>
+</li>
+<li>
+<p><strong>要点标题：现成Skill要看&rdquo;出厂日期&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「很多都是给老模型写的，模型一升级一换代，一些写死的规矩反而会把现在的新模型给束缚住」</li>
+<li><strong>案例还原</strong>：UP主搜到humanizer（近7万星、几天前还在更新）才敢用；并建议换了新模型先关掉Skill裸跑，如果发现不如不用就直接删掉。</li>
+<li>
+<p><strong>解读</strong>：工具会随模型过期，定期&rdquo;裸跑体检&rdquo;是低成本纠偏。</p>
+</li>
+<li>
+<p><strong>要点标题：不做语料统计，Skill就没有&rdquo;你的味道&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「网上热门的skill呢也有一大半装了是跟没装一样的，但是结合你自己真实任务打磨出来的skill，平均都能涨16.6个点」</li>
+<li><strong>案例还原</strong>：UP主让Agent统计自己十篇旧文稿的句长、标点、口头禅（可数的数据），把开头和转折习惯总结成带原文证据的规律；随后自省发现60段里十时段以&rdquo;那&rdquo;开头，虽是自己味道但不好，归入&rdquo;想改的味儿&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：语料不是照单全收，而是先诊断自己、再喂给AI。</p>
+</li>
+<li>
+<p><strong>要点标题：迭代的原则是&rdquo;找规律&rdquo;而非&rdquo;加禁令&rdquo;</strong></p>
+</li>
+<li><strong>原文引用</strong>：「不要写不是而是……这会导致你的禁令越攒越多，那AI呢反倒不知道正确的该怎么做了」</li>
+<li><strong>案例还原</strong>：UP主建议抓到错误先问AI&rdquo;为什么你要这样做&rdquo;，一起找到背后模式，写一条规律拦住同类问题；并在Skill末尾加一句&rdquo;每当我纠正你或夸结果好时，主动复盘问我要不要更新进Skill&rdquo;。</li>
+<li>
+<p><strong>解读</strong>：让纠错自动沉淀为规则，Skill才能自我进化。</p>
+</li>
+<li>
+<p><strong>要点标题：收尾两件事——砍和拆</strong></p>
+</li>
+<li><strong>原文引用</strong>：「skill文件呢其实是越短越精简效果越好的」</li>
+<li><strong>案例还原</strong>：UP主指出AI在别人底子上只增不删，所以手动删掉AI本来就会的内容、删掉关系不大的情况（如humanizer里跟英文相关的习惯）；再把skill.md压到只留主流程和目录，样本、统计、脚本放进reference和scripts文件夹；最后用三路盲评（裸跑/底子/自改版）验证哪些指令真正起作用。</li>
+<li><strong>解读</strong>：精简+对照实验，是把Skill从&rdquo;能用&rdquo;推到&rdquo;好用&rdquo;的最后一段路。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>方法论启示</strong>：UP主&rdquo;统计可数数据+总结不可数规律+附原文当证据&rdquo;的语料提炼法，本质就是一套&rdquo;从用户原生内容中提取画像&rdquo;的定性+定量混合研究流程，可直接迁移到用户画像、声音（voice of customer）分析。</li>
+<li><strong>可借鉴的具体做法</strong>：找十篇以上&rdquo;未被AI污染&rdquo;的原生材料（UP主选的是没用AI写过的旧文稿、聊天记录）；可数量化指标（句长、标点习惯、高频口头禅），不可数量化特征（开头、转折习惯）总结成规律并附证据。</li>
+<li><strong>被揭示的坑</strong>：拿到提炼结果不能照单全收，UP主自己就发现&rdquo;以那开头&rdquo;是味道但不好，要分&rdquo;要留/要改/想加&rdquo;——研究结论同样需要研究者二次诊断，而不是直接交付数据。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频揭示了&rdquo;平台热门≠有效&rdquo;的残酷现实——网上热门的Skill一大半装了跟没装一样，只有结合自身真实任务打磨的才平均涨16.6个点。这对&rdquo;爆款模板直接套用&rdquo;式营销是直接的提醒：<strong>别人的爆款是别人的习惯，品牌必须建立自己的&rdquo;味道清单&rdquo;</strong>。</li>
+<li><strong>可研究的传播路径</strong>：UP主把方法论绑定一个真实刚需场景（去AI味）做全程演示，这种&rdquo;痛点→翻车→修正→成果&rdquo;的叙事结构本身就是优质内容营销的模板。</li>
+<li><strong>值得注意的合规细节</strong>：在别人基础上改要保留原作者署名和MIT协议——品牌二次创作、UGC复用时的版权处理同理。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>运营策略参考</strong>：UP主的&rdquo;三路盲评法&rdquo;（裸跑 / 用底子 / 用自改版，同一提示词同一任务对比盲评）是一套低成本A/B测试思维，可迁移到详情页文案、客服话术、内容脚本的多版本对比。</li>
+<li><strong>用户旅程发现</strong>：视频完整展示了&rdquo;期待→裸跑失望→找现成方案→仍不满意→自己打磨→盲评验证→持续迭代&rdquo;的决策旅程，本质是用户从&rdquo;拿来主义&rdquo;走向&rdquo;定制化&rdquo;的认知升级路径——运营SOP和工具类产品都该设计这条升级通路。</li>
+<li><strong>转化提示</strong>：视频末尾用&rdquo;Skill已放在评论区，记得按第三步做成你自己的味道&rdquo;收尾，是&rdquo;给鱼不如给渔&rdquo;的留存设计，对应电商中的复购与用户共创思路。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）【选填】</h3>
+          <ul>
+<li><strong>AI真正发挥作用的阶段</strong>：严格按逐字稿，视频未涉及ID设计/MD堆叠/电子设计demo，本点仅能就&rdquo;AI辅助流程固化&rdquo;做有限推论。可迁移的信号是：UP主展示了AI可完成&rdquo;搜现成方案→下载→翻译→统计语料→自检删减→存成新Skill&rdquo;这类<strong>流程性、文本性、可复用</strong>的工作，类比PM工作中需求文档整理、竞品资料汇总、SOP沉淀等环节。</li>
+<li><strong>AI的边界（推论，基于视频原话）</strong>：原文明确指出&rdquo;就算找好了底子，还得加入你自己的味道&rdquo;&ldquo;AI并不懂你的目标和任务的细节标准&rdquo;。对应到硬件PM，即AI不懂产品目标与用户细节标准，做&rdquo;判断与定标准&rdquo;的那部分仍必须PM亲自来——UP主那句&rdquo;做Skill像带实习生&rdquo;同样适用于带AI：给底子、看样、陪练、考试、纠错，缺一不可。</li>
+<li><strong>流程与岗位演变信号（推论）</strong>：视频反复强调&rdquo;模型升级后旧Skill的写死规矩会束缚新模型&rdquo;&ldquo;每纠正一次就长进一次&rdquo;，暗示未来的工作方式是把个人经验持续沉淀为可复用的规则资产——这与PM把需求判断、取舍标准沉淀成团队方法论的方向一致。<strong>注：视频未提供任何硬件设计相关实证，以上仅为内容迁移性推论。</strong></li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ul>
+<li>「整个就是一个给agent的任务说明书」（中段）——一句话讲清了Skill的本质，消除神秘感，是做Skill前必须建立的正确心智模型。</li>
+<li>「网上热门的skill呢也有一大半装了是跟没装一样的，但是结合你自己真实任务打磨出来的skill，平均都能涨16.6个点」（中段）——用数据打破&rdquo;下载即用&rdquo;的幻想，也是全片最有说服力的行动理由。</li>
+<li>「做skill没有技术，反而像带实习生一样」（结尾）——全片最佳记忆锚点，把技术活还原成管理活，降低门槛又留下清晰的动作清单。</li>
+</ul>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>正在使用或准备使用Agent、下载了一堆Skill却觉得&rdquo;不够顺手&rdquo;的AI工具用户；以及任何想把个人经验沉淀为可复用工作流的内容创作者、效率工具爱好者和需要带人/带AI的职场人。10分钟投入，换来一套可迁移到任何任务的Skill制作流程。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
