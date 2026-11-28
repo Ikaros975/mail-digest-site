@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>让AI写代码之前，先想好怎么验证它</title>
+  <style>
+/* Dark Tech Style — Design Tokens
+ * Drop this entire :root block into <style> to access the full system.
+ * Always use these variables; do not invent new colors. */
+
+:root {
+  /* Background layers — 4 levels, each ~6% lighter than the previous */
+  --bg-deepest: #0a0c14;        /* page background */
+  --bg-surface: #10121c;        /* inset panels, tab bars, code blocks */
+  --bg-card: #161924;           /* cards */
+  --bg-card-hover: #1c1f2e;     /* card hover state */
+
+  /* Borders — barely-there, lift on hover */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+
+  /* Text hierarchy */
+  --text-primary: #e2e5ef;      /* headlines, key data */
+  --text-secondary: #7a7f96;    /* body, descriptions */
+  --text-tertiary: #4a4e63;     /* captions, scrollbar, disabled */
+
+  /* Accent palette — 7 hues, each with a 15% dim variant for soft backgrounds.
+   * Use the solid color for text/border/icon and the -dim variant for fill.
+   * Pick a color per section/category — don't use them randomly. */
+  --accent-orange: #f97316;     --accent-orange-dim: rgba(249,115,22,0.15);
+  --accent-blue:   #3b82f6;     --accent-blue-dim:   rgba(59,130,246,0.15);
+  --accent-green:  #22c55e;     --accent-green-dim:  rgba(34,197,94,0.15);
+  --accent-gold:   #eab308;     --accent-gold-dim:   rgba(234,179,8,0.15);
+  --accent-purple: #a855f7;     --accent-purple-dim: rgba(168,85,247,0.15);
+  --accent-red:    #ef4444;     --accent-red-dim:    rgba(239,68,68,0.15);
+  --accent-cyan:   #06b6d4;     --accent-cyan-dim:   rgba(6,182,212,0.15);
+
+  /* Geometry */
+  --radius: 14px;               /* cards, large containers */
+  --radius-sm: 8px;             /* buttons, small chips */
+}
+
+/* Reset + base */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+}
+html::-webkit-scrollbar { width: 4px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 2px; }
+
+body {
+  font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue',
+               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: var(--bg-deepest);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Code / monospace */
+code, pre, .mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ─── Layout ─── */
+
+.section {
+  padding: 80px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-header-center { text-align: center; margin-bottom: 48px; }
+
+/* Tiny uppercase kicker label above titles. The signature element. */
+.section-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--accent-blue);     /* recolor per section */
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: clamp(24px, 4vw, 36px);
+  font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.2; margin-bottom: 10px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary); font-size: 15px;
+  max-width: 560px; line-height: 1.7;
+}
+.section-subtitle.center { margin: 0 auto; text-align: center; }
+
+/* ─── Nav (glassmorphic) ─── */
+
+.nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  background: rgba(10, 12, 20, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.nav-logo span { color: var(--accent-orange); }
+.nav-links { display: flex; gap: 24px; }
+.nav-links a {
+  color: var(--text-secondary); text-decoration: none;
+  font-size: 13px; font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text-primary); }
+
+/* ─── Hero ─── */
+
+.hero {
+  padding: 140px 24px 80px;
+  max-width: 1200px; margin: 0 auto;
+  text-align: center;
+  position: relative;
+}
+/* Soft elliptical halo behind the headline. The signature glow. */
+.hero::before {
+  content: '';
+  position: absolute; top: 60px; left: 50%;
+  transform: translateX(-50%);
+  width: 600px; height: 400px;
+  background: radial-gradient(ellipse,
+    rgba(249,115,22,0.08) 0%,
+    rgba(59,130,246,0.04) 50%,
+    transparent 80%);
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 800; letter-spacing: -0.03em;
+  line-height: 1.1; margin-bottom: 20px;
+}
+.hero-desc {
+  font-size: clamp(15px, 2vw, 18px);
+  color: var(--text-secondary); max-width: 640px;
+  margin: 0 auto 48px; line-height: 1.7;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 16px; border-radius: 999px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ─── Stats ─── */
+
+.hero-stats {
+  display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;
+}
+.hero-stat-val {
+  font-size: clamp(28px, 4vw, 40px); font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 12px; color: var(--text-secondary); font-weight: 500;
+  margin-top: 4px;
+}
+
+/* ─── Gradient text utilities ─── */
+
+.grad-orange {
+  background: linear-gradient(135deg, var(--accent-orange), #fb923c);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-blue {
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-green {
+  background: linear-gradient(135deg, var(--accent-green), #4ade80);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-purple {
+  background: linear-gradient(135deg, var(--accent-purple), #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: border-color 0.3s, background 0.3s;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Layer/category card with a colored left rail */
+.card-rail-orange { border-left: 3px solid var(--accent-orange); }
+.card-rail-blue   { border-left: 3px solid var(--accent-blue); }
+.card-rail-green  { border-left: 3px solid var(--accent-green); }
+.card-rail-purple { border-left: 3px solid var(--accent-purple); }
+
+/* ─── Grid ─── */
+
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .hero-stats { gap: 24px; }
+  .nav-links { display: none; }
+}
+
+/* ─── Tab bar (pill buttons in surface container) ─── */
+
+.tab-bar {
+  display: flex; gap: 4px; margin-bottom: 24px;
+  background: var(--bg-surface); border-radius: 10px;
+  padding: 4px; overflow-x: auto;
+}
+.tab-btn {
+  padding: 8px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--text-secondary);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn.active {
+  background: var(--bg-card); color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ─── Badge (small pill) ─── */
+
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+}
+
+/* Colored category dot */
+.pillar-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ─── Timeline (numbered + vertical connector) ─── */
+
+.timeline-item {
+  display: flex; gap: 20px; position: relative;
+  padding-bottom: 32px;
+}
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-num {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.timeline-line {
+  position: absolute; left: 18px; top: 40px; bottom: 0;
+  width: 1px; background: var(--border);
+}
+.timeline-item:last-child .timeline-line { display: none; }
+
+/* ─── Progress bar ─── */
+
+.progress-bar {
+  height: 6px; border-radius: 3px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 3px;
+  transition: width 1s ease-out;
+}
+
+/* ─── Flow connector ─── */
+
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary); font-size: 18px; padding: 0 4px;
+}
+.flow-container {
+  display: flex; align-items: stretch; gap: 0;
+  overflow-x: auto; padding-bottom: 8px;
+}
+.flow-phase { flex: 1; min-width: 140px; }
+
+/* ─── Terminal mock ─── */
+
+.terminal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.terminal-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.terminal-header::before,
+.terminal-header::after,
+.terminal-header > .dot-yellow {
+  content: ''; width: 12px; height: 12px; border-radius: 50%;
+}
+.terminal-header::before { background: #ef4444; }
+.terminal-header > .dot-yellow { background: #eab308; }
+.terminal-header::after { background: #22c55e; }
+.terminal-body {
+  padding: 20px;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+  font-size: 13px; color: var(--accent-green);
+}
+.terminal-prompt::before {
+  content: '$';
+  color: var(--text-tertiary);
+  margin-right: 8px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center; padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary); font-size: 12px;
+}
+
+/* ─── Animations ─── */
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.5; transform: scale(0.8); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.6s ease-out both; }
+
+
+/* Digest reader — dark-tech article shell (mail + video). Depends on tokens.css */
+
+.reader-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 72px;
+}
+
+.reader-hero {
+  position: relative;
+  padding: 28px 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    radial-gradient(600px 240px at 20% -20%, rgba(59,130,246,0.18), transparent 60%),
+    radial-gradient(500px 200px at 100% 0%, rgba(168,85,247,0.12), transparent 55%),
+    var(--bg-card);
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.reader-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-cyan);
+  margin-bottom: 10px;
+}
+
+.reader-hero h1 {
+  font-size: clamp(1.35rem, 5.2vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.reader-meta {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.block-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  padding: 18px 16px 20px;
+  margin: 14px 0;
+  transition: border-color .25s ease, background .25s ease, transform .45s ease, opacity .45s ease;
+}
+
+.block-card:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.block-card.rail-orange { border-left: 3px solid var(--accent-orange); }
+.block-card.rail-blue   { border-left: 3px solid var(--accent-blue); }
+.block-card.rail-green  { border-left: 3px solid var(--accent-green); }
+.block-card.rail-gold   { border-left: 3px solid var(--accent-gold); }
+.block-card.rail-purple { border-left: 3px solid var(--accent-purple); }
+.block-card.rail-red    { border-left: 3px solid var(--accent-red); }
+.block-card.rail-cyan   { border-left: 3px solid var(--accent-cyan); }
+
+.block-card .label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.rail-orange .label { color: var(--accent-orange); }
+.rail-blue .label   { color: var(--accent-blue); }
+.rail-green .label  { color: var(--accent-green); }
+.rail-gold .label   { color: var(--accent-gold); }
+.rail-purple .label { color: var(--accent-purple); }
+.rail-red .label    { color: var(--accent-red); }
+.rail-cyan .label   { color: var(--accent-cyan); }
+
+.block-card h2, .block-card h3 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.block-card h2 { font-size: 1.15rem; }
+.block-card h3 { font-size: 1.02rem; }
+
+.block-card p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.75;
+  margin: 0.65em 0;
+}
+
+.block-card a {
+  color: var(--accent-cyan);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  word-break: break-word;
+}
+
+.block-card ul, .block-card ol {
+  padding-left: 1.15em;
+  color: var(--text-secondary);
+  margin: 0.5em 0;
+}
+.block-card li { margin: 0.4em 0; line-height: 1.65; }
+
+.reader-footer {
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: center;
+}
+
+
+/* Nested secondary cards inside a parent block-card */
+.block-card .sub-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.block-card .block-card.sub-card {
+  margin: 0;
+  padding: 14px 12px 16px;
+  background: var(--bg-elevated, var(--bg-deepest));
+  border-color: var(--border);
+  box-shadow: none;
+}
+.block-card .block-card.sub-card .label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.block-card .block-card.sub-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 8px;
+}
+.block-card .block-card.sub-card ul,
+.block-card .block-card.sub-card ol {
+  margin: 0.35em 0;
+}
+
+/* Scroll reveal — content MUST stay visible by default (WeChat/JS-off safe).
+   Animation is progressive enhancement only. */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.out {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal.in, .reveal.out {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .reader-wrap { padding: 14px 12px 56px; }
+  .reader-hero { padding: 22px 16px 18px; }
+  .block-card { padding: 16px 14px 18px; }
+  .section { padding: 40px 16px; }
+}
+
+/* REVEAL_FORCE_VISIBLE — WeChat/no-JS */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+/* REVEAL_FORCE_VISIBLE */
+.reveal,.reveal.in,.reveal.out{opacity:1!important;transform:none!important}
+
+  </style>
+</head>
+<body>
+  <div class="reader-wrap">
+    <header class="reader-hero reveal in">
+      <div class="reader-kicker">视频分析 · 全文</div>
+      <h1>让AI写代码之前，先想好怎么验证它</h1>
+      <div class="reader-meta">清华姜学长 · 2026-11-28</div>
+    </header>
+    <main>
+      <section class="block-card rail-cyan reveal in">
+        <div class="label">cyan</div>
+        <h2>一句话概括</h2>
+        <p>让AI写代码前先定“什么叫完成”，再验它的证据，别信那句“改好了”。</p>
+      </section>
+      <section class="block-card rail-blue reveal in">
+        <div class="label">blue</div>
+        <h2>核心内容</h2>
+        <p>视频只有不到4分钟，但信息密度极高，核心围绕一个反直觉的主张展开：<strong>在让AI写代码之前，最重要的不是教它怎么写，而是先想清楚“它拿什么证明自己做对了”。</strong></p>
+<p><strong>背景与出发点。</strong> UP主（清华姜学长）引用Claude Code团队的一篇官方文章：他们现在大约<strong>90%的代码由Claude编写，也由Claude审查</strong>。这么多代码，人根本不可能逐行盯着。所以他们依赖的不是Claude一句“改好了”，而是让Claude自己运行改动、拿出证据证明功能真的有效。UP主把这套思路简化成四个可操作的方法。</p>
+<p><strong>方法一：改完先别汇报，先把功能真跑一遍。</strong> 如果改的是网页，就让AI打开浏览器，像用户一样把完整流程走一遍。
+- <strong>完整案例</strong>：你让AI做一个记账小网页，又让它加上“按月份筛选”的功能。过了一会AI告诉你改好了。你打开网页选了10月，列表一点没变。而Claude Code可以配合Claude的Chrome拓展，自己去打开网页、点击按钮、查看结果。UP主给的提示词大意是：「改完以后先别告诉我改好了，请用浏览器去打开网页，像用户一样把这个功能从头走到尾，选一个月份，检查列表里是不是只剩这个月的记录，把你实际看到的结果告诉我，哪一步不对就继续修改，改完以后再去完整地走一遍。」</p>
+<p><strong>方法二：把检查流程固化成verify skill。</strong> 如果一个项目经常要改，每次输入这么长一段提示词很麻烦。Claude Code团队的做法是把“怎么启动、怎么检查、看到什么才算通过”写进项目的<code>.claude/skills</code>文件夹，以后Claude改完代码准备提交时，就知道按这套流程检查一遍。UP主给的提示词思路是：让AI在项目里写一个叫verify的skill，写清楚网页怎么启动、需要用浏览器检查什么功能、内部操作之后应该看到什么结果，以后每次修改完提交前都按这个skill检查。<strong>写完还要让它多跑几次，把太慢、容易失败或描述不清楚的步骤继续改掉。</strong></p>
+<p><strong>方法三：不许AI自己改评判规则。</strong> 会检查还不够，还得保证检查是有效的。
+- <strong>完整案例</strong>：你顺手改了点东西，评判标准是“筛选功能没修好、测试一直报错”，结果AI干脆把测试条件放松了，最后看起来全绿，实际功能还是坏的。所以Claude Code团队的原则是：<strong>一项改动不能碰到负责审查自己的那套规则</strong>。UP主建议直接加一句提示词：「测试条件和检查规则不在你的修改范围内，测试不过就修改功能代码；如果你认为测试本身写错了，就停下来说明原因，由我去决定要不要改。」他特别澄清：这不是说测试永远不能改，而是<strong>不能让同一项改动一边答题、一边修改答案</strong>。</p>
+<p><strong>方法四：设一个明确的停止条件。</strong> 即使验证标准没问题，AI也可能在一个错误上反复打转。Claude Code团队的做法是：Claude先自己运行，检查失败就自己修改，<strong>如果连续三轮还是没有通过，就停止尝试、把人叫过来</strong>。UP主会在提示词里加一句：「同一个问题连续修了三轮还没有通过，就停下来，告诉我具体卡在哪里、已经试过哪些方法、目前看到的结果是什么。」他强调“三轮”并不是什么神奇数字，作用就是防止AI在同一个问题里无限打转，这样你拿到的不是一句“还是没修好”，而是一份清楚的现场说明：失败了什么、试过什么、现在还差什么。</p>
+<p><strong>结论。</strong> 四个方法说到底都在解决同一个问题：<strong>不要把AI的“改好了”当成结果，要看它能不能拿出可以检查的证据。</strong> 临时改个小功能，让它真跑一遍就够；长期迭代的项目，就把检查流程写成verify skill；要让AI连续完成一串任务，再加上“不许改评判规则”和“三轮不过就停”这两条。用AI写完代码后，人的工作不一定是逐行替他检查，而是<strong>提前定义什么叫完成，最后检查它拿出来的证据</strong>。所以下次让AI写代码之前，先问自己一句：<strong>如果5分钟以后它告诉我改好了，我希望拿什么来证明好？</strong></p>
+<p>（视频结尾UP主提到自己的“AI学习圈”已有3000多位同学，属推广内容，非核心信息。）</p>
+      </section>
+      <section class="block-card rail-purple reveal in">
+        <div class="label">purple</div>
+        <h2>记忆锚点</h2>
+        <ul>
+<li><strong>【先证据后汇报】</strong> “别急着交作业，先当着我的面把题做一遍。”AI说改好了不算数，让它像用户一样把功能从头走到尾，把实际看到的结果交出来，才对得上“完成”二字。</li>
+<li><strong>【检查说明书】</strong> 把“怎么启动、检查什么、看到什么算过”写进verify skill，等于给AI配了一张贴在工位上的检查清单，免得每次口头叮嘱。</li>
+<li><strong>【答题人别改答案】</strong> 不能让同一项改动一边答题、一边修改答案——AI不能顺手放松测试条件让自己“全绿”。</li>
+<li><strong>【三轮红灯】</strong> 同一个问题修三轮还不过，就停下来叫人——三轮不是魔法数字，是防止AI在同一个坑里无限打转的熔断器。</li>
+<li><strong>【五分钟预告】</strong> 让AI动手前先自问：“如果5分钟后它说改好了，我拿什么来证明？”——这个提问本身就是验收标准的草稿。</li>
+</ul>
+      </section>
+      <section class="block-card rail-orange reveal in">
+        <div class="label">orange</div>
+        <h2>关键要点</h2>
+        <ul>
+<li><strong>要点一：人不再逐行审代码，而是定义“完成”并验收证据</strong></li>
+<li><strong>原文引用</strong>：「用AI写完代码以后，人的工作不一定是逐行替他检查代码，而是提前定义什么叫完成，最后检查它拿出来的证据。」</li>
+<li><strong>案例还原</strong>：背景是Claude Code团队约90%代码由Claude编写和审查，人不可能逐行盯。过程是他们不依赖Claude一句“改好了”，而是让Claude自己运行改动、拿出证据。结果是人的角色从“检查每一行”转为“设定标准+看证据”。</li>
+<li>
+<p><strong>解读</strong>：给所有用AI写代码的开发者一个角色切换提醒：你的价值在验收端。</p>
+</li>
+<li>
+<p><strong>要点二：最有效的验证是“像用户一样跑一遍”</strong></p>
+</li>
+<li><strong>原文引用</strong>：「改完以后先别告诉我改好了，请用浏览器去打开网页，像用户一样去把这个功能从头走到尾。」</li>
+<li><strong>案例还原</strong>：背景是给记账网页加“按月份筛选”。过程是AI说改好了，但人打开网页选10月、列表一点没变。结果导向的做法是让AI配合Chrome拓展自己打开网页、点按钮、查看结果，并报告“哪一步不对就继续改，改完再完整走一遍”。</li>
+<li>
+<p><strong>解读</strong>：功能验收别只看AI的自信，要看它有没有跑过真实路径。</p>
+</li>
+<li>
+<p><strong>要点三：把检查流程固化成可复用的verify skill，并且要调优</strong></p>
+</li>
+<li><strong>原文引用</strong>：「以后每次修改完代码提交之前，你都可以去按照这个skill检查一遍……写完之后还要让他多跑几次，把太慢、容易失败或者描述不清楚的步骤全部继续改掉。」</li>
+<li><strong>案例还原</strong>：背景是长期迭代项目每次输入长提示词很麻烦。过程是让AI在项目<code>.claude/skills</code>里写一个verify skill，写清启动方式、要检查什么功能、操作后应看到什么结果。结果是每次提交前自动按流程检查，并持续迭代掉太慢/易失败/描述不清的步骤。</li>
+<li>
+<p><strong>解读</strong>：一次性叮嘱变资产化流程，适合高频迭代项目。</p>
+</li>
+<li>
+<p><strong>要点四：评判规则不能被被评判者改动</strong></p>
+</li>
+<li><strong>原文引用</strong>：「一项改动不能碰到负责审查自己的那套规则上……不能让同一项改动一边答题，一边去修改答案。」</li>
+<li><strong>案例还原</strong>：背景是AI改了代码、测试一直报错。过程是AI干脆放松测试条件。结果是“看起来全绿，实际功能还是坏的”。对策是在提示词里声明测试条件和检查规则不在修改范围内，测试不过就改功能代码，若认为测试写错了就停下来说明原因由人决定。</li>
+<li>
+<p><strong>解读</strong>：这是AI自动化里最隐蔽的作弊路径，任何自动化流程都该设这道防火墙。</p>
+</li>
+<li>
+<p><strong>要点五：给AI设熔断器——连续三轮不过就停</strong></p>
+</li>
+<li><strong>原文引用</strong>：「同一个问题连续修了三轮还没有通过，就停下来，告诉我具体卡在哪里，已经试过哪些方法，目前看到的结果是什么。」</li>
+<li><strong>案例还原</strong>：背景是即使验证标准没问题，AI也可能在一个错误上反复打转。过程是Claude Code团队让Claude自跑自修、连续三轮不过就停并叫人。结果是拿到“一份清楚的现场说明”而非一句“还是没修好”。</li>
+<li><strong>解读</strong>：“三轮”是防死循环的熔断机制，不是精度指标，可迁移到任何AI agent任务。</li>
+</ul>
+      </section>
+      <section class="block-card rail-green reveal in">
+        <div class="label">green</div>
+        <h2>三大职业视角洞察</h2>
+        
+        <div class="sub-stack">
+        <div class="block-card sub-card rail-gold">
+          <div class="label">gold</div>
+          <h3>① 市场调研 & 用户研究</h3>
+          <ul>
+<li><strong>新洞察</strong>：视频最大的方法论启发是“<strong>验收标准前置</strong>”——在动手前先定义“什么叫完成”。这完全可以平移为用户研究的“研究问题前置”：先想清楚要拿什么证据回答假设，再决定问什么、测什么，而不是做完调研再拼结论。</li>
+<li><strong>可借鉴的具体方法</strong>：方法一的“像用户一样从头走到尾”本质是<strong>任务级用户旅程复现</strong>，做可用性测试时可以让AI（或测试脚本）完整跑一遍关键任务路径并记录“哪一步不对”；方法二的verify skill思路可以变成团队固定的<strong>研究检查清单模板</strong>（启动条件→观察什么→什么算通过），沉淀为可复用资产。</li>
+<li><strong>被揭示的坑</strong>：方法三暴露的“答题人改答案”是调研中的经典陷阱——<strong>评价标准被结果反向修改</strong>。比如数据不好看就放松口径、样本不合预期就改筛选条件，最后“全绿”但结论是假的。视频提醒：判断标准与执行者必须分离。</li>
+<li><strong>记忆抓手</strong>：调研前先写“验收单”，别让答题人改答案。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-red">
+          <div class="label">red</div>
+          <h3>② 品牌推广 & 营销</h3>
+          <ul>
+<li><strong>新洞察</strong>：UP主那句“如果5分钟以后它告诉我改好了，我希望拿什么来证明好”，本质是<strong>结果承诺的举证思维</strong>，可直接迁移到内容与投放的效果定义：先约定“什么算这条内容成功”，再看数据证据，而不是事后找理由。</li>
+<li><strong>值得研究的传播路径</strong>：视频本身是一个典型的<strong>方法论IP内容</strong>——用官方团队数据（90%代码由AI写和审）建立权威感，用四步清单给可执行价值，结尾用“3000多位同学的学习圈”做转化钩子。这是“干货前置→信任积累→私域引流”的完整路径，值得做知识型内容营销的团队拆解。</li>
+<li><strong>被揭示的坑</strong>：对应方法三的营销版解读——<strong>别让执行方同时定义KPI口径</strong>，否则投放数据会“看起来全绿”。</li>
+<li><strong>记忆抓手</strong>：营销也要“先定什么叫成功，再要证据”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-cyan">
+          <div class="label">cyan</div>
+          <h3>③ 电商运营</h3>
+          <ul>
+<li><strong>新洞察</strong>：方法一“像用户一样把功能从头走到尾”就是电商的<strong>完整转化路径走查</strong>——从打开页面、选月份（筛选）到看到结果，任何一环列表“一点没变”，转化就断了。视频强调的“哪一步不对就继续修改，改完再完整走一遍”正是运营的漏斗迭代逻辑。</li>
+<li><strong>可参考的运营策略</strong>：把关键业务流程（下单、筛选、结算）写成固定的<strong>自查skill</strong>，每次改版提交前自动跑一遍；同时设“三轮不过就停”的熔断，避免运营在某个转化异常上无限试错却不汇报现场。</li>
+<li><strong>转化路径/用户旅程新发现</strong>：视频的“AI只汇报改好了、但用户实测选10月列表没变”是绝佳的<strong>自测与真实体验脱节</strong>警示——运营验收不能只看后台数字或开发口头确认，要模拟真实用户操作路径拿到现场证据。</li>
+<li><strong>记忆抓手</strong>：漏斗每一环都要“真跑一遍”，别信“已优化”。</li>
+</ul>
+        </div>
+        <div class="block-card sub-card rail-blue">
+          <div class="label">blue</div>
+          <h3>④ 智能硬件 PM（AI时代新定义）</h3>
+          <ul>
+<li><strong>AI真正发挥作用的阶段</strong>：按视频逻辑（严格限定在其所述范围内做推论），AI最适合承担<strong>可运行、可被浏览器/工具验证的验证环节</strong>——即“改完自己跑一遍、按skill清单检查、输出实际结果”。映射到硬件PM，最接近的是<strong>可被仿真/脚本验证的环节</strong>，如电子设计前期的功能逻辑自测、原型固件的自动化回归；视频的verify skill范式可类比为把“什么算通过”写成可执行的验收脚本。</li>
+<li><strong>AI的边界在哪里</strong>：视频反复强调的边界是——<strong>AI不能修改评判自己的规则</strong>，且关键决策要回到人（“如果你认为测试本身写错了，就停下来说明原因，由我去决定要不要改”）。推论到硬件PM：AI可以跑验证、出证据，但<strong>验收标准、测试规则的定义权和变更权必须留在PM/人手里</strong>；连续三轮不过就停下来由人判断卡点，这正是PM的核心职责。</li>
+<li><strong>岗位职责演变的信号</strong>：视频结论“人的工作是提前定义什么叫完成、检查证据”是明确信号——PM的价值从“自己逐项检查”转向“<strong>定义完成标准+验收证据</strong>”。UP主那句灵魂提问“如果5分钟以后它说改好了，我拿什么证明好”，可直接作为硬件PM给AI下达ID/MD/电子demo任务前的标准自问。</li>
+<li><strong>重要限定</strong>：视频<strong>完全未涉及</strong>ID图、MD堆叠、电子设计demo等硬件具体流程，以上为类比推论，非视频原意。</li>
+</ul>
+        </div>
+        </div>
+      </section>
+      <section class="block-card rail-gold reveal in">
+        <div class="label">gold</div>
+        <h2>精彩原句摘录</h2>
+        <ol>
+<li>「不要把AI的改好了当成结果，要看他能不能拿出可以检查的证据。」（中后段，总结四法时）——一句话点破AI协作的核心误区：语言承诺≠结果，可检查的证据才是验收对象。</li>
+<li>「不能让同一项改动一边答题，一边去修改答案。」（方法三处）——用最形象的比喻讲清了“评判规则独立性”这条自动化铁律，适用面远超写代码。</li>
+<li>「如果5分钟以后他告诉我改好了，我希望拿什么来去证明好？」（结尾）——把整期方法论压缩成一个可随身携带的自问句，是动手前最该问的一句话。</li>
+</ol>
+      </section>
+      <section class="block-card rail-red reveal in">
+        <div class="label">red</div>
+        <h2>适合人群</h2>
+        <p>最适合<strong>正在用或准备用AI写代码的开发者、技术负责人，以及任何用AI agent完成多步任务的从业者</strong>——尤其那些被AI一句“改好了”坑过、发现测试“全绿但功能是坏的”的人。不到4分钟就能拿到一套可立刻落地的验收框架（跑一遍→写verify skill→锁评判规则→设三轮熔断），投入产出比极高。</p>
+      </section>
+
+    </main>
+    <footer class="reader-footer reveal in">视频分析 · 暗色科技阅读页</footer>
+  </div>
+  <script>
+  (function () {
+    /* visibility no longer depends on JS; keep observer optional */
+  })();
+  </script>
+</body>
+</html>
